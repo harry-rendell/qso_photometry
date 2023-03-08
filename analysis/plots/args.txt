@@ -1,0 +1,9 @@
+correlation_pd.pdf
+axes = pd.plotting.scatter_matrix(filtered_properties[keys].sample(frac = 0.5),alpha=0.05, figsize = (14,14),diagonal = 'hist',hist_kwds={'bins':100});
+
+
+correlation_sns.pdf
+g = sns.PairGrid(filtered_properties[['MBH_CIV','Lbol','mag_std','nEdd']], layout_pad = -0.2, height = 4)
+g.map_lower(plt.scatter, s = 10, marker = '.', alpha = 0.05)
+g.map_upper(sns.kdeplot, shade = True, n_levels = 10)
+g.map_diag(plt.hist, bins = 100);
