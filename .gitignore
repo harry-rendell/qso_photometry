@@ -1,9 +1,9 @@
 data/
-*/computed/*
-.ipynb_checkpoints/
-*/.DS_Store
-*/__pycache__/*
 plots/
-*.pyc
-.DS_Store
-*.csv
+**/computed/
+**/.ipynb_checkpoints
+**/.DS_Store
+**/__pycache__
+**.pyc
+**.csv
+**.ipynb
