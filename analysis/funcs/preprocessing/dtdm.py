@@ -130,23 +130,19 @@ class dtdm():
 
 		return figax, SF
 
-	def plot_sf_ensemble_iqr(self, figax=None):
-		if figax is None:
+	def plot_sf_ensemble_iqr(self, ax=None, **kwargs):
+		if ax is None:
 			fig, ax = plt.subplots(1,1, figsize=(15,8))
-		else:
-			fig, ax = figax
 		norm_cumsum = self.dms_binned.cumsum(axis=1)/self.dms_binned.sum(axis=1)[:,np.newaxis]
 		lq_idxs	 = np.abs(norm_cumsum-0.25).argmin(axis=1)
 		uq_idxs	 = np.abs(norm_cumsum-0.75).argmin(axis=1)
-
 		SF = 0.74 * ( self.m_bin_centres[uq_idxs]-self.m_bin_centres[lq_idxs] ) * (( self.dms_binned.sum(axis=1) - 1 ) ** -0.5)
 		SF[SF == 0] = np.nan
 
 		ax.errorbar(self.t_bin_chunk_centres, SF, yerr=self.dms_binned.sum(axis=1)**-0.5*self.means, lw = 0.5, marker = 'o', label = self.label)
-		ax.set(yscale='log',xscale='log', xticks=[100,1000])
+		ax.set(xticks=[100,1000], **kwargs)
 		ax.set(xlabel='∆t',ylabel = 'structure function')
-
-		return figax, SF
+		return ax, SF
 	
 	def plot_sf_ensemble_asym(self, figax=None, color='b'):
 		
