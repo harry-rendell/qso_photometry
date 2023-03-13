@@ -14,18 +14,26 @@ def calc_moments(bins,weights):
 	z = (x-x.mean(axis=1)[:,np.newaxis])/x.std(axis=1)[:,np.newaxis]
 	return x.mean(axis=1), (z**4).mean(axis = 1) - 3
 
+def reader(args):
+	n_subarray, basepath, ID = args
+	return pd.read_csv(basepath+'lc_{}.csv'.format(n_subarray), 
+					   comment='#',
+					   index_col = ID,
+					   dtype = {'catalogue': np.uint8, 'mag': np.float32, 'magerr': np.float32, 'mjd': np.float64, ID: np.uint32})
+
 class analysis():
-	def __init__(self, ID, obj):
+	def __init__(self, ID, obj, band):
 		self.ID = ID
 		self.obj = obj
-# 		self.band = band
+		self.band = band
 		self.plt_color = {'u':'m', 'g':'g', 'r':'r','i':'k','z':'b'}
 		self.plt_color_bokeh = {'u':'magenta', 'g':'green', 'r':'red','i':'black','z':'blue'}
 		self.marker_dict = {1:'^', 3:'v', 5:'D', 7:'s', 11:'o'}
 		self.marker_dict_bokeh = {1:'triangle', 3:'inverted_triangle', 5:'diamond', 7:'square', 11:'circle'}
 		self.survey_dict = {1:'SSS_r1', 3: 'SSS_r2', 5:'SDSS', 7:'PS1', 11:'ZTF'}
+		self.coords = pd.read_csv(wdir+'data/catalogues/qsos/dr14q/dr14q_uid_coords.csv', index_col='uid')
 
-	def read_in(self, reader, multi_proc = True, catalogue_of_properties = None, redshift=True):
+	def read_in(self, multi_proc = True, catalogue_of_properties = None, redshift=True):
 		"""
 		Read in raw data
 
@@ -37,10 +45,14 @@ class analysis():
 				True to use multiprocessesing
 		catalogue_of_properties : dataframe
 		"""
+		
 		# Default to 4 cores
 		if multi_proc == True:
+			# Use the path below for SSA
+# 			basepath = wdir+'data/merged/{}/{}_band/with_ssa/'
+			basepath = wdir+'data/merged/{}/{}_band/'.format(self.obj, self.band)
 			pool = Pool(4)
-			df_list = pool.map(reader, range(4))
+			df_list = pool.map(reader, [(i, basepath, self.ID) for i in range(4)])
 			self.df = pd.concat(df_list).rename(columns={'mag_ps':'mag'})
 			if self.df.index.name == None:
 				self.df = self.df.set_index(self.ID)
@@ -139,7 +151,6 @@ class analysis():
 		if colors:
 			df_colors = pd.read_csv(wdir+'data/computed/{}/colors_sdss.csv'.format(self.obj), index_col=0)
 			self.df_grouped = self.df_grouped.join(df_colors, on=self.ID, how='left')
-
 
 	def merge_with_catalogue(self,catalogue='dr12_vac', remove_outliers=True, prop_range_any = {'MBH_MgII':(6,12), 'MBH_CIV':(6,12)}):
 		"""
@@ -246,17 +257,32 @@ class analysis():
 	def save_dtdm_rf(self, uids, time_key):
 		"""
 		Save (∆t, ∆m) pairs from lightcurves. 
-
+		dtdm defined as: ∆m = (m2 - m1), ∆t = (t2 - t1) where (t1, m1) is the first obs and (t2, m2) is the second obs.
+		Thus a negative ∆m corresponds to a brightening of the object
+		
 		Parameters
 		----------
 		uids : array_like
 			uids of objects to be used for calcuation
 		time_key : str
 			either mjd or mjd_rf for regular and rest frame respectively
+		
 		Returns
 		-------
 		df : DataFrame
 			DataFrame(columns=[self.ID, 'dt', 'dm', 'de', 'dm2_de2', 'cat'])
+		where
+			dt : time interval between pair
+			dm : magnitude difference between pair
+			de : error on dm, calculated by combining individual errors in quadrature as sqrt(err1^2 + err2^2)
+			dm2_de2 : dm^2 - de^2, representing the intrinsic variability once photometric variance has been removed
+			cat : an ID representing which catalogue this pair was created from, calculated as survey_id_1*survey_id_2
+				where survey_ids are: 
+					1 = SSS_r1
+					3 = SSS_r2
+					5 = SDSS
+					7 = PS1
+					11 = ZTF
 		"""
 		sub_df = self.df[[time_key, 'mag', 'magerr', 'catalogue']].loc[uids]
 
@@ -267,8 +293,7 @@ class analysis():
 			magerr = group['magerr'].values
 			cat	 = group['catalogue'].values
 			n = len(mjd_mag)
-			# dtdm defined as: ∆m = (m2 - m1), ∆t = (t2 - t1) where (t1, m1) is the first obs and (t2, m2) is the second obs.
-			# Thus a negative ∆m corresponds to a brightening of the object
+
 			unique_pair_indicies = np.triu_indices(n,1)
 
 			dcat = cat*cat[:,np.newaxis]
@@ -313,7 +338,7 @@ class analysis():
 
 			n = len(mjd_mag1)*len(mjd_mag2)
 			dtdm = mjd_mag2[:, np.newaxis] - mjd_mag1
-			dcat = cat2[:, np.newaxis] + 3*cat1
+			dcat = cat2[:, np.newaxis]*cat1
 			dmagerr = ( magerr2[:,np.newaxis]**2 + magerr1**2 )**0.5
 			duid = np.full(n,uid,dtype='uint32')
 
@@ -478,10 +503,10 @@ class analysis():
 				for cat in single_obj['catalogue'].unique():
 					x = single_obj[single_obj['catalogue']==cat]
 					ax.errorbar(x['mjd'], x['mag'], yerr = x['magerr'], lw = 0.5, marker = self.marker_dict[cat], label = self.survey_dict[cat]+' '+filtercodes, color = self.plt_color[filtercodes])
-					mean = x['mag'].mean()
-					ax2 = ax.twinx()
-					ax.axhline(y=mean, color='k', ls='--', lw=0.4, dashes=(50, 20))
-					ax2.set(ylim=np.array(ax.get_ylim())-mean, ylabel=r'$\mathrm{mag} - \overline{\mathrm{mag}}$')
+				mean = single_obj['mag'].mean()
+				ax2 = ax.twinx()
+				ax.axhline(y=mean, color='k', ls='--', lw=0.4, dashes=(50, 20))
+				ax2.set(ylim=np.array(ax.get_ylim())-mean, ylabel=r'$\mathrm{mag} - \overline{\mathrm{mag}}$')
 
 
 			ax.invert_yaxis()
