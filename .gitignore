@@ -1,5 +1,6 @@
 data/
 plots/
+.idea/
 **.pdf
 **/computed/
 **/.ipynb_checkpoints
