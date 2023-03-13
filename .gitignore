@@ -7,3 +7,6 @@ plots/
 **.pyc
 **.csv
 **.ipynb
+**.png
+**.jpg
+**.pdf
