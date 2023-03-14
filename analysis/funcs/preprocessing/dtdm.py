@@ -63,12 +63,7 @@ class dtdm():
 		self.dms_binned = np.loadtxt(wdir+'data/computed/{}/binned/{}/dm/dms_binned_{}_{}.csv'.format(self.obj, self.subset, self.obj, self.name),  delimiter=',', dtype='uint64')
 		self.des_binned = np.loadtxt(wdir+'data/computed/{}/binned/{}/de/des_binned_{}_{}.csv'.format(self.obj, self.subset, self.obj, self.name),  delimiter=',', dtype='uint64') # could get away with uint32, as the largest number we expect is ~2^29
 		self.dcs_binned = np.loadtxt(wdir+'data/computed/{}/binned/{}/dc/dcs_binned_{}_{}.csv'.format(self.obj, self.subset, self.obj, self.name),  delimiter=',', dtype='uint16')
-		self.dm2_de2_binned = np.loadtxt(wdir+'data/computed/{}/binned/{}/dm2_de2/dm2_de2_binned_{}_{}.csv'.format(self.obj, self.subset, self.obj, self.name),  delimiter=',', dtype='uint16')
-
-		# redefining dcat, because ZTF-PS is equivalent to PS-ZTF
-#		 for a,b in zip([1,2,5],[3,6,7]):
-#			 dcat_result[:,a] = dcat_result[:,a] + dcat_result[:,b]
-#		 dcat_result = dcat_result[:,(0,4,8,1,2,5)]
+		self.dm2_de2_binned = np.loadtxt(wdir+'data/computed/{}/binned/{}/dm2_de2/dm2_de2_binned_{}_{}.csv'.format(self.obj, self.subset, self.obj, self.name),  delimiter=',', dtype='uint16')	
 
 	def stats(self, verbose=False):
 		if verbose:
@@ -88,13 +83,13 @@ class dtdm():
 
 	def plot_means(self, ax, ls='-'):
 		ax.errorbar(self.t_bin_chunk_centres, self.means, yerr=self.means*self.dms_binned.sum(axis=1)**-0.5, lw=0.5, marker='o', label=self.label)
-#		 ax.scatter(self.t_bin_chunk_centres, self.means, s=30, label=self.name, ls=ls)
-#		 ax.plot   (self.t_bin_chunk_centres, self.means, lw=1.5, ls=ls)
+		 # ax.scatter(self.t_bin_chunk_centres, self.means, s=30, label=self.name, ls=ls)
+		 # ax.plot   (self.t_bin_chunk_centres, self.means, lw=1.5, ls=ls)
 
 	def plot_modes(self, ax, ls='-'):
 		ax.errorbar(self.t_bin_chunk_centres, self.modes, yerr=self.means*self.dms_binned.sum(axis=1)**-0.5, lw=0.5, marker='o', label=self.label)
-#		 ax.scatter(self.t_bin_chunk_centres, self.modes, s=30, label=self.name, ls=ls)
-#		 ax.plot   (self.t_bin_chunk_centres, self.modes, lw=1.5, ls=ls)
+		 # ax.scatter(self.t_bin_chunk_centres, self.modes, s=30, label=self.name, ls=ls)
+		 # ax.plot   (self.t_bin_chunk_centres, self.modes, lw=1.5, ls=ls)
 
 	def plot_sf_ensemble(self, figax=None):
 		if figax is None:
@@ -183,19 +178,19 @@ class dtdm():
 			r2s = []
 			m,_,_= ax.hist(self.m_bin_edges[:-1], self.m_bin_edges[::n], weights = self.dms_binned[i], alpha = alpha, density=True, label = self.t_dict[i], color = colors[0]); # *0.25 is for jet color = cmap(0.6+i/20*0.5)
 			ax.set(xlim=[-window_width,window_width], xlabel='∆m')
-		#	 ax.axvline(x=modes[i], lw=0.5, ls='--', color='k')
-		#	 ax.axvline(x=m_bin_centres[m.argmax()], lw=0.5, ls='--', color='r')
+			# ax.axvline(x=modes[i], lw=0.5, ls='--', color='k')
+			# ax.axvline(x=m_bin_centres[m.argmax()], lw=0.5, ls='--', color='r')
 			text_height = 0.6
 			if overlay_gaussian:
 				#Also make sure that bins returned from .hist match m_bin_edges : it is
 				x = np.linspace(-2,2,1000)
 
 				popt, _ = curve_fit(gaussian, self.m_bin_edges[:-1:n], m, p0 = [m.max(),self.m_bin_edges[:-1:n][m.argmax()]])
-# 				ax.plot(x,gaussian(x, m.max(), self.m_bin_edges[:-1:n][m.argmax()]), label = 'gaussian') what is this for
+				# ax.plot(x,gaussian(x, m.max(), self.m_bin_edges[:-1:n][m.argmax()]), label = 'gaussian') what is this for
 				ax.plot(x,gaussian(x, *popt), color=colors[1], label = 'gaussian', lw=1.5)
 
-# 				popt, _ = curve_fit(gaussian, self.m_bin_edges[:-1:n], m, p0 = [m.max(),self.m_bin_edges[:-1:n][m.argmax()]], sigma = 1/self.m_bin_widths)
-# 				ax.plot(x,gaussian(x, *popt), label = 'gaussian_weighted')
+				# popt, _ = curve_fit(gaussian, self.m_bin_edges[:-1:n], m, p0 = [m.max(),self.m_bin_edges[:-1:n][m.argmax()]], sigma = 1/self.m_bin_widths)
+				# ax.plot(x,gaussian(x, *popt), label = 'gaussian_weighted')
 				
 				slope, intercept, r, p, stderr = linregress(m, gaussian(self.m_bin_centres, *popt))
 				chisq, p = chisquare(m, gaussian(self.m_bin_centres, *popt), ddof=0)
@@ -205,7 +200,7 @@ class dtdm():
 				if overlay_diff:
 					ax.plot(self.m_bin_centres, diff, label = 'diff')
 				ax.text(0.05, text_height, r'Gaussian     $r^2$ = {:.5f}'.format(r2_gaussian), transform=ax.transAxes)
-# 				ax.text(0.05, text_height-0.1, r'Gaussian linreg $r^2$ = {:.5f}'.format(r**2), transform=ax.transAxes)
+				# ax.text(0.05, text_height-0.1, r'Gaussian linreg $r^2$ = {:.5f}'.format(r**2), transform=ax.transAxes)
 				ax.text(0.05, text_height-0.2, r'Gaussian $\chi^2$ = {:.5f}'.format(chisq/m.sum()), transform=ax.transAxes)
 ######################### something wrong with chi squared
 				text_height -= 0.1
@@ -216,8 +211,8 @@ class dtdm():
 				popt, _ = curve_fit(lorentzian, self.m_bin_edges[:-1:n], m, p0 = [1/m.max(),self.m_bin_edges[:-1:n][m.argmax()]])
 				ax.plot(x,lorentzian(x,popt[0],popt[1]), color = colors[2], label = 'lorentzian', lw=2)
 				
-# 				popt, _ = curve_fit(lorentzian, self.m_bin_edges[:-1:n], m, p0 = [1/m.max(),self.m_bin_edges[:-1:n][m.argmax()]], sigma = 1/self.m_bin_widths)
-# 				ax.plot(x,lorentzian(x,popt[0],popt[1]), label = 'lorentzian weighted')
+				# popt, _ = curve_fit(lorentzian, self.m_bin_edges[:-1:n], m, p0 = [1/m.max(),self.m_bin_edges[:-1:n][m.argmax()]], sigma = 1/self.m_bin_widths)
+				# ax.plot(x,lorentzian(x,popt[0],popt[1]), label = 'lorentzian weighted')
 				
 				diff	= m - lorentzian(self.m_bin_centres, *popt)
 				r2_lorentzian = 1 -  (diff**2).sum() / ( (m - m.mean())**2).sum() 
@@ -229,15 +224,15 @@ class dtdm():
 
 
 			if overlay_exponential:
-				#Also make sure that bins returned from .hist match m_bin_edges : it is
+				# Also make sure that bins returned from .hist match m_bin_edges : it is
 				x = np.linspace(-2,2,1000)
 
 				popt, _ = curve_fit(exponential, self.m_bin_edges[:-1:n], m, p0 = [m.max(),self.m_bin_edges[:-1:n][m.argmax()], 1])
-# 				ax.plot(x,exponential(x, m.max(), self.m_bin_edges[:-1:n][m.argmax()]), label = 'exponential') what is this for
+				# ax.plot(x,exponential(x, m.max(), self.m_bin_edges[:-1:n][m.argmax()]), label = 'exponential') what is this for
 				ax.plot(x,exponential(x, *popt), color=colors[3], label = 'exponential', lw=2)
 
-# 				popt, _ = curve_fit(exponential, self.m_bin_edges[:-1:n], m, p0 = [m.max(),self.m_bin_edges[:-1:n][m.argmax()], 1], sigma = 1/self.m_bin_widths)
-# 				ax.plot(x,exponential(x, *popt), label = 'exponential_weighted')
+				# popt, _ = curve_fit(exponential, self.m_bin_edges[:-1:n], m, p0 = [m.max(),self.m_bin_edges[:-1:n][m.argmax()], 1], sigma = 1/self.m_bin_widths)
+				# ax.plot(x,exponential(x, *popt), label = 'exponential_weighted')
 				
 				diff	= m - exponential(self.m_bin_centres, *popt)
 				r2_exponential = 1 -  (diff**2).sum() / ( (m - m.mean())**2).sum() 
@@ -251,9 +246,9 @@ class dtdm():
 			ax.text(0.05, 0.9, 'mean = {:.5f}'.format(self.means[i]), transform=ax.transAxes)
 			ax.text(0.05, 0.8, 'mode = {:.5f}'.format(self.modes[i]), transform=ax.transAxes)
 			ax.text(0.05, 0.7, 'skew  = {:.5f}'.format(self.skew_1[i]), transform=ax.transAxes)
-# 			ax.axvline(x=self.means[i], lw=0.4, ls='-', color='b')
-# 			ax.axvline(x=self.modes[i], lw=0.4, ls='-', color='r')
-# 			ax.axvline(x=self.m_bin_centres[m.argmax()], lw=0.6, ls='-', color='r')
+			# ax.axvline(x=self.means[i], lw=0.4, ls='-', color='b')
+			# ax.axvline(x=self.modes[i], lw=0.4, ls='-', color='r')
+			# ax.axvline(x=self.m_bin_centres[m.argmax()], lw=0.6, ls='-', color='r')
 			ax.axvline(x=0, lw=1, ls='--', color='k')
 			ax.legend()
 			plt.subplots_adjust(hspace=0.5)
@@ -309,7 +304,7 @@ class dtdm():
 			m,_,_= ax.hist(self.t_bin_edges[:-1], self.t_bin_edges[::n], weights = self.dts_binned[i], alpha = 1, label = self.t_dict[i], color = cmap(i/20.0));
 		ax.axvline(x=0, lw=0.5, ls='--')
 		ax.set(yscale='log')
-# 		ax.legend()
+		# ax.legend()
 
 		if save:
 			fig.savefig('/disk1/hrb/python/analysis/{}/plots/{}_{}_dt_hist.pdf'.format(self.obj, self.obj, self.name), bbox_inches='tight')
@@ -337,7 +332,7 @@ class dtdm_key():
 		self.label_range_val = {i:'{:.1f} < {} < {:.1f}'.format(self.bounds_values[i],self.key,self.bounds_values[i+1]) for i in range(len(self.bounds_values)-1)}
 
 		self.read()
-#		 self.stats(verbose)
+		# self.stats(verbose)
 
 	def read(self):
 		n = len([file for file in listdir(wdir+'data/computed/{}/binned/{}/dm/'.format(self.obj,self.key)) if file.startswith('dms')])
@@ -355,11 +350,6 @@ class dtdm_key():
 			self.dm2_de2_binned[i] = np.loadtxt(wdir+'data/computed/{}/binned/{}/dm2_de2/dm2_de2_binned_{}_{}_{}_{}.csv'.format(self.obj, self.key, self.obj, self.name, self.key, i),  delimiter=',', dtype='uint64')
 			self.des_binned[i] = np.loadtxt(wdir+'data/computed/{}/binned/{}/de/des_binned_{}_{}_{}_{}.csv'.format(self.obj, self.key, self.obj, self.name, self.key, i),  delimiter=',', dtype='uint16')
 			self.dcs_binned[i] = np.loadtxt(wdir+'data/computed/{}/binned/{}/dc/dcs_binned_{}_{}_{}_{}.csv'.format(self.obj, self.key, self.obj, self.name, self.key, i),  delimiter=',', dtype='uint16')
-
-		# redefining dcat, because ZTF-PS is equivalent to PS-ZTF
-#		 for a,b in zip([1,2,5],[3,6,7]):
-#			 dcat_result[:,a] = dcat_result[:,a] + dcat_result[:,b]
-#		 dcat_result = dcat_result[:,(0,4,8,1,2,5)]
 
 	def stats(self, verbose=False):
 		if verbose:
@@ -380,14 +370,14 @@ class dtdm_key():
 	def plot_means(self, ax, ls='-'):
 		for i in range(self.n):
 			ax.errorbar(self.t_bin_chunk_centres, self.means[i], yerr=self.means[i]*(self.dms_binned[i].sum(axis=-1)**-0.5), lw=0.5, marker='o', label=self.label_range_val[i])
-#		 ax.scatter(self.t_bin_chunk_centres, self.means, s=30, label=self.name, ls=ls)
-#		 ax.plot   (self.t_bin_chunk_centres, self.means, lw=1.5, ls=ls)
+			# ax.scatter(self.t_bin_chunk_centres, self.means, s=30, label=self.name, ls=ls)
+			# ax.plot   (self.t_bin_chunk_centres, self.means, lw=1.5, ls=ls)
 
 	def plot_modes(self, ax, ls='-'):
 		for i in range(self.n):
 			ax.errorbar(self.t_bin_chunk_centres, self.modes[i], yerr=self.means[i]*(self.dms_binned[i].sum(axis=-1)**-0.5), lw=0.5, marker='o', label=self.label_range_val[i])
-#		 ax.scatter(self.t_bin_chunk_centres, self.modes, s=30, label=self.name, ls=ls)
-#		 ax.plot   (self.t_bin_chunk_centres, self.modes, lw=1.5, ls=ls)
+		 	# ax.scatter(self.t_bin_chunk_centres, self.modes, s=30, label=self.name, ls=ls)
+		 	# ax.plot   (self.t_bin_chunk_centres, self.modes, lw=1.5, ls=ls)
 
 	def plot_sf_ensemble(self, figax=None):
 		if figax is None:
@@ -414,7 +404,7 @@ class dtdm_key():
 		
 		for i in range(self.n):
 			SF = (((self.m2_bin_centres**2)*self.dm2_de2_binned[i]).sum(axis=-1)/self.dm2_de2_binned[i].sum(axis=-1))
-# 			SF[self.dm2_de2_binned[i].sum(axis=-1)**-0.5 > 0.1] = np.nan
+			# SF[self.dm2_de2_binned[i].sum(axis=-1)**-0.5 > 0.1] = np.nan
 			# Check errors below a right
 			ax.errorbar(self.t_bin_chunk_centres, SF, yerr=0, lw = 0.5, marker = 'o', label=self.label_range_val[i])
 		ax.set(yscale='log',xscale='log', xticks=[100,1000])
@@ -456,8 +446,8 @@ class dtdm_key():
 		for i, ax in enumerate(axes):
 			m,_,_= ax.hist(self.m_bin_edges[:-1], self.m_bin_edges[::n], weights = self.dms_binned[i], alpha = 1, density=True, label = self.t_dict[i], color = cmap(i/20.0));
 			ax.set(xlim=[-window_width,window_width])
-		#	 ax.axvline(x=modes[i], lw=0.5, ls='--', color='k')
-		#	 ax.axvline(x=m_bin_centres[m.argmax()], lw=0.5, ls='--', color='r')
+			 # ax.axvline(x=modes[i], lw=0.5, ls='--', color='k')
+			 # ax.axvline(x=m_bin_centres[m.argmax()], lw=0.5, ls='--', color='r')
 
 			if overlay_gaussian:
 				#Also make sure that bins returned from .hist match m_bin_edges : it is
@@ -543,8 +533,8 @@ class dtdm_raw_analysis():
 			n_cores = 4
 			p = Pool(n_cores)
 			self.df = pd.concat(p.map(self.read_dtdm, self.fnames[n_cores*n_chunk:(n_chunk+1)*n_cores]))
-#		 self.df = self.df[~self.df.isna().values.any(axis=1)] #drop na rows. This snippet is faster than self.df.dropna().
-#		 self.df.loc[(self.df['cat']<4),'de'] += 5 # increase the error on plate pair observations by 0.05
+		 # self.df = self.df[~self.df.isna().values.any(axis=1)] #drop na rows. This snippet is faster than self.df.dropna().
+		 # self.df.loc[(self.df['cat']<4),'de'] += 5 # increase the error on plate pair observations by 0.05
 
 	def read_key(self, key):
 		"""
@@ -627,15 +617,15 @@ class dtdm_raw_analysis():
 		xlim   = [0.9,23988.3/20]
 		ylim   = [0.0001,0.6] # dm2_de2**0.5
 		self.dt_edges = np.logspace(*np.log10(xlim), xbins+1)
-#		 self.dt_edges = np.linspace(*xlim, xbins+1) # for linear binning
+		# self.dt_edges = np.linspace(*xlim, xbins+1) # for linear binning
 		self.dm2_de2_edges = np.linspace(*ylim, ybins+1)
 		self.dt_centres = (self.dt_edges[1:]+self.dt_edges[:-1])/2
 		self.dm2_de2_centres = (self.dm2_de2_edges[1:]+self.dm2_de2_edges[:-1])/2
 		self.total_counts = np.full((xbins,ybins),0, dtype='uint64')
 		n_slices = 10
 		self.mean_tot = np.zeros((n_slices,n_chunks))
-#		 self.std_tot  = np.zeros((n_slices,n_chunks))
-#		 self.median_tot  = np.zeros((n_slices,n_chunks))
+		# self.std_tot  = np.zeros((n_slices,n_chunks))
+		# self.median_tot  = np.zeros((n_slices,n_chunks))
 
 		self.dt_edges_stat = np.linspace(*xlim,n_slices+1)
 		self.dt_centres_stat = (self.dt_edges_stat[1:]+self.dt_edges_stat[:-1])/2
@@ -647,18 +637,18 @@ class dtdm_raw_analysis():
 			counts = np.histogram2d(self.df[boolean]['dt'],self.df[boolean]['dm2_de2']**0.5,range=(xlim,ylim), bins=(xbins, ybins))[0].astype('uint64')
 			self.total_counts += counts
 
-#			 std = []
+			# std = []
 			mean = []
-#			 median = []
+			# median = []
 			for dt1, dt2 in zip(self.dt_edges_stat[:-1], self.dt_edges_stat[1:]):
 				slice_ = self.df['dm2_de2']
-#				 std.append(slice_.std())
+				 # std.append(slice_.std())
 				mean.append((slice_**0.5).mean())
-#				 median.append(slice_.median())
+				 # median.append(slice_.median())
 
 			self.mean_tot[:,n] = np.array(mean)
-#			 self.std_tot[:,n]  = np.array(std)
-#			 self.median_tot[:,n] = np.array(median)
+			# self.std_tot[:,n]  = np.array(std)
+			# self.median_tot[:,n] = np.array(median)
 
 	def plot_dm_hist(self):
 		n = len(self.de_edges_stat)-1
@@ -682,12 +672,12 @@ class dtdm_raw_analysis():
 			print(boolean.sum())
 			ax[i].hist(self.df[boolean]['dm2_de2'], range=kwargs['xlim'], alpha=0.5, bins=bins, label='{:.2f} < ∆t < {:.2f}'.format(*edges))
 			ax[i].set(xlabel='$(m_i-m_j)^2 - \sigma_i^2 - \sigma_j^2$', **kwargs) #title='Distribution of individual corrected SF values'
-#		 ax.set(yscale='log')
-#		 for i in range(n):
-#			 de1, de2 = (self.de_edges_stat[i], self.de_edges_stat[i+1])
-#			 slice_ = self.df['dm2_de2'][(de1 < self.df['de']) & (self.df['de'] < de2)]
-#			 ax[i].hist(slice_, bins=101, range=(-0.5,0.5), alpha=0.4)
-#			 ax[i].legend()
+		ax.set(yscale='log')
+		for i in range(n):
+			de1, de2 = (self.de_edges_stat[i], self.de_edges_stat[i+1])
+			slice_ = self.df['dm2_de2'][(de1 < self.df['de']) & (self.df['de'] < de2)]
+			ax[i].hist(slice_, bins=101, range=(-0.5,0.5), alpha=0.4)
+			ax[i].legend()
 
 
 	def calculate_stats_looped(self, n_chunks, log_or_lin,  max_t=23576, save=False, inner=False):
@@ -718,9 +708,9 @@ class dtdm_raw_analysis():
 
 		self.mjd_centres = (self.mjd_edges[:-1] + self.mjd_edges[1:])/2
 
-#		 names = ['n','SF 1', 'SF 2', 'SF 3', 'SF 4', 'SF weighted', 'SF corrected', 'SF corrected weighted', 'SF corrected weighted fixed', 'SF corrected weighted fixed 2', 'mean', 'mean weighted']
+		# names = ['n','SF 1', 'SF 2', 'SF 3', 'SF 4', 'SF weighted', 'SF corrected', 'SF corrected weighted', 'SF corrected weighted fixed', 'SF corrected weighted fixed 2', 'mean', 'mean weighted']
 		names = ['n', 'mean weighted a', 'mean weighted b', 'SF cwf a', 'SF cwf b', 'SF cwf p', 'SF cwf n', 'skewness', 'kurtosis']
-# 		names = ['SF cwf p', 'SF cwf n']
+		# names = ['SF cwf p', 'SF cwf n']
 		results = {name:np.zeros(shape=(n_chunks, n_points, 2)) for name in names}
 		results['n'] = np.zeros(shape=(n_chunks, n_points), dtype='uint64')
 
@@ -737,16 +727,16 @@ class dtdm_raw_analysis():
 				boolean = (mjd_lower < self.df['dt']) & (self.df['dt']<mjd_upper)# & (self.df['dm2_de2']>0) # include last condition to remove negative SF values
 				print('number of points in {:.1f} < ∆t < {:.1f}: {}'.format(mjd_lower, mjd_upper, boolean.sum()))
 				subset = self.df[boolean]
-# 				subset = subset[subset['dm2_de2']<1]
-# 				subset.loc[(subset['dm2_de2']<0).values,'dm2_de2'] = 0 # Include for setting negative SF values to zero. Need .values for mask to prevent pandas warning
+				# subset = subset[subset['dm2_de2']<1]
+				# subset.loc[(subset['dm2_de2']<0).values,'dm2_de2'] = 0 # Include for setting negative SF values to zero. Need .values for mask to prevent pandas warning
 				n = len(subset)
 				results['n'][i,j] = n
 				if n>0:
-#					results['mean'][i,j, (0,1)] = subset['dm'].mean(), subset['dm'].std()
-#					results['SF'][i,j,(0,1)] = (subset['dm']**2).mean(), (subset['de']**2).sum()/n
-#					results['SF corrected'][i,j,(0,1)] = subset['dm2_de2'].mean(), subset['dm2_de2'].var()
-# 					results['SF a'][i,j,(0,1)] = (subset['dm']**2).mean(), 1/weights.sum()
-# 					results['SF b'][i,j,(0,1)] = (subset['dm']**2).mean(), (subset['dm']**2).var()
+					# results['mean'][i,j, (0,1)] = subset['dm'].mean(), subset['dm'].std()
+					# results['SF'][i,j,(0,1)] = (subset['dm']**2).mean(), (subset['de']**2).sum()/n
+					# results['SF corrected'][i,j,(0,1)] = subset['dm2_de2'].mean(), subset['dm2_de2'].var()
+					# results['SF a'][i,j,(0,1)] = (subset['dm']**2).mean(), 1/weights.sum()
+					# results['SF b'][i,j,(0,1)] = (subset['dm']**2).mean(), (subset['dm']**2).var()
 
 
 					weights = subset['de']**-2
@@ -830,7 +820,7 @@ class dtdm_raw_analysis():
 
 		self.mjd_centres = (self.mjd_edges[:-1] + self.mjd_edges[1:])/2
 		self.read_key(prop) # to give self.n_groups (and self.groups, but not needed yet)
-#		 names = ['n','SF 1', 'SF 2', 'SF 3', 'SF 4', 'SF weighted', 'SF corrected', 'SF corrected weighted', 'SF corrected weighted fixed', 'SF corrected weighted fixed 2', 'mean', 'mean weighted']
+		# names = ['n','SF 1', 'SF 2', 'SF 3', 'SF 4', 'SF weighted', 'SF corrected', 'SF corrected weighted', 'SF corrected weighted fixed', 'SF corrected weighted fixed 2', 'mean', 'mean weighted']
 		names = ['n', 'mean weighted a', 'mean weighted b', 'SF cwf a', 'SF cwf b', 'skewness', 'kurtosis']
 		results = {name:np.zeros(shape=(n_chunks, n_points, self.n_groups, 2)) for name in names}
 		results['n'] = np.zeros(shape=(n_chunks, n_points, self.n_groups), dtype='uint64')
@@ -851,13 +841,13 @@ class dtdm_raw_analysis():
 					mjd_lower, mjd_upper = edges
 					boolean = (mjd_lower < subgroup['dt']) & (subgroup['dt'] < mjd_upper)# & (subgroup['dm2_de2']>0) # include last condition to remove negative SF values
 					subset = subgroup[boolean]
-#					 subset.loc[(subset['dm2_de2']<0).values,'dm2_de2'] = 0 # Include for setting negative SF values to zero. Need .values for mask to prevent pandas warning
+					# subset.loc[(subset['dm2_de2']<0).values,'dm2_de2'] = 0 # Include for setting negative SF values to zero. Need .values for mask to prevent pandas warning
 					n = len(subset)
 					results['n'][i,j, group_idx] = n
 					print('\t\tnumber of points in {:.1f} < ∆t < {:.1f}: {}'.format(mjd_lower, mjd_upper, boolean.sum()))
 
 					if n>0:
-#						 results['mean'][i,j, group_idx, (0,1)] = subset['dm'].mean(), subset['dm'].std()
+						# results['mean'][i,j, group_idx, (0,1)] = subset['dm'].mean(), subset['dm'].std()
 						weights = subset['de']**-2
 						results['mean weighted a'][i,j, group_idx, (0,1)] = np.average(subset['dm'], weights = weights), 1/weights.sum()
 						results['mean weighted b'][i,j, group_idx, (0,1)] = np.average(subset['dm'], weights = weights), subset['dm'].var()
@@ -867,8 +857,8 @@ class dtdm_raw_analysis():
 
 						weights = 0.5*subset['de']**-4
 						SF = np.average(subset['dm2_de2'], weights = weights)
-# 						mask = (SF < 0)
-# 						SF[mask] = 0
+						# mask = (SF < 0)
+						# SF[mask] = 0
 						results['SF cwf a'][i,j, group_idx, (0,1)] = SF, 1/weights.sum()
 						results['SF cwf b'][i,j, group_idx, (0,1)] = SF, subset['dm2_de2'].var()
 
@@ -919,14 +909,14 @@ class dtdm_raw_analysis():
 
 		for key in keys:
 			y = self.pooled_stats[key]
-#			 ax.errorbar(self.mjd_centres, y[:,0], yerr=y[:,1]**0.5, label='{}, {}'.format(key,self.name), color=color, lw=2.5) # square root this
+			# ax.errorbar(self.mjd_centres, y[:,0], yerr=y[:,1]**0.5, label='{}, {}'.format(key,self.name), color=color, lw=2.5) # square root this
 			ax.errorbar(self.mjd_centres, y[:,0], yerr=y[:,1], label='{}, {}'.format(self.name,key), color=color, lw=2.5, capsize=10)
 			ax.scatter(self.mjd_centres, y[:,0], color=color, s=80)
 			ax.set(xlabel='Rest frame time lag (days)')
 
 		if macleod:
-#			 f = lambda x: 0.01*(x**0.443)
-#			 ax.plot(self.mjd_centres, f(self.mjd_centres), lw=0.5, ls='--', color='b', label='MacLeod 2012')
+			# f = lambda x: 0.01*(x**0.443)
+			# ax.plot(self.mjd_centres, f(self.mjd_centres), lw=0.5, ls='--', color='b', label='MacLeod 2012')
 			x,y = np.loadtxt(wdir+'data/Macleod2012/SF/macleod2012.csv', delimiter=',').T
 			ax.scatter(x, y, color='k')
 			ax.plot(x, y, label = 'Macleod 2012', lw=2, ls='--', color='k')
@@ -943,7 +933,7 @@ class dtdm_raw_analysis():
 				print('Slope for {}: {:.2f}'.format(key, popt[1]))
 		ax.set(**kwargs)
 		ax.legend()
-#		 ax.set(xlabel='$(m_i-m_j)^2 - \sigma_i^2 - \sigma_j^2$', title='Distribution of individual corrected SF values', **kwargs)
+		# ax.set(xlabel='$(m_i-m_j)^2 - \sigma_i^2 - \sigma_j^2$', title='Distribution of individual corrected SF values', **kwargs)
 		return (fig,ax)
 
 	def plot_stats_property(self, keys, figax, macleod=False, fit=False, **kwargs):
@@ -986,8 +976,8 @@ class dtdm_raw_analysis():
 		fig, ax = plt.subplots(1,1, figsize=(20,10))
 
 		ax.contourf(self.dt_centres, self.dm2_de2_centres, self.total_counts.T, levels=np.logspace(0,3.4,50), cmap='jet')
-#		 ax.set(xscale='log', yscale='log')
-#		 plt.scatter(self.dt_centres_stat, self.median_tot.mean(axis=1), color = 'b')
-#		 for m in [-1,0,1]:
-#			 plt.scatter(self.de_centres_stat,self.mean_tot.mean(axis=1)+self.std_tot.mean(axis=1)*m, color='k')
-#			 plt.plot   (self.de_centres_stat,self.mean_tot.mean(axis=1)+self.std_tot.mean(axis=1)*m, color='k', lw=0.5)
+		# ax.set(xscale='log', yscale='log')
+		# plt.scatter(self.dt_centres_stat, self.median_tot.mean(axis=1), color = 'b')
+		# for m in [-1,0,1]:
+		# 	plt.scatter(self.de_centres_stat,self.mean_tot.mean(axis=1)+self.std_tot.mean(axis=1)*m, color='k')
+		# 	plt.plot   (self.de_centres_stat,self.mean_tot.mean(axis=1)+self.std_tot.mean(axis=1)*m, color='k', lw=0.5)
