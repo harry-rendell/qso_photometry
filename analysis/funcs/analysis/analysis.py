@@ -7,19 +7,25 @@ from bokeh.plotting import figure, output_notebook, show
 from bokeh.layouts import column
 
 wdir = '/disk1/hrb/python/'
+DTYPES = {'catalogue': np.uint8, 'mag': np.float32, 'magerr': np.float32, 'mjd': np.float64, 'uid': np.uint32, 'uid_s':np.uint32}
 
 def calc_moments(bins,weights):
-	k = np.array([3,4])
+	"""
+	Calculate mean and kurtosis
+	"""
 	x = bins*weights
 	z = (x-x.mean(axis=1)[:,np.newaxis])/x.std(axis=1)[:,np.newaxis]
 	return x.mean(axis=1), (z**4).mean(axis = 1) - 3
 
 def reader(args):
+	"""
+	Reading function for multiprocessing
+	"""
 	n_subarray, basepath, ID = args
 	return pd.read_csv(basepath+'lc_{}.csv'.format(n_subarray), 
 					   comment='#',
 					   index_col = ID,
-					   dtype = {'catalogue': np.uint8, 'mag': np.float32, 'magerr': np.float32, 'mjd': np.float64, ID: np.uint32})
+					   dtype = DTYPES)
 
 class analysis():
 	def __init__(self, ID, obj, band):
@@ -49,7 +55,7 @@ class analysis():
 		# Default to 4 cores
 		if multi_proc == True:
 			# Use the path below for SSA
-# 			basepath = wdir+'data/merged/{}/{}_band/with_ssa/'
+			# basepath = wdir+'data/merged/{}/{}_band/with_ssa/'
 			basepath = wdir+'data/merged/{}/{}_band/'.format(self.obj, self.band)
 			pool = Pool(4)
 			df_list = pool.map(reader, [(i, basepath, self.ID) for i in range(4)])
@@ -57,9 +63,9 @@ class analysis():
 			if self.df.index.name == None:
 				self.df = self.df.set_index(self.ID)
 		elif multi_proc == False:
-			self.df = pd.read_csv(wdir+'data/merged/{}/lc_{}_{}.csv'.format(self.obj, self.band), comment='#', index_col = self.ID, dtype = {'catalogue': np.uint8, 'mag': np.float32, 'magerr': np.float32, 'mjd': np.float64, self.ID: np.uint32})
+			self.df = pd.read_csv(wdir+'data/merged/{}/lc_{}_{}.csv'.format(self.obj, self.band), comment='#', index_col = self.ID, dtype = DTYPES)
 
-		#Would be good to add in print statments saying: 'lost n1 readings due to -9999, n2 to -ve errors etc'
+		# Would be good to add in print statments saying: 'lost n1 readings due to -9999, n2 to -ve errors etc'
 
 		# Remove bad values from SDSS (= -9999) and large outliers (bad data)
 		self.df = self.df[(self.df['mag'] < 25) & (self.df['mag'] > 15)]
@@ -77,6 +83,10 @@ class analysis():
 		assert self.df.index.is_monotonic, 'Index is not sorted'
 
 	def residual(self, corrections):
+		"""
+		Apply residual corrections, defined such that the corrected star photometry has a
+			non-zero offset
+		"""
 		self.df = self.df.reset_index().set_index([self.ID,'catalogue'])
 		for cat in corrections.keys():
 			self.df.loc[pd.IndexSlice[:, cat], 'mag'] += corrections[cat]
@@ -96,16 +106,15 @@ class analysis():
 				list of surveys which contribute to observations (sdss=1, ps=2, ztf=3)
 		"""
 		# Check which qsos we are missing and which we have, given a list
-		self.idx_uid	  = self.df.index.unique()
 		uids_complete	 = pd.Index(np.arange(1,526356+1), dtype = np.uint32)
+		
+		self.idx_uid	  = self.df.index.unique()
 		self.uids_missing = uids_complete[~np.isin(uids_complete,self.idx_uid)]
 		self.n_qsos		   = len(self.idx_uid)
 		self.idx_cat	  = self.df['catalogue'].unique()
 
 		print('Number of qsos with lightcurve: {:,}'.format(self.n_qsos))
-		print('Number of datapoints in:\nSDSS: {:,}\nPS: {:,}\nZTF: {:,}'.format((self.df['catalogue']==5).sum(),
-																																						 (self.df['catalogue']==7).sum(),
-																																						 (self.df['catalogue']==11).sum()))
+		print('Number of datapoints in:\nSDSS: {:,}\nPS: {:,}\nZTF: {:,}'.format((self.df['catalogue']==5).sum(),(self.df['catalogue']==7).sum(),(self.df['catalogue']==11).sum()))
 
 	def group(self, keys = ['uid'], read_in = True, redshift=True, colors=True, survey = None):
 		"""
@@ -121,10 +130,7 @@ class analysis():
 		read_in : boolean
 		survey : str
 		Default is None. If 'ZTF' then read in grouped_stats computed from ZTF data only. If 'SSS' then read in grouped_stats with plate data included.
-			
-		
 		"""
-		#df_z = pd.read_csv(wdir+'data/catalogues/dr14q_uid_desig_z.csv', usecols = [0,6], index_col = 0) if we need redshift
 		if read_in == True:
 			if len(keys) == 1:
 				self.df_grouped = pd.read_csv(wdir+'data/merged/{}/{}_band/grouped_stats_{}_{}.csv'.format(self.obj, self.band, self.band, survey), index_col=0, comment='#')
@@ -138,8 +144,7 @@ class analysis():
 
 			self.df_grouped = self.df.groupby(keys).agg({'mag':[mean_mag_fn, median_mag_fn,'std','count'], 'magerr':'mean', 'mjd': ['min', 'max', np.ptp]})
 			self.df_grouped.columns = ["_".join(x) for x in self.df_grouped.columns.ravel()]
-# 			self.redshifts = pd.read_csv(wdir+'data/catalogues/dr14q_uid_desig_z.csv', index_col=self.ID, usecols=[self.ID,'z'], squeeze=True).rename('redshift')
-	
+
 		if redshift:
 			if ~hasattr(self, 'redshifts'):
 				# add on column for redshift. Use squeeze = True when reading in a single column.
@@ -189,10 +194,8 @@ class analysis():
 		print(vac.index)
 		self.df = self.df[self.df.index.isin(vac.index)]
 
-		# Recalculate which qsos we are missing and which we have, given a list (copy of code in self.summary)
+		# Recalculate and print which qsos we are missing and which we have
 		self.summary()
-
-#			   self.properties = self.df_grouped.reset_index('catalogue').join(vac, how = 'inner', on=self.ID)
 		self.properties = self.df_grouped.join(vac, how = 'inner', on=self.ID)
 		self.vac = vac
 		
@@ -244,7 +247,7 @@ class analysis():
 		z_score.hist(bins = 200, ax=ax)
 		self.bounds_values = bounds * std + mean
 		for i in range(len(bounds)-1):
-#					   print('{:+.2f} < z < {:+.2f}: {:,}'.format(bounds[i],bounds[i+1],((bounds[i]<z_score)&(z_score<bounds[i+1])&(self.properties['mag_count']>2)).sum()))
+			# print('{:+.2f} < z < {:+.2f}: {:,}'.format(bounds[i],bounds[i+1],((bounds[i]<z_score)&(z_score<bounds[i+1])&(self.properties['mag_count']>2)).sum()))
 			print('{:+.2f} < z < {:+.2f}: {:,}'.format(bounds[i],bounds[i+1],((bounds[i]<z_score)&(z_score<bounds[i+1])).sum()))
 		for bound in bounds:
 			ax.axvline(x=bound, color = 'k')
@@ -369,7 +372,7 @@ class analysis():
 		fig3, axes3 = plt.subplots(8,1,figsize = (16,50))
 		label_range = {i:'{:.1f} < z < {:.1f}'.format(bounds[i],bounds[i+1]) for i in range(len(bounds)-1)}
 		label_range_val = {i:'{:.1f} < {} < {:.1f}'.format(self.bounds_values[i],key,self.bounds_values[i+1]) for i in range(len(self.bounds_values)-1)}
-#				label_moment = ['mean', 'std', 'skew_stand', 'Excess kurtosis']
+		# label_moment = ['mean', 'std', 'skew_stand', 'Excess kurtosis']
 		label_moment = ['mean', 'Excess kurtosis']
 		cmap = plt.cm.jet
 		for i in range(8):
@@ -388,18 +391,17 @@ class analysis():
 			moments = np.zeros(19)
 			for j in range(19):
 				dms_binned_norm[j],_= np.histogram(m_bin_edges[:-1], m_bin_edges, weights = dms_binned[j], density=True);
-#								print('number of -ve dm in {} for {}: {:,}'.format(t_dict[j],label_range[i], dms_binned[j,:100].sum()))
-#								print('number of +ve dm in {} for {}: {:,}'.format(t_dict[j],label_range[i], dms_binned[j,100:].sum()))
+				# print('number of -ve dm in {} for {}: {:,}'.format(t_dict[j],label_range[i], dms_binned[j,:100].sum()))
+				# print('number of +ve dm in {} for {}: {:,}'.format(t_dict[j],label_range[i], dms_binned[j,100:].sum()))
 			moments = calc_moments(m_bin_centres,dms_binned_norm)
 
 
 			for idx, ax2 in enumerate(axes2.ravel()):
 				ax2.plot(t_bin_chunk_centres, moments[idx], lw = 0.5, marker = 'o', label = label_range_val[i], color = cmap(i/10.0));
-		#				ax2.legend()
+				# ax2.legend()
 				ax2.set(xlabel='mjd', ylabel = label_moment[idx])
 				ax2.axhline(y=0, lw=0.5, ls = '--')
 
-#								ax2.title.set_text(label_moment[idx])
 		ax.set(xlabel='mjd', ylabel = 'structure function')
 		if save:
 			# fig.savefig('SF_{}.pdf'.format(key),bbox_inches='tight')
@@ -413,7 +415,7 @@ class analysis():
 		fig3, axes3 = plt.subplots(8,1,figsize = (16,50))
 		label_range = {i:'{:.1f} < z < {:.1f}'.format(bounds[i],bounds[i+1]) for i in range(len(bounds)-1)}
 		label_range_val = {i:'{:.1f} < {} < {:.1f}'.format(self.bounds_values[i],key,self.bounds_values[i+1]) for i in range(len(self.bounds_values)-1)}
-#				label_moment = ['mean', 'std', 'skew_stand', 'Excess kurtosis']
+		# label_moment = ['mean', 'std', 'skew_stand', 'Excess kurtosis']
 		label_moment = ['mean', 'Excess kurtosis']
 		cmap = plt.cm.jet
 		for i in range(8):
@@ -429,18 +431,18 @@ class analysis():
 			moments = np.zeros(19)
 			for j in range(19):
 				dms_binned_norm[j],_= np.histogram(m_bin_edges[:-1], m_bin_edges, weights = dms_binned[j], density=True);
-#								print('number of -ve dm in {} for {}: {:,}'.format(t_dict[j],label_range[i], dms_binned[j,:100].sum()))
-#								print('number of +ve dm in {} for {}: {:,}'.format(t_dict[j],label_range[i], dms_binned[j,100:].sum()))
+				# print('number of -ve dm in {} for {}: {:,}'.format(t_dict[j],label_range[i], dms_binned[j,:100].sum()))
+				# print('number of +ve dm in {} for {}: {:,}'.format(t_dict[j],label_range[i], dms_binned[j,100:].sum()))
 			moments = calc_moments(m_bin_centres,dms_binned_norm)
 
 
 			for idx, ax2 in enumerate(axes2.ravel()):
 				ax2.plot(t_bin_chunk_centres, moments[idx], lw = 0.5, marker = 'o', label = label_range_val[i], color = cmap(i/10.0));
-		#				ax2.legend()
+				# ax2.legend()
 				ax2.set(xlabel='mjd', ylabel = label_moment[idx])
 				ax2.axhline(y=0, lw=0.5, ls = '--')
 
-#								ax2.title.set_text(label_moment[idx])
+				# ax2.title.set_text(label_moment[idx])
 		ax.set(xlabel='mjd', ylabel = 'structure function')
 		if save == True:
 			# fig.savefig('SF_{}.pdf'.format(key),bbox_inches='tight')
