@@ -12,7 +12,7 @@
 #     name: python3
 # ---
 
-import pandas as pd 
+import pandas as pd
 pd.options.mode.chained_assignment = None
 import numpy as np
 from astropy.table import Table

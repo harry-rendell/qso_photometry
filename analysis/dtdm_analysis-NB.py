@@ -82,7 +82,7 @@ survey_list_s = [all_s]#, sdss_ps_s, sdss_ztf_s, ps_ztf_s, sdss_sdss_s, ps_ps_s,
 
 # # ∆σ analysis
 
-fig, ax, r2s = all_q.hist_dm(1.5, overlay_gaussian=False, overlay_lorentzian=False, overlay_exponential=False, overlay_diff=False, colors=['royalblue','k','k','red'], save=False)
+fig, ax, r2s = all_q.hist_dm(1.5, overlay_gaussian=True, overlay_lorentzian=True, overlay_exponential=False, overlay_diff=False, colors=['royalblue','k','k','red'], save=False)
 
 fig, ax = plt.subplots(1,1, figsize=(10,8))
 ax.plot(r2s[0], label='gaussian')
@@ -97,35 +97,24 @@ ax.plot(r2s[0], label='gaussian')
 ax.plot(r2s[1], label='exponential')
 ax.legend()
 
-all_q.m_bin_edges
-
 self = all_q
 i = 0
 n=1
 cmap = plt.cm.cool
 m,_,_= ax.hist(self.m_bin_edges[:-1], self.m_bin_edges[::n], weights = self.dms_binned[i], alpha = 1, density=True, label = self.t_dict[i], color = cmap(i/20.0));
-
-len(m)
-
-
-
-plt.plot(m, gaussian(self.m_bin_centres, 5, 0))
-
-lin_bins = np.linspace(self.m_bin_edges[10],self.m_bin_edges[-10], 101)
-print(lin_bins)
-digitized = np.digitize(self.m_bin_centres, lin_bins)
-bin_counts = [m[digitized == i].sum() for i in range(1, len(lin_bins))]
-
-plt.plot(bin_counts)
-
-lin_bins
-
 plt.plot(self.m_bin_centres,m)
 
-# + jupyter={"outputs_hidden": true}
-fig, ax = sdss_ps_s.hist_dm(0.8, False, False, False)
+# + active=""
+# lin_bins = np.linspace(self.m_bin_edges[10],self.m_bin_edges[-10], 101)
+# print(lin_bins)
+# digitized = np.digitize(self.m_bin_centres, lin_bins)
+# bin_counts = [m[digitized == i].sum() for i in range(1, len(lin_bins))]\
+# plt.plot(bin_counts)
 
-# + jupyter={"outputs_hidden": true}
+# + active=""
+# fig, ax = sdss_ps_s.hist_dm(0.8, False, False, False)
+# -
+
 all_s.hist_de(0.5, False, False, False)
 
 # + jupyter={"outputs_hidden": true}
@@ -137,6 +126,7 @@ ztf_ztf_s.hist_de(0.5, False, False, False)
 
 sdss_sdss_q.hist_de(0.5, False, False, False)
 
+# Histogram showing the number of bin counts for (∆m, ∆t) pairs in different time intervals ∆t
 all_q.hist_dt_stacked(False, False, False)
 
 print('qsos:')
@@ -162,9 +152,9 @@ ax.legend()
 
 fig, ax = plt.subplots(1,1, figsize=(15,8))
 for surv in survey_list_s[:1]:
-    (fig,ax), SF = surv.plot_sf_ensemble_iqr(figax=ax)
+    ax, SF = surv.plot_sf_ensemble_iqr(ax, xscale='log', yscale='linear')
 for surv in survey_list_q[:1]:
-    (fig,ax), SF = surv.plot_sf_ensemble_iqr(figax=ax)
+    ax, SF = surv.plot_sf_ensemble_iqr(ax, xscale='log', yscale='linear')
 ax.legend()
 ax.set(title='Structure function using IQR method')
 # fig.savefig('/disk1/hrb/python/analysis/{}/plots/{}_SF.jpg'.format(surv.obj,surv.obj), dpi=300, bbox_inches='tight')
@@ -202,7 +192,7 @@ ax.text(0.04, 0.92, 'slope: {:.2f}'.format(popt[0]), transform=ax.transAxes)
 # ax.plot(x,y)
 
 print('best fit by power law with exponent: {}'.format(popt[0]))
-fig.savefig('/disk1/hrb/python/analysis/{}/plots/{}_SF_fit.jpg'.format(surv.obj,surv.obj), dpi=300, bbox_inches='tight')
+# fig.savefig('/disk1/hrb/python/analysis/{}/plots/{}_SF_fit.jpg'.format(surv.obj,surv.obj), dpi=300, bbox_inches='tight')
 # -
 
 # QSOS
@@ -214,7 +204,7 @@ for surv in survey_list_q[:1]:
 ax.legend()
 ax.set(xlabel='∆t (days)', ylabel='∆m (mags)', ylim=[-0.15,0.3])
 ax.axhline(y=0, lw=1, ls='--', color='k')
-fig.savefig('/disk1/hrb/python/analysis/{}/plots/{}_drift_mean.jpg'.format(obj,obj), dpi=300, bbox_inches='tight')
+# fig.savefig('/disk1/hrb/python/analysis/{}/plots/{}_drift_mean.jpg'.format(obj,obj), dpi=300, bbox_inches='tight')
 
 # QSOS
 fig, ax = plt.subplots(1,1, figsize=(23,10))
@@ -223,7 +213,7 @@ for surv in survey_list_q[:1]:
 for surv in survey_list_s[:1]:
     surv.plot_modes(ax, ls='-')
 ax.legend()
-ax.set(xlabel='∆t (days)', ylabel='∆m (mags)', ylim=[-0.15,0.05])
+ax.set(xlabel='∆t (days)', ylabel='∆m (mags)', ylim=[-0.15,0.1])
 ax.axhline(y=0, lw=1, ls='--', color='k')
 # fig.savefig('/disk1/hrb/python/analysis/{}/plots/{}_drift_mode.jpg'.format(obj,obj), dpi=300, bbox_inches='tight')
 
@@ -259,8 +249,9 @@ ax.axhline(y=0, lw=1, ls='--', color='k')
 # uids = dr.properties['mjd_ptp_rf'][(bounds[i]<z_score)&(z_score<bounds[i+1])].sort_values(ascending=False).head(100000).index
 
 # +
-config = {'obj':'qsos','ID':'uid','t_max':6751,'n_bins_t':200,'n_bins_m':200,'n_t_chunk':19, 'width':2, 'steepness':0.005}
-# config = {'obj':'calibStars','ID':'uid_s','t_max':7772,'n_bins_t':200,'n_bins_m':200,'n_t_chunk':19, 'width':1, 'steepness':0.005}
+config = {'obj':'qsos','ID':'uid','t_max':6751,'n_bins_t':200,'n_bins_m':200, 'n_bins_m2':235,'n_t_chunk':19, 'width':2, 'steepness':0.005, 'leftmost_bin':-0.21}
+# config = {'obj':'calibStars','ID':'uid_s','t_max':7772,'n_bins_t':200,'n_bins_m':200,'n_t_chunk':19, 'width':1, 'steepness':0.005, 'leftmost_bin':-0.21}
+# config = {'obj':'calibStars','ID':'uid_s','t_max':25200,'n_bins_t':200,'n_bins_m':200, 'n_bins_m2':235,'n_t_chunk':20, 'width':1, 'steepness':0.005, 'leftmost_bin':-0.21}
 
 width   = config['width']
 steepness = config['steepness']
@@ -269,10 +260,12 @@ ID  = config['ID']
 t_max = config['t_max']
 n_bins_t = config['n_bins_t']
 n_bins_m = config['n_bins_m']
+n_bins_m2 = config['n_bins_m2']
 n_t_chunk = config['n_t_chunk']
 key = 'Lbol'
+leftmost_bin = config['leftmost_bin']
 
-all_q = dtdm_key(obj, 'all', 'all qsos', key, 200, 200, t_max, n_t_chunk, steepness, width);
+all_q = dtdm_key(obj, 'all', 'all qsos', key, 200, 200, n_bins_m2, t_max, n_t_chunk, steepness, width, leftmost_bin);
 # -
 
 all_q.stats()
