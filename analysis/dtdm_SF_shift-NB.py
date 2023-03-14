@@ -76,7 +76,6 @@ def plot_stats_property(self, keys, figax, macleod=False, fit=False, fit_g=False
     return fig,ax, np.array(fitted_params)
 
 
-
 # +
 wdir = '/disk1/hrb/python/'
 obj = 'qsos'

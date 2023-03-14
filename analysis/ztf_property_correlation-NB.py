@@ -100,11 +100,7 @@ for key in prop_range:
     lower, upper = prop_range[key]
     filtered_properties = dr2_r.properties[(lower < dr2_r.properties[key]) & (dr2_r.properties[key] < upper)]
 
-# +
 dr2_r.plot_property_distributions(dr12vac.prop_range, n_width = 3, n_bins = 150, separate_catalogues=False)
-
-
-# -
 
 print('Total number of objects: {:,}'.format(len(dr2_r.properties)))
 print('Number of objects within specified range: {:,}'.format(len(filtered_properties)))
