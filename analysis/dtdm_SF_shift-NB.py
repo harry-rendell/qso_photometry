@@ -82,7 +82,7 @@ obj = 'qsos'
 ID = 'uid'
 band = 'r'
 
-dr = analysis(ID, obj)
+dr = analysis(ID, obj, band)
 dr.properties = pd.read_csv(wdir+'data/catalogues/qsos/dr12q/SDSS_DR12Q_BH_matched.csv', index_col=dr.ID)
 key = 'MBH_CIV'
 prop_range_all = {'Mi':(-30,-20),'mag_mean':(15,23.5),'mag_std':(0,1),'redshift':(0,5),'Lbol':(44,48),'nEdd':(-3,0.5), 'MBH_CIV':(6,12)}
@@ -128,12 +128,14 @@ ax.grid(visible=True, which='major', lw=0.5)
 ax.grid(visible=True, which='minor', lw=0.2)
 # ax.set(ylim=[2e-2, 1], ylabel='Structure Function (mag)', title = 'Structure function (dr12)')
 # ax.set(xlabel=r'Rest frame time lag per mass (days/$10^8$M$_\odot$)')
-fig.savefig('plots/SF_shift_drw_fit.pdf', bbox_inches='tight')
+# fig.savefig('plots/SF_shift_drw_fit.pdf', bbox_inches='tight')
 
-
-# # Split
+# # Fit a modified DRW to our data.
 
 def plot_stats_property(self, keys, figax, macleod=False, fit=False, fit_g=False, **kwargs):
+    """
+    This is a modified version of plot_stats_property in dtdm.py, which allows a modified DRW to be fit to our data.
+    """
     subgroup = 10
     m = 3
     n = 2 
@@ -145,7 +147,7 @@ def plot_stats_property(self, keys, figax, macleod=False, fit=False, fit_g=False
         keys = list(self.pooled_stats.keys())[1:]
 
     from scipy.optimize import curve_fit
-    def func(x, tau, var_int, var_phot):
+    def func(x, tau, var_int, var_phot, slope):
             return (var_int * (1 - np.exp(-(x**(slope*2))/tau)) + var_phot ) ** 0.5
     fitted_params = []
     
@@ -163,7 +165,7 @@ def plot_stats_property(self, keys, figax, macleod=False, fit=False, fit_g=False
                     x = np.logspace(0.5,4.2,100)
                     ax.plot(x, func(x, *popt), lw=3, ls='-.', color = 'k', label=r'$\sqrt {\sigma_i^2(1-e^{-∆t/\tau}) + \sigma_p^2}, \tau='+'{:.0f},'.format(popt[0])+r'\:\sigma_i'+'={:.2f},'.format(popt[1]**0.5)+r'\:\sigma_p'+'={:.2f}$'.format(popt[2]**0.5)) #fix this
                     fitted_params.append([*popt,*np.diagonal(pcov)])
-#                     ax.plot(x, func(x, 5000, 0.3, 0.0001))
+                    # ax.plot(x, func(x, 5000, 0.3, 0.0001))
                 ax.legend(loc=2)
                 ax.set(**kwargs)
                 ax.grid(visible=True, which='major', lw=0.5)
@@ -184,7 +186,7 @@ def plot_stats_property(self, keys, figax, macleod=False, fit=False, fit_g=False
         ax.plot(x, func(x, *popt), lw=4, ls='-.', color = 'k', label=r'$SF_\infty \sqrt {1-e^{-∆t/\tau}}, SF_{\infty}='+'{:.2f},'.format(popt[0])+r'\:\tau'+'={:.0f}$'.format(popt[1])) #fix this
     
     plt.subplots_adjust(wspace=0, hspace=0)
-#     fig.legend(bbox_to_anchor=(1,0.5)) # For a global legend
+    # fig.legend(bbox_to_anchor=(1,0.5)) # For a global legend
     
     return fig,axes, np.array(fitted_params)
 
@@ -204,14 +206,14 @@ y = np.append(x[:, :, np.newaxis],y, axis=-1)
 
 # y[:, :, 0] /= 10**(1*(centres[:, np.newaxis]-8)) # -5 for c^3/G and -8 for 10^8 solar mass BH
 dtdm_qsos_civ.pooled_stats['SF cwf a'] = y
+# -
 
-# +
 # plotting DRW with systematic photometric error
-# x = np.logspace(-2,2)
-# y = np.sqrt(10*(1 - np.exp(-x/2))+ 100)
-# fig, ax = plt.subplots(1,1, figsize=(10,5))
-# ax.plot(x,y)
-# ax.set(xscale='log',yscale='log')
+x = np.logspace(-2,2)
+y = np.sqrt(10*(1 - np.exp(-x/2))+ 100)
+fig, ax = plt.subplots(1,1, figsize=(10,5))
+ax.plot(x,y)
+ax.set(xscale='log',yscale='log')
 
 # +
 fig, ax = plt.subplots(1,1, figsize = (13,6))
@@ -226,14 +228,12 @@ ax.grid(visible=True, which='major', lw=0.5)
 ax.grid(visible=True, which='minor', lw=0.2)
 ax.yaxis.set_minor_formatter(FormatStrFormatter('%.0f'))
 ax.yaxis.set_major_formatter(FormatStrFormatter('%.0f'))
-fig.savefig('plots/drw_sf.pdf', bbox_inches='tight')
+# fig.savefig('plots/drw_sf.pdf', bbox_inches='tight')
 # -
 
 fig, ax, fitted_params = plot_stats_property(dtdm_qsos_civ, ['SF cwf a'], figax=None, fit=True, fit_g=False, xscale='log', yscale='log')
 # ax.set(xlabel=r'Rest frame time lag per mass (days/$10^8$M$_\odot$)')
-fig.savefig('plots/SF_split_fit_phot_err_modified.pdf', bbox_inches='tight')
-
-fitted_params.shape
+# fig.savefig('plots/SF_split_fit_phot_err_modified.pdf', bbox_inches='tight')
 
 fig, ax = plt.subplots(1,1, figsize=(10,5))
 # ax.errorbar(centres, fitted_params[:,0], yerr=fitted_params[:,4],capsize=10)
