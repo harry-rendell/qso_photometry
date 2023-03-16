@@ -21,10 +21,9 @@ def reader(args):
 	"""
 	Reading function for multiprocessing
 	"""
-	n_subarray, basepath, ID = args
+	n_subarray, basepath = args
 	return pd.read_csv(basepath+'lc_{}.csv'.format(n_subarray), 
 					   comment='#',
-					   index_col = ID,
 					   dtype = DTYPES)
 
 class analysis():
@@ -39,7 +38,7 @@ class analysis():
 		self.survey_dict = {1:'SSS_r1', 3: 'SSS_r2', 5:'SDSS', 7:'PS1', 11:'ZTF'}
 		self.coords = pd.read_csv(wdir+'data/catalogues/qsos/dr14q/dr14q_uid_coords.csv', index_col='uid')
 
-	def read_in(self, multi_proc = True, catalogue_of_properties = None, redshift=True):
+	def read_in(self, catalogue_of_properties = None, redshift=True, cleaned=True):
 		"""
 		Read in raw data
 
@@ -47,30 +46,27 @@ class analysis():
 		----------
 		reader : function
 				used for reading data
-		multi_proc : boolean
-				True to use multiprocessesing
 		catalogue_of_properties : dataframe
 		"""
 		
 		# Default to 4 cores
-		if multi_proc == True:
-			# Use the path below for SSA
-			# basepath = wdir+'data/merged/{}/{}_band/with_ssa/'
+		# Use the path below for SSA
+		# basepath = wdir+'data/merged/{}/{}_band/with_ssa/'
+		if cleaned:
 			basepath = wdir+'data/merged/{}/{}_band/'.format(self.obj, self.band)
-			pool = Pool(4)
-			df_list = pool.map(reader, [(i, basepath, self.ID) for i in range(4)])
-			self.df = pd.concat(df_list).rename(columns={'mag_ps':'mag'})
-			if self.df.index.name == None:
-				self.df = self.df.set_index(self.ID)
-		elif multi_proc == False:
-			self.df = pd.read_csv(wdir+'data/merged/{}/lc_{}_{}.csv'.format(self.obj, self.band), comment='#', index_col = self.ID, dtype = DTYPES)
-
-		# Would be good to add in print statments saying: 'lost n1 readings due to -9999, n2 to -ve errors etc'
+		else:
+			basepath = wdir+'data/merged/{}/{}_band/unclean/'.format(self.obj, self.band)
+		pool = Pool(4)
+		df_list = pool.map(reader, [(i, basepath) for i in range(4)])
+		self.df = pd.concat(df_list, ignore_index=True).set_index(self.ID) #.rename(columns={'mag_ps':'mag'}) 
+		# NOTE: Removed 'rename' above since unclean has mag and mag_ps columns. Cleaned photometry has mag only.
+		# TODO: Would be good to add in print statments saying: 'lost n1 readings due to -9999, n2 to -ve errors etc'
 
 		# Remove bad values from SDSS (= -9999) and large outliers (bad data)
 		self.df = self.df[(self.df['mag'] < 25) & (self.df['mag'] > 15)]
 		# Remove -ve errors (why are they there?) and readings with >0.5 error
 		self.df = self.df[ (self.df['magerr'] > 0) & (self.df['magerr'] < 0.5)]
+
 		# Remove objects with a single observation.
 		self.df = self.df[self.df.index.duplicated(keep=False)]
 		if redshift:
@@ -483,7 +479,6 @@ class analysis():
 			fig, axes = plt.subplots(len(uids),1,figsize = (25,3*len(uids)), sharex=True)
 		if len(uids)==1:
 			axes=[axes]
-			
 		for uid, ax in zip(uids,axes):
 			single_obj = self.df.loc[uid].sort_values('mjd')
 			if len(filtercodes)>1:
@@ -494,11 +489,7 @@ class analysis():
 					for cat in single_band['catalogue'].unique():
 						x = single_band[single_band['catalogue']==cat]
 						ax.errorbar(x['mjd'], x['mag'], yerr = x['magerr'], lw = 0.5, markersize = 3, marker = self.marker_dict[cat], label = self.survey_dict[cat]+' '+band, color = self.plt_color[band])
-						mean = x['mag'].mean()
-						ax2 = ax.twinx()
-						ax.axhline(y=mean, color='k', ls='--', lw=0.4, dashes=(50, 20))
-						ax2.set(ylim=np.array(ax.get_ylim())-mean, ylabel=r'$\mathrm{mag} - \overline{\mathrm{mag}}$')
-						
+
 			else:
 				if survey is not None:
 					single_obj = single_obj[single_obj['catalogue']==survey]
@@ -506,15 +497,14 @@ class analysis():
 					x = single_obj[single_obj['catalogue']==cat]
 					ax.errorbar(x['mjd'], x['mag'], yerr = x['magerr'], lw = 0.5, marker = self.marker_dict[cat], label = self.survey_dict[cat]+' '+filtercodes, color = self.plt_color[filtercodes])
 				mean = single_obj['mag'].mean()
-				ax2 = ax.twinx()
 				ax.axhline(y=mean, color='k', ls='--', lw=0.4, dashes=(50, 20))
+				ax2 = ax.twinx()
 				ax2.set(ylim=np.array(ax.get_ylim())-mean, ylabel=r'$\mathrm{mag} - \overline{\mathrm{mag}}$')
-
+				ax2.invert_yaxis()
 
 			ax.invert_yaxis()
-			ax2.invert_yaxis()
 			ax.set(xlabel='MJD', ylabel='mag', **kwargs)
-	# 			ax.legend(loc=)
+			# ax.legend(loc=)
 			ax.text(0.02, 0.9, 'uid: {}'.format(uid), transform=ax.transAxes, fontsize=10)
 		
 		plt.subplots_adjust(hspace=0)
