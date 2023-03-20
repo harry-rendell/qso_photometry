@@ -72,7 +72,7 @@ sns_correlate(df, 3e0, 1e3, True)
 fig, ax = plt.subplots(1,1, figsize=(9,3))
 ax.hist(df['z'], bins=150, range=(0,5), color='royalblue');
 ax.set(ylabel='Number of Quasars', xlabel='Redshift', xlim=[0,5])
-fig.savefig(path+'analysis/plots/redshift.pdf', bbox_inches='tight')
+# fig.savefig(path+'analysis/plots/redshift.pdf', bbox_inches='tight')
 
 # ---
 
@@ -96,24 +96,15 @@ obj = 'qsos'
 ID = 'uid'
 band = 'r'
 
+dr = analysis(ID, obj, band)
 
-def reader(n_subarray):
-    return pd.read_csv(wdir+'data/merged/{}/{}_band/lc_{}.csv'.format(obj,band,n_subarray), comment='#', nrows=None, index_col = ID, dtype = {'catalogue': np.uint8, 'mag_ps': np.float32, 'magerr': np.float32, 'mjd': np.float64, ID: np.uint32})
-
-
-
-# band = 'r'
-dr = analysis(ID, obj)
-
-# dr.read_in(reader, redshift=True)
+dr.read_in(redshift=True)
 dr.band = 'r'
-dr.group(keys = ['uid'],read_in=True)
+dr.group(keys = ['uid'],read_in=True, survey='all')
 
 dr.df_grouped
 
 fig, ax = plt.subplots(1,1, figsize=(9,3))
 ax.hist(dr.df_grouped['mag_mean'], bins=150, range=(16,23), color='royalblue');
 ax.set(ylabel='Number of Quasars', xlabel=r'$r$-band magnitude', xlim=[16,23])
-fig.savefig(path+'analysis/plots/qso_mag_dist.pdf', bbox_inches='tight')
-
-
+# fig.savefig(path+'analysis/plots/qso_mag_dist.pdf', bbox_inches='tight')

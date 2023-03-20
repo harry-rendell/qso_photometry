@@ -81,5 +81,3 @@ oids_1to1 = np.loadtxt('/disk1/hrb/python/data/surveys/ztf/calibStars/calibStars
 oids_diff = np.setdiff1d(oids, oids_1to1)
 
 np.savetxt('/disk1/hrb/python/data/surveys/ztf/calibStars/calibStars_oids.txt',oids,fmt='%i')
-
-

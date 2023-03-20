@@ -32,7 +32,6 @@ def slope(group):
     return {'m_optimal':m_optimal,'m_regular':m_regular}
 
 
-
 import pandas as pd 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -65,6 +64,17 @@ dr.read_in(reader)
 result_obs = dr.df.groupby('uid').apply(slope).apply(pd.Series)
 
 result_obs.to_csv(wdir + 'data/computed/qsos/slopes/slopes_obsframe.csv')
+
+result_obs = pd.read_csv('../data/computed/qsos/slopes/slopes_obsframe.csv', index_col='uid')
+result_obs.columns
+
+# +
+fig, ax = plt.subplots(1,1,figsize=(20,10))
+result_obs['m_optimal'].hist(bins=100, range=(-0.01,0.01), ax=ax)
+
+ax.set(yscale='log')
+
+# -
 
 result_obs = pd.read_csv('../data/computed/qsos/slopes/slopes_obsframe_all.csv', index_col='uid')
 result_obs = result_obs[abs(result_obs['m_optimal'])<0.5]

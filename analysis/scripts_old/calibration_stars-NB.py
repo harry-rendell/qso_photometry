@@ -144,7 +144,7 @@ sns.jointplot(x='gr',y='ri',data=colors.sample(frac=frac), kind='hex', xlim=[-0.
 sns.jointplot(x='ug',y='gr',data=colors.sample(frac=frac), kind='hex', xlim=[-0.6,3.5], ylim=[-0.6,1.6])
 sns.jointplot(x='ri',y='iz',data=colors.sample(frac=frac), kind='hex', xlim=[-0.6,2.0], ylim=[-0.51,1.1])
 
-# + jupyter={"source_hidden": true}
+# +
 # uid_oid = pd.read_csv('/disk1/hrb/python/data/surveys/ztf/calibStars/calibStars_ztf.txt', skiprows = 59, usecols = [3,6], names=['uid_s','oid'], sep='\s+', index_col = 'oid')
 # mask = uid_oid['oid'].duplicated()
 # uid_oid = uid_oid[mask]

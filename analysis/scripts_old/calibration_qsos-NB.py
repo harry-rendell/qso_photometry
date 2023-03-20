@@ -24,7 +24,7 @@ matplotlib.rc('font', **font)
 import sys
 sys.path.append('../')
 
-from funcs.analysis.obj_survey import obj_survey#, reader
+from funcs.analysis.obj_survey import obj_survey
 from funcs.preprocessing.parse import intersection, filter_data
 from funcs.analysis.plotting import plot_magerr_hist, plot_mag_dist
 

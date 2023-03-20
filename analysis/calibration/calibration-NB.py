@@ -136,15 +136,13 @@ qsos_r.read()
 qsos_r.join_colors()
 qsos_r.calculate_offsets()
 
-# + active=""
-# fig, ax = plt.subplots(1,1, figsize=(15,6))
-# ax.hist((qsos_r.ps['mag_med']-qsos_r.ztf['mag_med'])  , bins=200, alpha=0.5, range=(-0.5,0.5), label='transformed');
-# ax.hist((qsos_r.ps['mag_med_native']-qsos_r.ztf['mag_med_native'])  , bins=200, alpha=0.5, range=(-0.5,0.5), label='untransformed');
-# # ax.hist((qsos_r.sdss['mag_mean']-qsos_r.ps['mag_mean']), bins=200, alpha=0.5, range=(-2,2), label='mean');
-# ax.legend()
-# ax.set(xlabel=r'$r_\mathrm{SDSS} - r_\mathrm{PS}$ (mag)', ylabel='Number')
-# ax.axvline(x=0, lw=0.4, ls='--')
-# -
+fig, ax = plt.subplots(1,1, figsize=(15,6))
+ax.hist((qsos_r.ps['mag_med']-qsos_r.ztf['mag_med'])  , bins=200, alpha=0.5, range=(-0.5,0.5), label='transformed');
+ax.hist((qsos_r.ps['mag_med_native']-qsos_r.ztf['mag_med_native'])  , bins=200, alpha=0.5, range=(-0.5,0.5), label='untransformed');
+# ax.hist((qsos_r.sdss['mag_mean']-qsos_r.ps['mag_mean']), bins=200, alpha=0.5, range=(-2,2), label='mean');
+ax.legend()
+ax.set(xlabel=r'$r_\mathrm{SDSS} - r_\mathrm{PS}$ (mag)', ylabel='Number')
+ax.axvline(x=0, lw=0.4, ls='--')
 
 # # STARS
 # ---
@@ -162,7 +160,6 @@ star_r.offsets['ps-ztf_nat'].mean()
 
 star_r.offsets['ps-ztf'].mean()
 
-# +
 save = True
 for color in ['mean_ri','mean_gr']:
     for survey1, survey2 in [('ps','sdss'),('ps','ztf')]:
@@ -171,9 +168,6 @@ for color in ['mean_ri','mean_gr']:
 #     survey2 = 'ztf'
         g = star_r.sns_correlate(color, survey1+'-'+survey2+'_nat', 1.5e1, 1e3, limits=[(0,2),(-0.2,0.4)], colorscale='log', xlabel=r'$'+color[-2]+'-'+color[-1]+'$', ylabel=r'$r_\mathrm{'+survey1.upper()+'}-r_\mathrm{'+survey2.upper()+'}$', save=save)
         g = star_r.sns_correlate(color, survey1+'-'+survey2       , 1.5e1, 1e3, limits=[(0,2),(-0.2,0.4)], colorscale='log', xlabel=r'$'+color[-2]+'-'+color[-1]+'$', ylabel=r'$r_\mathrm{'+survey1.upper()+'}-r_\mathrm{'+survey2.upper()+'}^\prime$', save=save)
-
-
-# -
 
 # # QSOS
 # ---
@@ -191,7 +185,6 @@ qsos_r.offsets['ps-ztf_nat'].mean()
 
 qsos_r.offsets['ps-ztf'].mean()
 
-# +
 save = True
 for color in ['mean_ri','mean_gr']:
     for survey1, survey2 in [('ps','sdss'),('ps','ztf')]:
@@ -201,13 +194,8 @@ for color in ['mean_ri','mean_gr']:
         g = qsos_r.sns_correlate(color, survey1+'-'+survey2+'_nat', 1.5e1, 1e3, limits=[(-0.5,1),(-1.25,1.25)], colorscale='log', xlabel=r'$'+color[-2]+'-'+color[-1]+'$', ylabel=r'$r_\mathrm{'+survey1.upper()+'}-r_\mathrm{'+survey2.upper()+'}$', save=save)
         g = qsos_r.sns_correlate(color, survey1+'-'+survey2       , 1.5e1, 1e3, limits=[(-0.5,1),(-1.25,1.25)], colorscale='log', xlabel=r'$'+color[-2]+'-'+color[-1]+'$', ylabel=r'$r_\mathrm{'+survey1.upper()+'}-r_\mathrm{'+survey2.upper()+'}^\prime$', save=save)
 
-
-# -
-
 color = 'mean_gr'
 survey1 = 'sdss'
 survey2 = 'ztf'
 g = qsos_r.sns_correlate(color, survey1+'-'+survey2+'_nat', 1.5e1, 1e3, limits=[(-0.5,1),(-1.25,1.25)], colorscale='log', xlabel=r'$'+color[-2]+'-'+color[-1]+'$', ylabel=r'$r_\mathrm{'+survey1.upper()+'}-r_\mathrm{'+survey2.upper()+'}$', save=True)
 g = qsos_r.sns_correlate(color, survey1+'-'+survey2       , 1.5e1, 1e3, limits=[(-0.5,1),(-1.25,1.25)], colorscale='log', xlabel=r'$'+color[-2]+'-'+color[-1]+'$', ylabel=r'$r_\mathrm{'+survey1.upper()+'}-r_\mathrm{'+survey2.upper()+'}^\prime$', save=True)
-
-
