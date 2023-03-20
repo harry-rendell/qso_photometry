@@ -19,26 +19,20 @@ pd.options.mode.chained_assignment = None
 import numpy as np
 import matplotlib.pyplot as plt
 from funcs.analysis.analysis import *
+from config import cfg
+import time
 # %matplotlib inline
 
-band = 'r'
-wdir = '/disk1/hrb/python/'
-
-
-def reader(n_subarray):
-    return pd.read_csv(wdir+'data/merged/{}/{}_band/unclean/lc_{}.csv'.format(obj, band, n_subarray), nrows=None, index_col = ID, dtype = {'catalogue': np.uint8, 'mag_ps': np.float32, 'magerr': np.float32, 'mjd': np.float64, ID: np.uint32})
-
-
-
+wdir = cfg.USER.W_DIR
 # obj = 'calibStars'
 # ID  = 'uid_s'
 obj = 'qsos'
 ID = 'uid'
-dr = analysis(ID, obj)
-dr.read_in(reader, redshift=False)
+band = 'r'
+dr = analysis(ID, obj, band)
+dr.read_in(reader, redshift=False, cleaned=False, nrows=10000)
 dr.df['mjd_floor'] = np.floor(dr.df['mjd']).astype('int')
-
-dr.df
+dr.group(keys=[ID], read_in=True, redshift=False, colors=False, survey='all', restrict=True) # previously we read in grouped explicitly and used it. Now changed to dr.df_grouped
 
 # ### How many repeat observations per night
 
@@ -47,12 +41,17 @@ dr.summary()
 sdss = dr.df[dr.df['catalogue']==5].reset_index()
 frac = sdss.duplicated(subset=['uid','mjd_floor'], keep='first').sum()/len(sdss)
 print('Number of SDSS observations within the same night of the same object: {:.2f}%'.format(frac*100))
+print('-'*20)
+
 ps = dr.df[dr.df['catalogue']==7].reset_index()
 frac = ps.duplicated(subset=['uid','mjd_floor'], keep='first').sum()/len(ps)
 print('Number of PS   observations within the same night of the same object: {:.2f}%'.format(frac*100))
+print('-'*20)
+
 ztf = dr.df[dr.df['catalogue']==11].reset_index()
 frac = ztf.duplicated(subset=['uid','mjd_floor'], keep='first').sum()/len(ztf)
 print('Number of ZTF  observations within the same night of the same object: {:.2f}%'.format(frac*100))
+print('-'*20)
 
 frac = dr.df.reset_index().duplicated(subset=['uid','mjd_floor'], keep='first').sum()/len(dr.df)
 print('Total observations within the same night of the same object: {:.2f}%'.format(frac*100))
@@ -62,240 +61,196 @@ dr.summary() # gives us dr.n_qsos
 frac = len(dr.df[dr.df.reset_index().duplicated(subset=['uid','mjd_floor'], keep='first').values].index.unique())/dr.n_qsos
 print('Fraction of objects that have another observation within the same night: {:.2f}%'.format(frac*100))
 
-grouped = pd.read_csv(wdir+'data/merged/{}/{}_band/grouped_stats_{}_all.csv'.format(obj,band,band), index_col=ID)
-
-grouped
-
-dr.df
+# ___
+# # Removing bad objects
+# two methods:
+# 1. Remove objects which are fainter than the limiting magnitude of the survey (need to find limits for each band)
+# 2. Remove objects which have a magerr > 0.198
 
 # +
-# Remove objects which are fainter than the limiting magnitude of the survey (or we dould do magerr=0.198)
-catalogue = dr.df['catalogue']
-# mag_med = grouped['mag_med']
+## catalogue = dr.df['catalogue']
+# mag_med = dr.df_grouped['mag_med']
 # mag_med = mag_med[mag_med.index.isin(catalogue.index)]
 # mask = ((catalogue == 5) & (mag_med < 22.7)) | ((catalogue == 7) & (mag_med < 23.2)) | ((catalogue == 11) & (mag_med < 20.6))
 
-magerr_med = grouped['magerr_med']
-magerr_med = magerr_med[magerr_med.index.isin(catalogue.index)]
-mask = (catalogue > 1) & (magerr_med > 0.198)
+magerr_med = dr.df_grouped['magerr_med']
+mask = (magerr_med > cfg.PREPROC.MAG_ERR_THRESHOLD)
+print('Number of datapoints removed: {:,}/{:,} \t {:.2f}%'.format(mask.sum(), len(mask), mask.sum()/len(mask)))
 
 
 # -
 
-mask
-
-dr.df
-
 dr.df[mask]['magerr'].hist(bins=100)
 dr.df[mask]['magerr'].describe()
 
 dr.df[~mask]['magerr'].hist(bins=100)
 dr.df[~mask]['magerr'].describe()
-
-dr.df[mask]['magerr'].hist(bins=100)
-dr.df[mask]['magerr'].describe()
-
-dr.df[~mask]['magerr'].hist(bins=100)
-dr.df[~mask]['magerr'].describe()
-
-
-
-(grouped['mag_med']<22.7) &  (dr.df['catalogue']==5)
 
 # +
+## This needs to be in its own notebook or script
 # # WRITE
 # grouped_q = pd.read_csv('../data/merged/{}/{}_band/grouped_stats_{}.csv'.format('qsos',band,band), index_col='uid')
 # bins=np.linspace(16,21,51)
 # counts, _ = np.histogram(grouped_q['mag_mean'], bins=bins)
 # uid_s_list = []
 # for i in range(len(counts)):
-#     uid_s_list.append(np.random.choice(grouped[(bins[i] < grouped['mag_mean']) & (grouped['mag_mean'] < bins[i+1])].index, size=counts[i], replace=False))
+#     uid_s_list.append(np.random.choice(dr.df_grouped[(bins[i] < dr.df_grouped['mag_mean']) & (dr.df_grouped['mag_mean'] < bins[i+1])].index, size=counts[i], replace=False))
 # # uid_s_list = np.concatenate(uid_s_list)
 # np.savetxt('/disk1/hrb/python/data/merged/calibStars/r_band/uid_s_matched.csv', uid_s_list, fmt='%i')
-# -
 
-# READ
-if obj == 'calibStars':
-    uid_s_matched_sub = np.loadtxt('/disk1/hrb/python/data/merged/calibStars/r_band/uid_s_matched.csv', dtype='int')
-    uid_s_matched = np.append(grouped[grouped['mag_mean']>21].index, uid_s_matched_sub)
-    grouped = grouped.loc[uid_s_matched]
-    dr.df = dr.df[dr.df.index.isin(uid_s_matched)]
+# # READ
+# if obj == 'calibStars':
+#     uid_s_matched_sub = np.loadtxt('/disk1/hrb/python/data/merged/calibStars/r_band/uid_s_matched.csv', dtype='int')
+#     uid_s_matched = np.append(dr.df_grouped[dr.df_grouped['mag_mean']>21].index, uid_s_matched_sub)
+#     dr.df_grouped = dr.df_grouped.loc[uid_s_matched]
+#     dr.df = dr.df[dr.df.index.isin(uid_s_matched)]
+#     del uid_s_matched, uid_s_matched_sub
+    
+# # Plot match
+# fig, ax = plt.subplots(1,1, figsize=(10,8))
+# grouped_q['mag_mean'].hist(bins=51, ax=ax, label='qsos', alpha=0.5, range=(16,23))
+# # grouped2['mag_mean'].hist(bins=51, ax=ax, label='stars', alpha=0.5, range=(16,23))
+# dr.df_grouped['mag_mean'].hist(bins=51, ax=ax, label='stars', alpha=0.5, range=(16,23))
+# ax.legend()
 
-dr.df
-
-del uid_s_matched, uid_s_matched_sub
-
-# +
-fig, ax = plt.subplots(1,1, figsize=(10,8))
-grouped_q['mag_mean'].hist(bins=51, ax=ax, label='qsos', alpha=0.5, range=(16,23))
-# grouped2['mag_mean'].hist(bins=51, ax=ax, label='stars', alpha=0.5, range=(16,23))
-grouped['mag_mean'].hist(bins=51, ax=ax, label='stars', alpha=0.5, range=(16,23))
-ax.legend()
-
-fig, ax = plt.subplots(1,1, figsize=(10,8))
-grouped_q['mag_std'].hist(bins=51, ax=ax, label='qsos', alpha=0.5, range=(0,0.6))
-# grouped2['mag_std'].hist(bins=51, ax=ax, label='stars', alpha=0.5, range=(0,0.6))
-grouped['mag_std'].hist(bins=51, ax=ax, label='stars', alpha=0.5, range=(0,0.6))
-ax.legend()
+# fig, ax = plt.subplots(1,1, figsize=(10,8))
+# grouped_q['mag_std'].hist(bins=51, ax=ax, label='qsos', alpha=0.5, range=(0,0.6))
+# # grouped2['mag_std'].hist(bins=51, ax=ax, label='stars', alpha=0.5, range=(0,0.6))
+# dr.df_grouped['mag_std'].hist(bins=51, ax=ax, label='stars', alpha=0.5, range=(0,0.6))
+# ax.legend()
 # -
 
 # ### Averaging nightly observations
 
-# > We want to combine multiple observations on the same night into a single datapoint, while throwing out bad points
-# > histograms below show that it is safe to round mjd down to the nearest integer and then bin them (since the distribution doesnt carry over from 1 back to 0
+# * We want to combine multiple observations on the same night into a single datapoint, while throwing out bad points.
+# * histograms below show the distribution of mjd's mod 1, ie what UTC time during the night the observations are taken.
+# * it is safe to round mjd down to the nearest integer and then bin them (since the distribution doesnt carry over from 1 back to 0, which would split the same night observations over two mjd's)
 
-# + active=""
-# from astropy.time import Time
-# t = Time('2021-04-13 15:09:00')
-# t.mjd
-# -
-
+# This plot shows 
 fig, axes = plt.subplots(3,1, figsize=(15,5))
-for cat, ax in zip([1,2,3],axes.ravel()):
+for cat, ax in zip([5,7,11],axes.ravel()):
     (dr.df[dr.df['catalogue']==cat]['mjd'] % 1).hist(bins=100, range=(0,1), ax=ax, alpha=1, density=True, label=dr.survey_dict[cat])
     ax.legend()
     ax.set(xlabel='mjd mod 1', yscale='log')
 
+CHECK_OBS_DIFFERENT_SURVEY_ON_SAME_DAY = True
+if CHECK_OBS_DIFFERENT_SURVEY_ON_SAME_DAY:
+    # Check that we do not have multiple observations from different surveys that lie on the same day.
+    # If we do, we need to treat them differently.
+    mask1 = dr.df.reset_index().duplicated([ID,'mjd_floor'], keep=False)
+    mask2 = dr.df.reset_index().duplicated([ID,'mjd_floor','catalogue'], keep=False)
+    if (mask1 ^ mask2).sum()>0:
+        print(dr.df[(mask1 ^ mask2).values])
+        raise Warning('The observations listed above have data from multiple surveys on the same day')
+    
+    # With our current data, we have observations from PS and ZTF on MJD=55102.
+    # For now we will just average this data as normal
+
 
 # +
+### Check this against scripts_test/remove_outliers_MAD as it will be a better method
+
 def average_nightly_obs(group):
-    n = len(group)
+    # Each group is all the data collected on a given night
+    n = len(group) # number of observations on that night
     cat, mjd, mag, magerr = group[['catalogue','mjd','mag','magerr']].values.T
-#     assert len(np.unique(cat))==1, group.index.unique()
-    cat = cat[0]
-    
-    if (n==2) & (np.ptp(mag)>0.4): # why 0.4? maybe better to use np.sum(error)
+    # TODO: The statement below should be asserted prior to calling this function, since it will slow it down.
+    # assert len(np.unique(cat))==1, group.index.unique() 
+    cat = cat[0] # Take the first entry since they should all be the same
+
+    if (n==2) & (np.ptp(mag)>1): # why 0.4? maybe better to use np.sum(error)
         # If we have two observations on the same night and the difference is greater than 0.4 mag
+        # then keep the datapoint which is closest to the median of the total light curve (from grouped)
         uid = group.index[0]
-        median = grouped.loc[uid,['mag_med']].values
+        median = dr.df_grouped.loc[uid,['mag_med']].values
         idx = np.argmin(abs(mag-median))
-        mag_mean = mag[idx] # throw away bad point (one that is furthest from median of lc)
+        mag_mean = mag[idx]
         mjd_mean = mjd[idx]
         magerr_mean = magerr[idx]
-        
+
     else:
         if n>2:
+            # Remove points that are 1mag away from the median of the group
             uid = group.index[0]
-            median_lc = grouped.loc[uid,['mag_med']].values
+            median_lc = dr.df_grouped.loc[uid,['mag_med']].values
             mask = (abs(mag-(np.median(mag)+median_lc)/2) < 1)
             if mask.sum()==0:
+                # If there are no data points within 1mag of the median of the light curve, then set mag_mean=np.nan
                 mag_mean = np.nan
                 err_msg = 'error with uid: '+str(uid)+'. Couldnt not average mags at mjd(s): '+str(mjd)
                 print(err_msg)
-                log.append(err_msg)
-                
-#         mag_mean  = -2.5*np.log10(np.mean(10**(-(mag-8.9)/2.5))) + 8.9
+                with open('average_nightly_obs_log.txt','a+') as file:
+                    file.write(err_msg)
             else:
-                mag = mag[mask] # remove points that are 1mag away from the median of the group
+                mag = mag[mask] 
                 magerr = magerr[mask]
                 mjd = mjd[mask]
-            
+
         mjd_mean  = np.mean(mjd)
         magerr_mean = (magerr ** -2).sum() ** -0.5 # sum errors in quadrature
         mag_mean  = -2.5*np.log10(np.average(10**(-(mag-8.9)/2.5), weights = magerr**-2)) + 8.9
-        
+
     return {'catalogue':cat,'mjd':mjd_mean, 'mag':mag_mean, 'magerr':magerr_mean}
 
 
-# -
-
+# +
 mask = dr.df.reset_index()[[ID,'mjd_floor']].duplicated(keep=False).values
 single_obs = dr.df[~mask].drop(columns='mjd_floor')  # observations that do not share the same night with any other observations
-# multi_obs = dr.df[mask] # observations that have at least one other observation that night. We need to groupby these then add them back onto df above. then sort_values([ID,'mjd'])
-# log = []
-# del dr.df
+multi_obs = dr.df[mask] # observations that have at least one other observation that night. We need to groupby these then add them back onto df above. then sort_values([ID,'mjd'])
 
-# multiprocesssor
-chunks = np.array_split(multi_obs.index, 4)
-uids = [(chunk[0],int(chunk[-1]-1)) for chunk in chunks] # need to check we arent making gaps with the -1
-chunks = [multi_obs.loc[uids[i][0]:uids[i][1]] for i in range(4)]
-del dr.df
-del multi_obs
-
-
-# +
-# For multiprocessing
-def multiobs_groupby(chunk):
-    
-    def average_nightly_obs(group):
-        n = len(group)
-        cat, mjd, mag, magerr = group[['catalogue','mjd','mag','magerr']].values.T
-    #     assert len(np.unique(cat))==1, group.index.unique()
-        cat = cat[0]
-
-        if (n==2) & (np.ptp(mag)>0.4):
-            uid = group.index[0]
-            median = grouped.loc[uid,['mag_med']].values
-            idx = np.argmin(abs(mag-median))
-            mag_mean = mag[idx] # throw away bad point (one that is furthest from median of lc)
-            mjd_mean = mjd[idx]
-            magerr_mean = magerr[idx]
-
-        else:
-            if n>2:
-                uid = group.index[0]
-                median_lc = grouped.loc[uid,['mag_med']].values
-                mask = (abs(mag-(np.median(mag)+median_lc)/2) < 1)
-                if mask.sum()==0:
-                    mag_mean = np.nan
-                    err_msg = 'error with uid: '+str(uid)+'. Couldnt not average mags at mjd(s): '+str(mjd)
-                    print(err_msg)
-                    log.append(err_msg)
-
-    #         mag_mean  = -2.5*np.log10(np.mean(10**(-(mag-8.9)/2.5))) + 8.9
-                else:
-                    mag = mag[mask] # remove points that are 1mag away from the median of the group
-                    magerr = magerr[mask]
-                    mjd = mjd[mask]
-
-            mjd_mean  = np.mean(mjd)
-            magerr_mean = (magerr ** -2).sum() ** -0.5 # sum errors in quadrature
-            mag_mean  = -2.5*np.log10(np.average(10**(-(mag-8.9)/2.5), weights = magerr**-2)) + 8.9
-
-        return {'catalogue':cat,'mjd':mjd_mean, 'mag':mag_mean, 'magerr':magerr_mean}
-    
-    return chunk.groupby([ID,'mjd_floor']).apply(average_nightly_obs).apply(pd.Series).reset_index('mjd_floor', drop=True).astype({'catalogue':'int'})
-
-if __name__ == '__main__':
-    pool = Pool(4)
-    result = pd.concat(pool.map(multiobs_groupby, chunks))
-    
-result.to_csv('averaged_qsos')
-
-# +
-#For single core
-from time import time
-start = time()
-avgd  = multi_obs.groupby([ID,'mjd_floor']).apply(average_nightly_obs).apply(pd.Series).reset_index('mjd_floor', drop=True).astype({'catalogue':'int'})
-end   = time()
-print('elapsed: {:.2f}'.format(end-start))
-
-np.savetxt('/disk1/hrb/python/data/merged/{}/{}_band/log.txt'.format(obj,band),np.array(log), fmt='%s')
-
-avgd.to_csv('averaged_qsos.csv') # save intermediate step if having memory issues
+# del dr.df # We don't need this DataFrame anymore, delete it for memory management
 # -
 
-avgd = pd.read_csv('averaged_qsos.csv',index_col=ID)
+test_objects = analysis(ID, obj, band)
+test_objects.df = dr.df.loc[np.random.choice(multi_obs.index.unique(),size=10)]
 
-avgd
+# +
+start = time.time()
+if cfg.USER.USE_MULTIPROCESSING:
+    idx_quarters = [multi_obs.index[len(multi_obs.index)//4*i] for i in range(5)]
+    uids = [(idx_quarters[i],idx_quarters[i+1]) if i == 0 else (int(idx_quarters[i]+1),idx_quarters[i+1]) for i in range(4)] # Make non-overlapping chunks
+    chunks = [multi_obs.loc[uids[i][0]:uids[i][1]] for i in range(4)]
+    # del multi_obs # We don't need this DataFrame anymore, delete it for memory management
 
-dr.df = single_obs.append(avgd).sort_values([ID,'mjd'])
-# x = x[x['catalogue']==2]
+    # For multiprocessing
+    def multiobs_groupby(chunk):
+        return chunk.groupby([ID,'mjd_floor']).apply(average_nightly_obs).apply(pd.Series).reset_index('mjd_floor', drop=True).astype({'catalogue':'int'})
 
+    if __name__ == '__main__':
+        pool = Pool(cfg.USER.N_CORES)
+        averaged = pd.concat(pool.map(multiobs_groupby, chunks))
+
+else:
+    averaged  = multi_obs.groupby([ID,'mjd_floor']).apply(average_nightly_obs).apply(pd.Series).reset_index('mjd_floor', drop=True).astype({'catalogue':'int'})
+
+end = time.time()
+print('Elapsed:',time.strftime("%Hh %Mm %Ss",time.gmtime(end-start)))
+
+SAVE_INTERMEDIATE = True
+if SAVE_INTERMEDIATE:
+    averaged.to_csv('averaged_qsos.csv')
+# -
+
+READ_INTERMEDIATE = False
+if READ_INTERMEDIATE:
+    averaged = pd.read_csv('averaged_qsos.csv',index_col=ID)
+
+# Add the data from nights with multiple observations back on
+dr.df = single_obs.append(averaged).sort_values([ID,'mjd'])
 dr.df.index = dr.df.index.astype('int')
-
-dr.df
 
 # ### remove outliers
 
-fig, ax = dr.plot_series(uids, survey=2, filtercodes='r', markersize=0.5)
-x2 = x[x['catalogue']==2]
-# x2 = x
+# test our data cleaning is working
+survey = 11
+uids = test_objects.df.index.unique()
+ax = dr.plot_series(uids, survey=survey, filtercodes='r')
+# test_objects.plot_series(uids, survey=survey, filtercodes='r', axes=ax)
 for uid, axis in zip(uids, ax):
-    mjd, mag, magerr = x2.loc[uid,['mjd','mag','magerr']].values.T
-    axis.errorbar(mjd, mag, yerr = magerr, lw = 0.5, markersize = 10)
-#     axis.set(xlim=[58200,58300])
-fig.savefig('averaging_nightly_observations_ztf.pdf', bbox_inches='tight') # test our data cleaning is working
+    mjd, mag, magerr = test_objects.df.loc[uid,['mjd','mag','magerr']].values.T
+    axis.errorbar(mjd, mag, yerr = magerr, lw = 0.5, markersize = 10, color='b')
+    axis.set(xlim=[58200,58500])
+# fig.savefig('averaging_nightly_observations_ztf.pdf', bbox_inches='tight')
 
 # + active=""
 # def reader(n_subarray):
@@ -312,7 +267,7 @@ fig.savefig('averaging_nightly_observations_ztf.pdf', bbox_inches='tight') # tes
 # # dr.df['mjd_floor'] = np.floor(dr.df['mjd']).astype('int')
 # -
 
-dr.df = dr.df.join(grouped[['mag_med','mag_std']], on=ID)
+dr.df = dr.df.join(dr.df_grouped[['mag_med','mag_std']], on=ID)
 dr.df['Z'] = (dr.df['mag']-dr.df['mag_med'])/dr.df['mag_std']
 
 
@@ -323,11 +278,10 @@ def remove_outliers(group):
     return clean
 
 
-from time import time
-start = time()
+start = time.time()
 clean_phot = dr.df[['catalogue','mjd','mag','magerr']].groupby(ID).apply(remove_outliers).reset_index(level=1, drop=True)
-end   = time()
-print('elapsed: {:.2f}s'.format(end-start))
+end   = time.time()
+print('Elapsed:',time.strftime("%Hh %Mm %Ss",time.gmtime(end-start)))
 
 # +
 # # testing outlier detection
@@ -343,12 +297,12 @@ print('elapsed: {:.2f}s'.format(end-start))
 
 # ### save processed data
 
-# #### def save(args):
-#     i, chunk = args
-#     f = open('/disk1/hrb/python/data/merged/{}/{}_band/lc_{}.csv'.format(obj,band,i), 'w')
-#     comment = '# CSV of cleaned photometry.\n# Data has been averaged nightly and outliers have been removed\n'
-#     f.write(comment)
-#     chunk.to_csv(f)
+#### def save(args):
+    i, chunk = args
+    f = open('/disk1/hrb/python/data/merged/{}/{}_band/lc_{}.csv'.format(obj,band,i), 'w')
+    comment = '# CSV of cleaned photometry.\n# Data has been averaged nightly and outliers have been removed\n'
+    f.write(comment)
+    chunk.to_csv(f)
 
 # multiprocesssor
 chunks = np.array_split(clean_phot,4)
