@@ -21,10 +21,11 @@ def reader(args):
 	"""
 	Reading function for multiprocessing
 	"""
-	n_subarray, basepath = args
+	n_subarray, basepath, nrows = args
 	return pd.read_csv(basepath+'lc_{}.csv'.format(n_subarray), 
 					   comment='#',
-					   dtype = DTYPES)
+					   dtype = DTYPES,
+					   nrows=nrows)
 
 class analysis():
 	def __init__(self, ID, obj, band):
@@ -38,7 +39,7 @@ class analysis():
 		self.survey_dict = {1:'SSS_r1', 3: 'SSS_r2', 5:'SDSS', 7:'PS1', 11:'ZTF'}
 		self.coords = pd.read_csv(wdir+'data/catalogues/qsos/dr14q/dr14q_uid_coords.csv', index_col='uid')
 
-	def read_in(self, catalogue_of_properties = None, redshift=True, cleaned=True):
+	def read_in(self, catalogue_of_properties = None, redshift=True, cleaned=True, nrows=None):
 		"""
 		Read in raw data
 
@@ -57,7 +58,7 @@ class analysis():
 		else:
 			basepath = wdir+'data/merged/{}/{}_band/unclean/'.format(self.obj, self.band)
 		pool = Pool(4)
-		df_list = pool.map(reader, [(i, basepath) for i in range(4)])
+		df_list = pool.map(reader, [(i, basepath, nrows) for i in range(4)])
 		self.df = pd.concat(df_list, ignore_index=True).set_index(self.ID) #.rename(columns={'mag_ps':'mag'}) 
 		# NOTE: Removed 'rename' above since unclean has mag and mag_ps columns. Cleaned photometry has mag only.
 		# TODO: Would be good to add in print statments saying: 'lost n1 readings due to -9999, n2 to -ve errors etc'
@@ -112,7 +113,7 @@ class analysis():
 		print('Number of qsos with lightcurve: {:,}'.format(self.n_qsos))
 		print('Number of datapoints in:\nSDSS: {:,}\nPS: {:,}\nZTF: {:,}'.format((self.df['catalogue']==5).sum(),(self.df['catalogue']==7).sum(),(self.df['catalogue']==11).sum()))
 
-	def group(self, keys = ['uid'], read_in = True, redshift=True, colors=True, survey = None):
+	def group(self, keys = ['uid'], read_in = True, redshift=True, colors=True, survey=None, restrict=False):
 		"""
 		Group self.df by keys and apply {'mag':['mean','std','count'], 'magerr':'mean', 'mjd': ['min', 'max', np.ptp]}
 
@@ -145,13 +146,16 @@ class analysis():
 			if ~hasattr(self, 'redshifts'):
 				# add on column for redshift. Use squeeze = True when reading in a single column.
 				self.redshifts = pd.read_csv(wdir+'data/catalogues/qsos/dr14q/dr14q_uid_desig_z.csv', index_col=self.ID, usecols=[self.ID,'z'], squeeze=True).rename('redshift')
-			
 			self.df_grouped = self.df_grouped.merge(self.redshifts, on=self.ID)
 			self.df_grouped['mjd_ptp_rf'] = self.df_grouped['mjd_ptp']/(1+self.df_grouped['redshift'])
 		
 		if colors:
 			df_colors = pd.read_csv(wdir+'data/computed/{}/colors_sdss.csv'.format(self.obj), index_col=0)
 			self.df_grouped = self.df_grouped.join(df_colors, on=self.ID, how='left')
+
+		if restrict:
+			# Take the subset for which we have observations in self.df
+			self.df_grouped = self.df_grouped[self.df_grouped.index.isin(self.df.index)]
 
 	def merge_with_catalogue(self,catalogue='dr12_vac', remove_outliers=True, prop_range_any = {'MBH_MgII':(6,12), 'MBH_CIV':(6,12)}):
 		"""
@@ -473,7 +477,7 @@ class analysis():
 		catalogue : int
 				Only plot data from given survey
 		survey : 1 = SSS_r1, 3 = SSS_r2, 5 = SDSS, 7 = PS1, 11 = ZTF
-
+		TODO: survey should really be surveyID (better than cat)
 		"""
 		if axes is None:
 			fig, axes = plt.subplots(len(uids),1,figsize = (25,3*len(uids)), sharex=True)
@@ -504,13 +508,12 @@ class analysis():
 
 			ax.invert_yaxis()
 			ax.set(xlabel='MJD', ylabel='mag', **kwargs)
-			# ax.legend(loc=)
 			ax.text(0.02, 0.9, 'uid: {}'.format(uid), transform=ax.transAxes, fontsize=10)
 		
 		plt.subplots_adjust(hspace=0)
 		
 		if axes is not None:
-			return fig, axes
+			return axes
 
 	def plot_series_bokeh(self, uids, survey=None, filtercodes=None):
 		"""
