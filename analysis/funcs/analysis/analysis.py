@@ -113,6 +113,12 @@ class analysis():
 		print('Number of qsos with lightcurve: {:,}'.format(self.n_qsos))
 		print('Number of datapoints in:\nSDSS: {:,}\nPS: {:,}\nZTF: {:,}'.format((self.df['catalogue']==5).sum(),(self.df['catalogue']==7).sum(),(self.df['catalogue']==11).sum()))
 
+	def sdss_quick_look(self, uids):
+		if type(uids) is not list: uids = [uids]
+		coords = self.coords.loc[uids].values
+		for ra, dec in coords:
+			print("https://skyserver.sdss.org/dr18/VisualTools/quickobj?ra={}&dec={}".format(ra, dec))
+
 	def group(self, keys = ['uid'], read_in = True, redshift=True, colors=True, survey=None, restrict=False):
 		"""
 		Group self.df by keys and apply {'mag':['mean','std','count'], 'magerr':'mean', 'mjd': ['min', 'max', np.ptp]}
@@ -127,6 +133,7 @@ class analysis():
 		read_in : boolean
 		survey : str
 		Default is None. If 'ZTF' then read in grouped_stats computed from ZTF data only. If 'SSS' then read in grouped_stats with plate data included.
+		TODO: Remove 'keys' given that we can specify survey anyway.
 		"""
 		if read_in == True:
 			if len(keys) == 1:
@@ -466,7 +473,7 @@ class analysis():
 		if save == True:
 			fig.savefig('SF_ensemble.pdf',bbox_inches='tight')
 
-	def plot_series(self, uids, survey=None, filtercodes='r', axes=None, **kwargs):
+	def plot_series(self, uids, survey=None, filtercodes='r', show_outliers=False, axes=None, **kwargs):
 		"""
 		Plot lightcurve of given objects
 
@@ -479,6 +486,7 @@ class analysis():
 		survey : 1 = SSS_r1, 3 = SSS_r2, 5 = SDSS, 7 = PS1, 11 = ZTF
 		TODO: survey should really be surveyID (better than cat)
 		"""
+		if type(uids) is not list: uids = [uids]
 		if axes is None:
 			fig, axes = plt.subplots(len(uids),1,figsize = (25,3*len(uids)), sharex=True)
 		if len(uids)==1:
@@ -499,12 +507,22 @@ class analysis():
 					single_obj = single_obj[single_obj['catalogue']==survey]
 				for cat in single_obj['catalogue'].unique():
 					x = single_obj[single_obj['catalogue']==cat]
-					ax.errorbar(x['mjd'], x['mag'], yerr = x['magerr'], lw = 0.5, marker = self.marker_dict[cat], label = self.survey_dict[cat]+' '+filtercodes, color = self.plt_color[filtercodes])
+					ax.errorbar(x['mjd'], x['mag'], yerr = x['magerr'], lw = 0, elinewidth=0.7, marker = self.marker_dict[cat], label = self.survey_dict[cat]+' '+filtercodes, color = self.plt_color[filtercodes])
 				mean = single_obj['mag'].mean()
 				ax.axhline(y=mean, color='k', ls='--', lw=0.4, dashes=(50, 20))
-				ax2 = ax.twinx()
-				ax2.set(ylim=np.array(ax.get_ylim())-mean, ylabel=r'$\mathrm{mag} - \overline{\mathrm{mag}}$')
-				ax2.invert_yaxis()
+				
+				if show_outliers:
+					mjd, mag, MAD = single_obj.loc[single_obj['MAD']>0.25, ['mjd','mag', 'MAD']].values.T
+					ax.scatter(mjd, mag, s=100)
+					string = ', '.join(['{:.3f}' for _ in MAD]).format(*MAD)
+					# ax.text(0.02, 0.8, 'MAD max: {:.2f}'.format(np.max(MAD)), transform=ax.transAxes, fontsize=10)
+					ax.text(0.02, 0.8, string, transform=ax.transAxes, fontsize=10)
+					# mu, std = self.df_grouped.loc[uid,['mag_mean','mag_std']].values.T
+					# axis.axhline((mu-5*std),lw=0.5)
+					# axis.axhline((mu+5*std),lw=0.5)
+				# ax2 = ax.twinx()
+				# ax2.set(ylim=np.array(ax.get_ylim())-mean, ylabel=r'$\mathrm{mag} - \overline{\mathrm{mag}}$')
+				# ax2.invert_yaxis()
 
 			ax.invert_yaxis()
 			ax.set(xlabel='MJD', ylabel='mag', **kwargs)
