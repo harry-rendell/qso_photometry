@@ -70,3 +70,13 @@ def compute_colors(survey):
     colors['mean_ri'] = survey.df_pivot['mean_r'] - survey.df_pivot['mean_i']
     colors['mean_iz'] = survey.df_pivot['mean_i'] - survey.df_pivot['mean_z']
     return colors
+
+def split_into_non_overlapping_chunks(df, n):
+    """
+    Split the dataframe into n roughly equally sized chunks in such a way that the index does not 
+        overlap between chunks. Returns a list of DataFrames.
+    """
+    idx_quarters = np.percentile(df.index.values, q=np.linspace(0,100,n+1,dtype='int'), interpolation='nearest')
+    uids = [(idx_quarters[i],idx_quarters[i+1]) if i == 0 else (int(idx_quarters[i]+1),idx_quarters[i+1]) for i in range(n)] # Make non-overlapping chunks
+    chunks = [df.loc[uids[i][0]:uids[i][1]] for i in range(n)]
+    return chunks
