@@ -5,8 +5,9 @@ import matplotlib.pyplot as plt
 from scipy.stats import binned_statistic
 from bokeh.plotting import figure, output_notebook, show
 from bokeh.layouts import column
+from ..config import cfg
 
-wdir = '/disk1/hrb/python/'
+wdir = cfg.USER.W_DIR
 DTYPES = {'catalogue': np.uint8, 'mag': np.float32, 'magerr': np.float32, 'mjd': np.float64, 'uid': np.uint32, 'uid_s':np.uint32}
 
 def calc_moments(bins,weights):
@@ -114,7 +115,7 @@ class analysis():
 		print('Number of datapoints in:\nSDSS: {:,}\nPS: {:,}\nZTF: {:,}'.format((self.df['catalogue']==5).sum(),(self.df['catalogue']==7).sum(),(self.df['catalogue']==11).sum()))
 
 	def sdss_quick_look(self, uids):
-		if type(uids) is not list: uids = [uids]
+		if np.issubdtype(type(uids),np.integer): uids = [uids]
 		coords = self.coords.loc[uids].values
 		for ra, dec in coords:
 			print("https://skyserver.sdss.org/dr18/VisualTools/quickobj?ra={}&dec={}".format(ra, dec))
@@ -486,7 +487,7 @@ class analysis():
 		survey : 1 = SSS_r1, 3 = SSS_r2, 5 = SDSS, 7 = PS1, 11 = ZTF
 		TODO: survey should really be surveyID (better than cat)
 		"""
-		if type(uids) is not list: uids = [uids]
+		if np.issubdtype(type(uids),np.integer): uids = [uids]
 		if axes is None:
 			fig, axes = plt.subplots(len(uids),1,figsize = (25,3*len(uids)), sharex=True)
 		if len(uids)==1:
@@ -494,16 +495,20 @@ class analysis():
 		for uid, ax in zip(uids,axes):
 			single_obj = self.df.loc[uid].sort_values('mjd')
 			if len(filtercodes)>1:
+				# Plot multiple bands
 				for band in filtercodes:
 					single_band = single_obj[single_obj['filtercode']==band]
 					if survey is not None:
+						# Restrict data to a single survey
 						single_band = single_band[single_band['catalogue']==survey]
 					for cat in single_band['catalogue'].unique():
 						x = single_band[single_band['catalogue']==cat]
 						ax.errorbar(x['mjd'], x['mag'], yerr = x['magerr'], lw = 0.5, markersize = 3, marker = self.marker_dict[cat], label = self.survey_dict[cat]+' '+band, color = self.plt_color[band])
 
 			else:
+				# Plot a single band
 				if survey is not None:
+					# Restrict data to a single survey
 					single_obj = single_obj[single_obj['catalogue']==survey]
 				for cat in single_obj['catalogue'].unique():
 					x = single_obj[single_obj['catalogue']==cat]
@@ -512,6 +517,9 @@ class analysis():
 				ax.axhline(y=mean, color='k', ls='--', lw=0.4, dashes=(50, 20))
 				
 				if show_outliers:
+					"""
+					requires having computed MAD previously
+					"""
 					mjd, mag, MAD = single_obj.loc[single_obj['MAD']>0.25, ['mjd','mag', 'MAD']].values.T
 					ax.scatter(mjd, mag, s=100)
 					string = ', '.join(['{:.3f}' for _ in MAD]).format(*MAD)
