@@ -65,57 +65,17 @@ class obj_survey():
 		self.name = survey
 #		 self.plt_color = {'u':'m', 'g':'g', 'r':'r','i':'k','z':'b'}[band]
 
-	def read_in_raw(self, nrows=None, melted=False, save=False):
+	def read_in_raw(self, nrows=None, save=False):
 		"""
 		Read in raw survey data. All dataframes returned have index_col = [uid, filtercode]
 
 		Parameters
 		----------
 		nrows  : number of rows to read in
-		melted : boolean, true to return melted dataframe
 		save   : boolean, true to save melted dataframe to file
 		"""
 		if self.name == 'sdss':
-# 			if melted:
-# 			# Set to true if we want to melt the raw data
-# 			# Set to false to return unmelted data
-# 				if save:
-# 				# Set to true if we would like to save the melted table for future use
-# 				# Set to false if instead we would like to read the melted table
-# 					cols = [self.ID] + [x for y in zip(['mag_'+b for b in 'griz'], ['magerr_'+b for b in 'griz']) for x in y] + ['mjd_r','get_nearby_distance']
-# 					self.df = pd.read_csv('data/surveys/sdss/{}/{}Secondary.csv'.format(self.obj,self.obj), nrows=nrows, index_col=self.ID, usecols=cols)
-					
-# 					# remove observations outside a certain radius. Here we use 1"
-# 					self.df = self.df[self.df['get_nearby_distance'] < 1.0/60.0]
-					
-# 					# make observation ID
-# 					self.df['obsid'] = range(1,len(self.df)+1)
-					
-# 					# Add columns for colors
-# 					for b1, b2 in zip('gri','riz'):
-# 						self.df[b1+'-'+b2] = self.df['mag_'+b1] - self.df['mag_'+b2]
-
-# 					df_sdss_unpivot1 = pd.melt(self.df, id_vars = 'obsid', value_vars = ['mag_'   +b for b in 'griz'], var_name = 'filtercode', value_name = 'mag')
-# 					df_sdss_unpivot2 = pd.melt(self.df, id_vars = 'obsid', value_vars = ['magerr_'+b for b in 'griz'], var_name = 'filtercode', value_name = 'magerr')
-
-# 					df_sdss_unpivot1['filtercode'] = df_sdss_unpivot1['filtercode'].str[-1]
-# 					df_sdss_unpivot2['filtercode'] = df_sdss_unpivot2['filtercode'].str[-1]
-
-# 					self.df_sdss_melted = pd.merge(self.df.reset_index()[[self.ID,'obsid','mjd']], pd.merge(df_sdss_unpivot1, pd.merge(df_sdss_unpivot2, self.df[['obsid','g-r','r-i','i-z']], on='obsid'), on = ['obsid','filtercode']), on = 'obsid').set_index([self.ID,'filtercode']).drop('obsid',axis=1)
-# 					self.df_sdss_melted.to_csv(wdir+'data/surveys/sdss/{}/{}Secondary_melt.csv'.format(self.obj,self.obj))
-
-# 				else:
-# 					self.df = pd.read_csv(wdir+'data/surveys/sdss/{}/{}Secondary_melt.csv'.format(self.obj,self.obj), nrows=nrows, index_col=[self.ID,'filtercode'])
-# 			else:
-# 			self.df = pd.read_csv(wdir+'data/surveys/sdss/{}/sdss_secondary.csv'.format(self.obj), nrows=nrows, index_col=self.ID)
-			if melted:
-				self.df = pd.read_csv(wdir+'data/surveys/sdss/{}/sdss_secondary.csv'.format(self.obj), nrows=nrows, index_col=[self.ID, 'filtercode'])
-			else:
-				cols = [self.ID] + [x for y in zip(['mag_'+b for b in 'ugriz'], ['magerr_'+b for b in 'ugriz']) for x in y] + ['mjd']
-				self.df = pd.read_csv(wdir+'data/surveys/sdss/{}/sdss_secondary_unmelted.csv'.format(self.obj), nrows=nrows, usecols=cols, index_col=self.ID)
-	# 			Add columns for colors
-				for b1, b2 in zip('gri','riz'):
-					self.df[b1+'-'+b2] = self.df['mag_'+b1] - self.df['mag_'+b2]
+			self.df = pd.read_csv(wdir+'data/surveys/sdss/{}/sdss_secondary.csv'.format(self.obj), nrows=nrows, index_col=[self.ID, 'filtercode'])
 
 		elif self.name == 'ps':
 			# Check ps_secondary.csv to see if it has sources outside 1"
