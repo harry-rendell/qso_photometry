@@ -11,17 +11,37 @@ def reader(args):
 	dtypes = kwargs['dtypes'] if 'dtypes' in kwargs else None
 	nrows  = kwargs['nrows']  if 'nrows'  in kwargs else None
 	usecols = kwargs['usecols'] if 'usecols' in kwargs else None
+	skiprows = kwargs['skiprows'] if 'skiprows' in kwargs else None
 	basepath = kwargs['basepath']
-	return pd.read_csv(basepath+'lc_{}.csv'.format(i), 
-					   comment='#',
-					   dtype=dtypes,
-					   nrows=nrows)
 
+	# Open the file and skip any comments. Leave the file object pointed to the header.
+	# Pass in the header in case we decide to skip rows.
+	with open(basepath+'lc_{}.csv'.format(i)) as file:
+		ln = 0
+		for line in file:
+			ln += 1
+			if not line.strip().startswith("#"):
+				names = line.replace('\n','').split(',')
+				break
+		return pd.read_csv(file,
+						   usecols=usecols,
+						   dtype=dtypes,
+						   nrows=nrows,
+						   names=names,
+						   skiprows=skiprows)
+# @profile
 def dispatch_reader(kwargs):
+	"""
+	Dispatching function for reader
+	"""
 	if __name__ == 'funcs.preprocessing.data_io':
 		pool = Pool(cfg.USER.N_CORES)
-		df_list = pool.map(reader, [(i, kwargs) for i in range(4)]) # This 4 is dictated by how many chunks we have split our data into. Currently 4.
-		return pd.concat(df_list, ignore_index=True).set_index('uid')
+		df = pool.map(reader, [(i, kwargs) for i in range(4)]) # This 4 is dictated by how many chunks we have split our data into. Currently 4.
+		df = pd.concat(df, ignore_index=True) # overwrite immediately for prevent holding unnecessary dataframes in memory
+		if 'ID' in kwargs:
+			return df.set_index(kwargs['ID'])
+		else:
+			return df
 
 def writer(args):
 	"""
@@ -29,12 +49,24 @@ def writer(args):
 	"""
 	i, chunk, kwargs = args
 	mode = kwargs['mode'] if 'mode' in kwargs else 'w'
-	f = open(kwargs['basepath']+'lc_{}.csv'.format(i), mode)
+	if 'basepath' in kwargs:
+		basepath = kwargs['basepath']
+	else:
+		raise Exception('user must provide path for saving output')
+
+	# if folder does not exist, create it
+	if not os.path.exists(basepath):
+		os.makedirs(basepath)
+
+	f = open(basepath+'lc_{}.csv'.format(i), mode)
 	if 'comment' in kwargs:
 		f.write(kwargs['comment'])
 	chunk.to_csv(f)
 
 def dispatch_writer(chunks, kwargs):
+	"""
+	Dispatching function for writer
+	"""
 	if __name__ == 'funcs.preprocessing.data_io':
 		pool = Pool(cfg.USER.N_CORES)
 		pool.map(writer, [(i, chunk, kwargs) for i, chunk in enumerate(chunks)])
