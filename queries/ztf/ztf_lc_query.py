@@ -8,11 +8,11 @@ def split_save(oid_batch,n,i):
 	oid_batch_half = np.array_split(oid_batch,2)
 	# Note: clrcounc provides uncertainty in clrcoeff. Could be used to propogate errors in transformation but this is not currently implemented.
 	# On further inspection, the max and median of clrcounc are on the order 1e-2 and 1e-5 respectively across our data, which is too small to worry about given mag uncertainties
-	df = pd.DataFrame(columns=['oid','mjd','mag','magerr','filtercode','magzp','clrcoeff'])
+	df = pd.DataFrame(columns=['oid','mjd','mag','magerr','filtercode','clrcoeff','limitmag'])
 	for j, oids in enumerate(oid_batch_half):
 		url = base_url.format(''.join(['&ID='+str(oid) for oid in oids])[1:])
 		try:
-			df_sub = pd.read_csv(url, usecols = ['oid', 'mjd', 'mag','magerr','filtercode','magzp','clrcoeff','clrcounc'])
+			df_sub = pd.read_csv(url, usecols = ['oid','mjd','mag','magerr','filtercode','clrcoeff','limitmag'])
 			df = df.append(df_sub)
 		except:
 			print('error downloading batch {}, {}/{}'.format(n, i, n_request))

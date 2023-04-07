@@ -19,7 +19,7 @@ pd.options.mode.chained_assignment = None
 import numpy as np
 import matplotlib.pyplot as plt
 from funcs.analysis.analysis import *
-from config import cfg
+from funcs.config import cfg
 import time
 # %matplotlib inline
 
@@ -30,7 +30,7 @@ obj = 'qsos'
 ID = 'uid'
 band = 'r'
 dr = analysis(ID, obj, band)
-dr.read_in(reader, redshift=False, cleaned=False, nrows=10000)
+dr.read_in(redshift=False, cleaned=False, nrows=100)
 dr.df['mjd_floor'] = np.floor(dr.df['mjd']).astype('int')
 dr.group(keys=[ID], read_in=True, redshift=False, colors=False, survey='all', restrict=True) # previously we read in grouped explicitly and used it. Now changed to dr.df_grouped
 
@@ -55,7 +55,26 @@ print('-'*20)
 
 frac = dr.df.reset_index().duplicated(subset=['uid','mjd_floor'], keep='first').sum()/len(dr.df)
 print('Total observations within the same night of the same object: {:.2f}%'.format(frac*100))
+
+# + active=""
+# test = ztf.groupby(['uid','mjd_floor']).agg({'mag':np.ptp})
+
+# + active=""
+# test = ztf.groupby(['uid','mjd_floor']).size()
+
+# + active=""
+# test2 = test.reset_index('mjd_floor').loc[:,0].sort_values(ascending=False)
+
+# + active=""
+# fig, ax= plt.subplots(1,1, figsize=(16,10))
+# ax.hist(test2, bins=100);
+# ax.set(yscale='log', ylabel='counts', xlabel='number of observations per night')
 # -
+
+# # dr.coords
+
+# Proof that ZTF errors are grossly underestimated
+dr.plot_series([471006], xlim=[58298.35,58298.43])
 
 dr.summary() # gives us dr.n_qsos
 frac = len(dr.df[dr.df.reset_index().duplicated(subset=['uid','mjd_floor'], keep='first').values].index.unique())/dr.n_qsos
@@ -133,7 +152,7 @@ for cat, ax in zip([5,7,11],axes.ravel()):
     ax.legend()
     ax.set(xlabel='mjd mod 1', yscale='log')
 
-CHECK_OBS_DIFFERENT_SURVEY_ON_SAME_DAY = True
+CHECK_OBS_DIFFERENT_SURVEY_ON_SAME_DAY = False
 if CHECK_OBS_DIFFERENT_SURVEY_ON_SAME_DAY:
     # Check that we do not have multiple observations from different surveys that lie on the same day.
     # If we do, we need to treat them differently.
@@ -182,7 +201,7 @@ def average_nightly_obs(group):
                 with open('average_nightly_obs_log.txt','a+') as file:
                     file.write(err_msg)
             else:
-                mag = mag[mask] 
+                mag = mag[mask]
                 magerr = magerr[mask]
                 mjd = mjd[mask]
 
@@ -201,15 +220,35 @@ multi_obs = dr.df[mask] # observations that have at least one other observation 
 # del dr.df # We don't need this DataFrame anymore, delete it for memory management
 # -
 
+multi_obs_ps = multi_obs[multi_obs['catalogue']==7]
+multi_obs_ps_ptp = multi_obs_ps.groupby(['uid','mjd_floor']).agg({'mag':np.ptp})
+
+multi_obs_ztf = multi_obs[multi_obs['catalogue']==11]
+multi_obs_ztf_ptp = multi_obs_ztf.groupby(['uid','mjd_floor']).agg({'mag':np.ptp})
+
+fig, ax = plt.subplots(1,1, figsize=(20,5))
+ax.hist(multi_obs_ztf_ptp, bins=100)
+ax.set(yscale='log', ylabel='counts',xlabel='∆m for observations within a night for ZTF (mag)')
+
+fig, ax = plt.subplots(1,1, figsize=(20,5))
+ax.hist(multi_obs_ps_ptp, bins=100)
+ax.set(yscale='log', ylabel='counts',xlabel='∆m for observations within a night for PS (mag)')
+
+uids = multi_obs_ztf_ptp[multi_obs_ztf_ptp['mag'] > 2].head(10).index.get_level_values(0)
+dr.plot_series(uids, survey=11, filtercodes='r')
+
+uids = multi_obs_ps_ptp[multi_obs_ps_ptp['mag'] > 2].head(10).index.get_level_values(0)
+dr.plot_series(uids, survey=7, filtercodes='r')
+
+# ---
+
 test_objects = analysis(ID, obj, band)
 test_objects.df = dr.df.loc[np.random.choice(multi_obs.index.unique(),size=10)]
 
 # +
 start = time.time()
 if cfg.USER.USE_MULTIPROCESSING:
-    idx_quarters = [multi_obs.index[len(multi_obs.index)//4*i] for i in range(5)]
-    uids = [(idx_quarters[i],idx_quarters[i+1]) if i == 0 else (int(idx_quarters[i]+1),idx_quarters[i+1]) for i in range(4)] # Make non-overlapping chunks
-    chunks = [multi_obs.loc[uids[i][0]:uids[i][1]] for i in range(4)]
+    chunks = split_into_non_overlapping_chunks(multi_obs, 4)
     # del multi_obs # We don't need this DataFrame anymore, delete it for memory management
 
     # For multiprocessing
@@ -283,6 +322,7 @@ clean_phot = dr.df[['catalogue','mjd','mag','magerr']].groupby(ID).apply(remove_
 end   = time.time()
 print('Elapsed:',time.strftime("%Hh %Mm %Ss",time.gmtime(end-start)))
 
+
 # +
 # # testing outlier detection
 # fig, ax = dr.plot_series(uids, survey=3, filtercodes='r')
@@ -297,12 +337,13 @@ print('Elapsed:',time.strftime("%Hh %Mm %Ss",time.gmtime(end-start)))
 
 # ### save processed data
 
-#### def save(args):
+def save(args):
     i, chunk = args
     f = open('/disk1/hrb/python/data/merged/{}/{}_band/lc_{}.csv'.format(obj,band,i), 'w')
     comment = '# CSV of cleaned photometry.\n# Data has been averaged nightly and outliers have been removed\n'
     f.write(comment)
     chunk.to_csv(f)
+
 
 # multiprocesssor
 chunks = np.array_split(clean_phot,4)
