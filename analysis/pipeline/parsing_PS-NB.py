@@ -14,12 +14,17 @@
 
 import pandas as pd
 import numpy as np
-from astropy.table import Table
-from astropy.io import ascii
-# from funcs.api_ps import retrieve_lightcurve_ps
-import matplotlib.pyplot as plt
-# %matplotlib inline
-path = '/disk1/hrb/python/data/surveys/ps/'
+from multiprocessing import Pool
+import os
+import sys
+sys.path.append('../')
+from funcs.config import cfg
+from funcs.preprocessing import parse, colour_transform, data_io
+
+OBJ    = 'qsos'
+ID     = 'uid'
+BAND   = 'r'
+wdir = cfg.USER.W_DIR
 
 # The query used to obtain this located in /queries/PS_nearby_search.txt and shown below. It finds all objects up to 2.4" around the dr14qso catalogue coordinate pairs. If a neighbour was found in SDSS within 2.4" then this is used as the upper bound of the search to prevent mismatching. 
 
@@ -36,26 +41,82 @@ path = '/disk1/hrb/python/data/surveys/ps/'
 #
 # cross apply dbo.fGetNearbyObjEq(q.ra_ref, q.dec_ref, q.sep) as nb
 # join StackObjectThin o on o.objid = nb.objid where o.primaryDetection = 1
+
+# +
+# ps_secondary = pd.read_csv(path + 'calibStars_psoids.csv'.format(),)
+# ps_secondary.head()
 # -
 
-ps_data = pd.read_csv(path + 'calibStars_psoids.csv',float_precision = 'round trip', index_col=0)
-ps_data.head()
+cols = [ID, 'objID', 'filter', 'obsTime', 'psfFlux', 'psfFluxErr']
+ps_secondary = pd.read_csv(wdir + 'data/surveys/ps/{}/ps_secondary.csv'.format(OBJ), dtype=cfg.COLLECTION.PS.dtypes, nrows=None, usecols=cols).set_index(ID).rename({'filter':'filtercode'})
+ps_neighbours = pd.read_csv(wdir + 'data/surveys/ps/{}/dr14q_ps_neighbours.csv'.format(OBJ), dtype=cfg.COLLECTION.PS.dtypes).set_index(ID)
+ps_neighbours['sep'] *= 60
 
 # We are querying StackObjectThin thus we expect a one to one match, however, sometimes additional IDs are returned. We filter these out. There are about 421 of these duplicates.
 
-print('Before dropping:',ps_data.shape)
-ps_data.drop_duplicates(subset = 'objID_ps',inplace = True)
-print('After dropping: ',ps_data.shape)
+CHECK_MAX_SEP = True
+if CHECK_MAX_SEP:
+    # Note, we queried PanSTARRS for objects within 1". To check this, we can join the coord query table from mastweb and sort by separation to show sep<1"
+    ps_secondary_merged = ps_secondary.join(ps_neighbours, on='uid', lsuffix='_ps')
+    ps_secondary_merged.sort_values('sep', ascending=False)
 
-# Let's look at the neighbours we picked up.
+CHECK_FOR_NON_UNIQUE_MATCHES = True
+if CHECK_FOR_NON_UNIQUE_MATCHES:
+    # Display cases where both ID and objID_ps are duplicated
+    print('-'*50)
+    print('Duplicate rows:')
+    mask = ps_neighbours.reset_index().duplicated([ID,'objID_ps'], keep=False).values
+    display(ps_neighbours[mask])
+    ps_neighbours_no_duplicates = ps_neighbours[~mask]
+    
+    # Display cases where one uid matches to multiple PS objIDs, or vice versa
+    print('-'*50)
+    print('Non 1-to1 matches:')
+    mask1 = ps_neighbours_no_duplicates.index.duplicated(keep=False)
+    mask2 = ps_neighbours_no_duplicates.duplicated('objID_ps', keep=False)
+    display(ps_neighbours_no_duplicates[(mask1 ^ mask2)])
 
-ps_dup = ps_data[ps_data.index.duplicated(keep = False)]
+# Given we have duplicates/non unique matches above, remove them here by selecting the closest objID for each uid.
+ps_neighbours_sorted = ps_neighbours.sort_values('sep', ascending=True)
+mask = ps_neighbours_sorted.index.duplicated(keep='first')
+print('Number of duplicates and non-unique matches removed: {:,}'.format(mask.sum()))
+print('Number of unique matches: {:,}'.format((~mask).sum()))
+ps_primary_matches = ps_neighbours_sorted[~mask].sort_values(ID)
+assert ps_primary_matches.index.is_unique
+assert ps_primary_matches['objID_ps'].is_unique
 
-ps_dup = ps_dup.sort_values('sep')
-mask = ps_dup.index.duplicated(keep = 'first')
-primary   = ps_dup[~mask]
-plt.hist(primary['sep'],bins = 100);
-# secondary = ps_dup[mask].drop_duplicates(subset = 'uid', keep = 'first') # find neighbours and get rid of additional neighbours
+objIDs_ps_to_keep = ps_primary_matches['objID_ps'].values
+
+mask = ps_secondary['objID'].isin(objIDs_ps_to_keep)
+print('Number of non-primary objID observations: {:,}'.format((~mask).sum()))
+df_ps = ps_secondary[mask]
+
+print('Number of unique matches for which we have photometry: {:,}'.format(len(df_ps['objID'].unique())))
+
+# ### Convert fluxes to mags
+
+df_ps = df_ps[df_ps['psfFlux']!=0]
+df_ps = df_ps.rename(columns = {'obsTime': 'mjd', 'filter': 'filtercode'})
+df_ps['mag'] = -2.5*np.log10(df_ps['psfFlux']) + 8.90
+df_ps['magerr'] = 1.086*df_ps['psfFluxErr']/df_ps['psfFlux']
+df_ps = df_ps.drop(['psfFlux','psfFluxErr','objID'], axis = 1)
+df_ps = df_ps.set_index('filtercode', append=True)
+
+# # Save data
+# ---
+
+# +
+# Add comment to start of csv file
+comment = """# CSV of photometry with no other preprocessing or cleaning.
+# mag : transformed photometry in native PanSTARRS photometric system\n"""
+
+for band in 'griz':
+    chunks = parse.split_into_non_overlapping_chunks(df_ps.loc[pd.IndexSlice[:, band],:].droplevel('filtercode'), 4)
+    # keyword arguments to pass to our writing function
+    kwargs = {'comment':comment,
+              'basepath':cfg.USER.W_DIR + 'data/surveys/ps/{}/unclean/{}_band/'.format(OBJ, band)}
+
+    data_io.dispatch_writer(chunks, kwargs)
 
 # +
 # Finding mismatched objects

@@ -15,9 +15,15 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-path = '/disk1/hrb/python/'
-obj = 'qsos'
-ID = 'uid'
+import os
+import sys
+sys.path.append('../')
+from funcs.config import cfg
+from funcs.preprocessing import colour_transform, parse, data_io
+
+OBJ    = 'qsos'
+ID     = 'uid'
+wdir = cfg.USER.W_DIR
 
 # Query used to obtain data (context = DR16):
 
@@ -36,6 +42,9 @@ ID = 'uid'
 #
 # join PhotoPrimary p on p.objid=nb.objid
 # join specobj as s on s.bestobjid=p.objid
+# -
+
+SAVE = False
 
 # +
 datatype = {'uid': np.uint32,   'objID'  : np.uint64, 
@@ -43,7 +52,7 @@ datatype = {'uid': np.uint32,   'objID'  : np.uint64,
             'dec': np.float128, 'dec_ref': np.float128,
             'get_nearby_distance': np.float64}
 
-sdss_data = pd.read_csv(path + 'data/retrieved_data/dr14q_nearby_3arcsec_class.csv', dtype = datatype, float_precision = 'round trip')
+sdss_data = pd.read_csv(wdir + 'data/retrieved_data/dr14q_nearby_3arcsec_class.csv', dtype = datatype, float_precision = 'round trip')
 # -
 
 print('shape:',sdss_data.shape)
@@ -78,7 +87,7 @@ merged.head()
 
 # +
 #Merge sdss qsos with our original dr14q list
-dr14q_coords = pd.read_csv(path + 'data/catalogues/qsos/dr14q/dr14q_uid_coords.csv', dtype = {'ra': np.float128, 'dec': np.float128, 'uid': np.uint64})
+dr14q_coords = pd.read_csv(wdir + 'data/catalogues/qsos/dr14q/dr14q_uid_coords.csv', dtype = {'ra': np.float32, 'dec': np.float32, 'uid': np.uint64})
 merged.sort_values('uid',inplace = True)
 
 new_search = merged[['uid','class','get_nearby_distance_nb']]
@@ -92,18 +101,20 @@ new_search_dr14q = new_search_dr14q.rename(columns={'get_nearby_distance_nb': 's
 drqsdss = pd.merge(dr14q_coords, merged[['uid','objID','class']], how = 'left', on = 'uid')
 drqsdss.fillna(0.0, inplace = True)
 drqsdss = drqsdss.astype({'objID': 'int64'})
-# drqsdss.to_csv(path + 'coords/dr14q_coords_unique.csv', index = False)
+if SAVE:
+    drqsdss.to_csv(wdir + 'coords/dr14q_coords_unique.csv', index = False)
 # -
+
+
 
 sdss_dr14q_filtered = merged[['uid','objID','ra_ref','dec_ref','get_nearby_distance_nb']]
 sdss_dr14q_filtered = sdss_dr14q_filtered.fillna(0.05)
 sdss_dr14q_filtered['get_nearby_distance_nb'] += -0.01 # subtract a small amount from the upper search radius to prevent picking neighbours.
 #remove 4 qsos because they don't match up
 
-sdss_dr14q_filtered.to_csv(path + 'data/catalogues/qsos/dr14q/sdss_secondary_search_coords.csv', index = False)
+if SAVE:
+    sdss_dr14q_filtered.to_csv(wdir + 'data/catalogues/qsos/dr14q/sdss_secondary_search_coords.csv', index = False)
 sdss_dr14q_filtered
-
-sdss_dr14q_filtered['get_nearby_distance_nb'].sort_values()
 
 # Distribution of search radius
 fig, ax = plt.subplots()
@@ -145,11 +156,11 @@ dtype1 =   {'uid': np.uint32, 'objID'  : np.uint64,
             'get_nearby_distance': np.float64}
 dtype2 = {band + 'psf'   : np.float64 for band in 'ugriz'}
 dtype3 = {band + 'psferr': np.float64 for band in 'ugriz'}
-cols = [ID] + [x for y in zip(['mag_'+b for b in 'griz'], ['magerr_'+b for b in 'griz']) for x in y] + ['mjd_r','get_nearby_distance']
+cols = [ID] + [x for y in zip(['mag_'+b for b in 'griz'], ['magerr_'+b for b in 'griz']) for x in y] + ['mjd','get_nearby_distance']
 
 
 # +
-sdss_unmelted = pd.read_csv(path+'data/surveys/sdss/{}/sdss_secondary_unmelted.csv'.format(obj), index_col=ID, usecols=cols, dtype = {**dtype1, **dtype2, **dtype3})
+sdss_unmelted = pd.read_csv(wdir+'data/surveys/sdss/{}/sdss_secondary_unmelted.csv'.format(OBJ), index_col=ID, usecols=cols, dtype = {**dtype1, **dtype2, **dtype3})
 
 # make observation ID
 sdss_unmelted['obsid'] = range(1,len(sdss_unmelted)+1)
@@ -168,19 +179,43 @@ df_sdss_unpivot1['filtercode'] = df_sdss_unpivot1['filtercode'].str[-1]
 df_sdss_unpivot2['filtercode'] = df_sdss_unpivot2['filtercode'].str[-1]
 
 sdss_melted = pd.merge(sdss_unmelted.reset_index()[[ID,'obsid','mjd']], pd.merge(df_sdss_unpivot1, pd.merge(df_sdss_unpivot2, sdss_unmelted[['obsid','g-r','r-i','i-z']], on='obsid'), on = ['obsid','filtercode']), on = 'obsid').set_index([ID,'filtercode']).drop('obsid',axis=1)
+
+# +
+### TODO:
+# Check: are we definitely removing objects that are >1"? 
 # -
 
-# Save output from above
-sdss_melted.to_csv(path+'data/surveys/sdss/{}/sdss_secondary.csv'.format(obj))
+# # Transform to PanSTARRS
+# ---
 
-# For some reason, our upper search limit is not working when we have nearby objects. Why? Perhaps due to class? SDSS why u no find nearby obj. If it just doesnt work then we will just cut objects with displacement >1"
+sdss_transformed = colour_transform.transform_sdss_to_ps(sdss_melted, color='g-r', system='tonry')
 
-# # Making sure mjd_ugriz does not vary by more than 1 day
+# # Save data
+# ---
 
-df_ugriz = pd.read_csv(path + 'retrieved_data/dr14q_secondary_mjdfloat_test.csv')
-std = df_ugriz[['mjd_' + band for band in 'ugriz']].std(axis=1)
-std.nlargest(5)
+# +
+# Add comment to start of csv file
+comment = """# CSV of photometry transformed to PS with no other preprocessing or cleaning.
+# mag      : transformed photometry in PanSTARRS photometric system
+# mag_orig : original photometry in native SDSS photometric system.\n"""
 
-# Observations in different bands are taken within 0.001311 days (2 mins) of eachother. Thus we can take a single band timestamp.
+for band in 'griz':
+    chunks = parse.split_into_non_overlapping_chunks(sdss_transformed.loc[pd.IndexSlice[:, band],:].droplevel('filtercode'), 4)
+    # keyword arguments to pass to our writing function
+    kwargs = {'comment':comment,
+              'basepath':cfg.USER.W_DIR + 'data/surveys/sdss/{}/unclean/{}_band/'.format(OBJ, band)}
 
-'{:0.20f}'.format((np.array([54741.371761], dtype = np.float64))[0])
+    data_io.dispatch_writer(chunks, kwargs)
+# -
+
+# ___
+# ### Extra checks: Making sure mjd_ugriz does not vary by more than 1 day
+# ___
+
+# The following shoes that observations in different bands are taken within 0.001311 days (2 mins) of eachother. Thus we can take a single band timestamp.
+
+CHECK_TIME_DIFF = False
+if CHECK_TIME_DIFF:
+    df_ugriz = pd.read_csv(path + 'retrieved_data/dr14q_secondary_mjdfloat_test.csv')
+    std = df_ugriz[['mjd_' + band for band in 'ugriz']].std(axis=1)
+    std.nlargest(5)
