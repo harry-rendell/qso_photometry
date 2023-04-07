@@ -11,8 +11,9 @@ cfg = __C
 import numpy as np
 
 
+#------------------------------------------------------------------------------
 # User settings
-# ============================
+#------------------------------------------------------------------------------
 __C.USER = edict()
 
 # Working directory
@@ -25,14 +26,17 @@ __C.USER.USE_MULTIPROCESSING = True
 __C.USER.N_CORES = 4
 
 
-
-# Collection
-# ============================
+#------------------------------------------------------------------------------
+# Data collection configurables
+#------------------------------------------------------------------------------
 __C.COLLECTION = edict()
 # These dtypes should be checked against the datatypes provided when fetching lightcurve data
 # float32 - float
 # float64 - double
-__C.COLLECTION.SDSS_dtypes = {
+
+__C.COLLECTION.SDSS = edict()
+# Datatypes
+__C.COLLECTION.SDSS.dtypes = {
 					'mjd': np.float32,
 					'mag': np.float32, # converted from real[4] with similar precision
 					'magerr': np.float32, # converted from real[4] with similar precision
@@ -43,7 +47,9 @@ __C.COLLECTION.SDSS_dtypes = {
 					'i-z': np.float32
 						 }
 
-__C.COLLECTION.PS_dtypes = {
+__C.COLLECTION.PS = edict()
+# Datatypes
+__C.COLLECTION.PS.dtypes = {
 					'objID': np.uint64, 
 					'obsTime': np.float32, # converted from float[8] with reduced precision
 					'psfFlux': np.float64, # converted from float[8] with similar precision. Since this is flux we use double precision.
@@ -55,7 +61,9 @@ __C.COLLECTION.PS_dtypes = {
 					'uid_s': np.uint32
 						 }
 
-__C.COLLECTION.ZTF_dtypes = {
+__C.COLLECTION.ZTF = edict()
+# Datatypes
+__C.COLLECTION.ZTF.dtypes = {
 					'oid': np.uint64, # note, uint32 is not large enough for ztf oids
 					'clrcoeff': np.float32,
 					'clrcounc': np.float32,
@@ -70,15 +78,57 @@ __C.COLLECTION.ZTF_dtypes = {
 # 'uid': np.uint32,
 # 'uid_s':np.uint32,
 # 'catalogue': np.uint8,
+#------------------------------------------------------------------------------
 # Preprocessing
-# ============================
+#------------------------------------------------------------------------------
 __C.PREPROC = edict()
+
+# Datatypes
+__C.PREPROC.dtypes = {
+					'mjd': np.float32,
+					'mag': np.float32,
+					'mag_orig': np.float32,
+					'magerr': np.float32,
+					'uid': np.uint32,
+					'uid_s': np.uint32,
+					}
+
+# Limiting magnitudes
+__C.PREPROC.LIMIT_MAG = edict()
+
+# https://www.sdss4.org/dr16/imaging/other_info/
+# 5 sigma limiting magnitudes
+__C.PREPROC.LIMIT_MAG.SDSS = {
+							'u': 22.15,
+							'g': 23.13,
+							'r': 22.70,
+							'i': 22.20,
+							'z': 20.71
+							}
+
+# https://outerspace.stsci.edu/display/PANSTARRS/PS1+FAQ+-+Frequently+asked+questions
+# 5 sigma limiting magnitudes
+__C.PREPROC.LIMIT_MAG.PS = {
+							'g': 23.3,
+							'r': 23.2,
+							'i': 23.1,
+							'z': 22.3,
+							'y': 21.4
+							}
+
+# limitingmag can be fetched on a per-observation basis but below is an average
+# 5 sigma limiting magnitudes
+__C.PREPROC.LIMIT_MAG.ZTF = {
+							'g': 20.8,
+							'r': 20.6,
+							'i': 19.9
+							}
 
 # Magnitude error threshold
 __C.PREPROC.MAG_ERR_THRESHOLD = 0.198
 
 
-
+#------------------------------------------------------------------------------
 # Analysis
-# ============================
+#------------------------------------------------------------------------------
 __C.ANALYSIS = edict()
