@@ -1,4 +1,3 @@
-
 import pandas as pd
 from multiprocessing import Pool
 from ..config import cfg
@@ -70,3 +69,18 @@ def dispatch_writer(chunks, kwargs):
 	if __name__ == 'funcs.preprocessing.data_io':
 		pool = Pool(cfg.USER.N_CORES)
 		pool.map(writer, [(i, chunk, kwargs) for i, chunk in enumerate(chunks)])
+
+def dispatch_function(function, chunks, kwargs={}):
+	"""
+	Dispatch generic function on a set of chunks
+	"""
+	dtypes = kwargs['dtypes'] if 'dtypes' in kwargs else None
+	if __name__ == 'funcs.preprocessing.data_io':
+		pool = Pool(cfg.USER.N_CORES)
+		df = pool.map(function, [(chunk, kwargs) for chunk in chunks]) # This 4 is dictated by how many chunks we have split our data into. Currently 4.
+		df = pd.concat(df, ignore_index=False) # overwrite immediately for prevent holding unnecessary dataframes in memory
+		dtypes = {k:v for k,v in dtypes.items() if k in df.columns}
+		if 'ID' in kwargs:
+			return df.set_index(kwargs['ID']).astype(dtypes)
+		else:
+			return df.astype(dtypes)
