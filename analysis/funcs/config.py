@@ -84,14 +84,30 @@ __C.COLLECTION.ZTF.dtypes = {
 __C.PREPROC = edict()
 
 # Datatypes
-__C.PREPROC.dtypes = {
-					'mjd': np.float32,
-					'mag': np.float32,
-					'mag_orig': np.float32,
-					'magerr': np.float32,
-					'uid': np.uint32,
-					'uid_s': np.uint32,
-					}
+__C.PREPROC.lc_dtypes = {'mjd': np.float32,
+						 'mag': np.float32,
+						 'mag_orig': np.float32,
+						 'magerr': np.float32,
+						 'uid': np.uint32,
+						 'uid_s': np.uint32}
+
+__C.PREPROC.stats_dtypes = {'n_tot': np.uint16, # Increase this to uint32 if we think we will have more than 2^16 (65,536) observations for a single object
+						    'mjd_min': np.float32,
+						    'mjd_max': np.float32,
+						    'mjd_ptp': np.float32,
+						    'mag_min': np.float32,
+						    'mag_max': np.float32,
+						    'mag_mean': np.float32,
+						    'mag_med': np.float32,
+						    # 'mag_mean_native': np.float32,
+						    # 'mag_med_native': np.float32,
+						    'mag_opt_mean': np.float32,
+						    'mag_opt_mean_flux': np.float32,
+						    'mag_std': np.float32,
+						    'magerr_max': np.float32,
+						    'magerr_mean': np.float32,
+						    'magerr_med': np.float32,
+						    'magerr_opt_std': np.float32}
 
 # Limiting magnitudes
 __C.PREPROC.LIMIT_MAG = edict()
