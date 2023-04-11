@@ -29,14 +29,21 @@ def reader(args):
 						   names=names,
 						   skiprows=skiprows)
 # @profile
-def dispatch_reader(kwargs):
+def dispatch_reader(kwargs, multiproc=True, i=0):
 	"""
 	Dispatching function for reader
 	"""
-	if __name__ == 'funcs.preprocessing.data_io':
-		pool = Pool(cfg.USER.N_CORES)
-		df = pool.map(reader, [(i, kwargs) for i in range(4)]) # This 4 is dictated by how many chunks we have split our data into. Currently 4.
-		df = pd.concat(df, ignore_index=True) # overwrite immediately for prevent holding unnecessary dataframes in memory
+	if multiproc:
+		if __name__ == 'funcs.preprocessing.data_io':
+			pool = Pool(cfg.USER.N_CORES)
+			df = pool.map(reader, [(j, kwargs) for j in range(4)]) # This 4 is dictated by how many chunks we have split our data into. Currently 4.
+			df = pd.concat(df, ignore_index=True) # overwrite immediately for prevent holding unnecessary dataframes in memory
+			if 'ID' in kwargs:
+				return df.set_index(kwargs['ID'])
+			else:
+				return df
+	else:
+		df = reader((i, kwargs))
 		if 'ID' in kwargs:
 			return df.set_index(kwargs['ID'])
 		else:
