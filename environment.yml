@@ -373,4 +373,3 @@ dependencies:
     - tf-estimator-nightly==2.5.0.dev2021030701
     - tf-nightly==2.5.0.dev20210307
     - webbpsf==0.9.0
-prefix: /disk1/hrb/anaconda3/envs/astroconda
