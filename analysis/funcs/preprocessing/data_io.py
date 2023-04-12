@@ -1,5 +1,6 @@
 import pandas as pd
 from multiprocessing import Pool
+import os
 from ..config import cfg
 
 def reader(args):
@@ -84,7 +85,7 @@ def dispatch_function(function, chunks, kwargs={}):
 	dtypes = kwargs['dtypes'] if 'dtypes' in kwargs else None
 	if __name__ == 'funcs.preprocessing.data_io':
 		pool = Pool(cfg.USER.N_CORES)
-		df = pool.map(function, [(chunk, kwargs) for chunk in chunks]) # This 4 is dictated by how many chunks we have split our data into. Currently 4.
+		df = pool.map(function, [chunk for chunk in chunks]) # This 4 is dictated by how many chunks we have split our data into. Currently 4.
 		df = pd.concat(df, ignore_index=False) # overwrite immediately for prevent holding unnecessary dataframes in memory
 		dtypes = {k:v for k,v in dtypes.items() if k in df.columns}
 		if 'ID' in kwargs:
