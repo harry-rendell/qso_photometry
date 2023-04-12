@@ -6,13 +6,38 @@ from ..config import cfg
 #     df, kwargs = args
 #     return df.groupby(df.index.names).apply(stats).apply(pd.Series).astype(cfg.PREPROC.stats_dtypes)
 
-def groupby_apply_stats(args):
-    df, kwargs = args
-    s = df.groupby(df.index.names).apply(stats)
+def groupby_apply_average(df):
+    s = df.groupby([df.index.name, 'mjd_floor']).apply(average_nightly_obs)
+    return pd.DataFrame(s.values.tolist(), index=s.index, dtype='float32').reset_index('mjd_floor', drop=True)
+
+def groupby_apply_stats(df):
+    s = df.groupby(df.index.name).apply(stats)
     return pd.DataFrame(s.values.tolist(), index=s.index, dtype='float32')
 
-def stats(group):
+def average_nightly_obs(group):
+    n = len(group)
+    mjd, mag, magerr, mag_median, mag_std = group[['mjd','mag','magerr','mag_med','mag_std']].values.T
+    
+    if np.ptp(mag) > 0.5:
+        mask = abs(mag-mag_median) < 3*mag_std
+        if mask.sum()==0:
+            mag_mean = np.nan
+            uid = group.index[0]
+            err_msg = 'Error with uid: '+str(uid)+'. Could not average mags at mjd(s): '+str(mjd)+'\n'
+            with open(cfg.USER.W_DIR + 'analysis/scripts/logs/average_nightly_obs_log.txt', 'a+') as myfile:
+                myfile.write(err_msg)
+        else:
+            mag = mag[mask] # remove points that are 1mag away from the median of the group
+            magerr = magerr[mask]
+            mjd = mjd[mask]
+            
+    mjd_mean  = np.mean(mjd)
+    magerr_mean = ((magerr ** 2).sum()/n) ** 0.5 # sum errors in quadrature. Do not use 'error on optimal average' since it makes the errors unphysically small.
+    mag_mean  = -2.5*np.log10(np.average(10**(-(mag-8.9)/2.5), weights = magerr**-2)) + 8.9
+        
+    return {'mjd':mjd_mean, 'mag':mag_mean, 'magerr':magerr_mean}
 
+def stats(group):
     # assign pandas columns to numpy arrays
     mjds       = group['mjd'].values
     mag        = group['mag'].values
