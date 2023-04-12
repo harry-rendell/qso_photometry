@@ -3,7 +3,8 @@ import numpy as np
 import time
 import os
 import sys
-sys.path.append('../')
+sys.path.append('..')
+print(os.getcwd())
 from funcs.config import cfg
 from funcs.preprocessing import data_io, parse, lightcurve_statistics
 
@@ -14,7 +15,7 @@ if __name__ == '__main__':
     wdir   = cfg.USER.W_DIR
     nrows  = None
     skiprows = None if nrows == None else nrows * 0
-    SURVEY = 'ps'
+    SURVEY = 'ztf'
     print('using {} cores'.format(cfg.USER.N_CORES))
 
     kwargs = {'dtypes': cfg.PREPROC.lc_dtypes,
