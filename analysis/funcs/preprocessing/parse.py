@@ -3,7 +3,9 @@ import numpy as np
 
 def intersection(*args):
 	"""
-	Reduce our data such that 
+	Find intersection of objects for which we have data in surveys provided in args
+	TODO:
+		We don't need to pass in all data, instead just pass in the analysis class and fetch the unique uids from there.
 	"""
 	surveys = args
 	for name, survey in zip(['sdss','ps  ','ztf '],surveys):
