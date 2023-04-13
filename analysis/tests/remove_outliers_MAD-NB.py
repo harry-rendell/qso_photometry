@@ -13,64 +13,82 @@
 # ---
 
 import pandas as pd
-pd.options.mode.chained_assignment = None
 import numpy as np
 import matplotlib.pyplot as plt
-from funcs.analysis import *
+import sys
+sys.path.append('../')
+from funcs.analysis.analysis import *
 # %matplotlib inline
-
-band = 'r'
-
-
-def reader(n_subarray):
-    return pd.read_csv('../data/merged/{}/{}_band/unclean/lc_{}.csv'.format(obj, band, n_subarray), nrows=None, index_col = ID, dtype = {'catalogue': np.uint8, 'mag_ps': np.float32, 'magerr': np.float32, 'mjd': np.float64, ID: np.uint32})
-
 
 obj = 'qsos'
 ID  = 'uid'
-dr = analysis(ID)
-dr.read_in(reader, redshift=False)
+band = 'r'
+dr = analysis(ID, obj, band)
+dr.read_in(redshift=False, cleaned=False, nrows=10000)
+dr.group(read_in=True, survey='all', redshift=False, colors=False, restrict=True)
 
 
 # # Clean lightcurves using MAD. Need to do this per filter
 
 # ### Using rolling window to find outliers
 
-def check_outliers(df, uids):
-    # for single band
-    MAD_max = pd.DataFrame(columns=['uid','MAD_max', 'MAD_argmax','mag','mjd'])
-    # make sure we have multiindexing
-    for uid in uids:
-        group = df.loc[uid].sort_values('mjd')
-        MAD_maxes = {'uid':uid}
-        append = False
-#         try:
-#         n = len(group)
-        MAD = abs(group['mag'] - group['mag'].rolling(4, center=True).median().fillna(method='bfill').fillna(method='ffill'))
-        if MAD.max() > 0:
-            MAD_maxes['MAD_max'] = MAD.max()
-            MAD_maxes['MAD_argmax'] = MAD.argmax()
-            MAD_maxes['mjd'] = group['mjd'].values[MAD.argmax()]
-            MAD_maxes['mag'] = group['mag'].values[MAD.argmax()]
-            append = True
-        outlier = group[MAD>1]
-#         except:
-#             pass
-        if append:
-            MAD_max = MAD_max.append(MAD_maxes, ignore_index=True)
+# + active=""
+# def check_outliers_(df, uids):
+#     outliers = []
+#     # for single band
+#     MAD_max = pd.DataFrame(columns=['uid','MAD_max', 'MAD_argmax','mag','mjd'])
+#     # make sure we have multiindexing
+#     for uid in uids:
+#         group = df.loc[uid].sort_values('mjd')
+#         MAD_maxes = {'uid':uid}
+#         
+#         mjd_diff = np.diff(group['mjd'])
+#         min_dt = np.array([mjd_diff[0]] + [min(mjd_diff[i],mjd_diff[i+1]) for i in range(len(mjd_diff)-1)] + [mjd_diff[-1]])
+#         
+#         MADS = abs(group['mag'] - group['mag'].rolling(6, center=True).median().fillna(method='bfill').fillna(method='ffill'))*np.exp(-min_dt)
+#
+#         for MAD in MADS[MADS>0.5]:
+#             MAD_maxes['MAD_max'] = MAD
+#             MAD_maxes['MAD_argmax'] = MAD.argmax()
+#             MAD_maxes['mjd'] = group['mjd'].values[MAD.argmax()]
+#             MAD_maxes['mag'] = group['mag'].values[MAD.argmax()]
+#             MAD_max = MAD_max.append(MAD_maxes, ignore_index=True)
+#
+#     return MAD_max.astype({'uid':np.uint32}).set_index('uid')
+# -
 
-    return MAD_max.astype({'uid':np.uint32}).set_index('uid')
+def calculate_MAD(group):    
+    mjd_diff = np.diff(group['mjd'])
+    min_dt = np.array([mjd_diff[0]] + [min(mjd_diff[i],mjd_diff[i+1]) for i in range(len(mjd_diff)-1)] + [mjd_diff[-1]])
+    MAD = abs(group['mag'] - group['mag'].rolling(6, center=True).median().fillna(method='bfill').fillna(method='ffill'))*np.exp(-min_dt*3)
+    
+    return MAD
 
 
-fig, ax = dr.plot_series(uids, filtercodes='r')
-MAD_max = check_outliers(dr.df, df_copy.index.unique())
-for axis, uid in zip(ax,uids)[:10]:
-    MAD_max_, mag, mjd = MAD_max.loc[uid, ['MAD_max', 'mag', 'mjd']].values.T
-    axis.text(0.02, 0.8, 'MAD max: {:.2f}'.format(MAD_max_), transform=axis.transAxes, fontsize=10)
-    axis.scatter(mjd, mag, s=100)
-    mu, std = grouped.loc[uid,['mag_mean','mag_std']].values.T
-    axis.axhline((mu-5*std),lw=0.5)
-    axis.axhline((mu+5*std),lw=0.5)
+dr.df['MAD']=dr.df.groupby(by='uid').apply(calculate_MAD).reset_index(level=0, drop=True)
+
+dr.df
+
+fig, ax = plt.subplots(1,1, figsize=(18,10))
+ax.hist(dr.df['MAD'], bins=100)
+ax.set(ylim=[0,1000])
+
+dr.df.loc[342201]
+
+# +
+# uids = dr.df.sample(30, weights='MAD', random_state=42).index
+# -
+
+ax = dr.plot_series([68], filtercodes='r', show_outliers=True, xlim=[58215,58230])
+
+dr.coords.loc[68].values
+
+dr.df.loc[68]
+
+ax = dr.plot_series(uids, filtercodes='r', show_outliers=True)#, xlim=[58215,58230])
+
+# + active=""
+# ax = dr.plot_series(uids, filtercodes='r', show_outliers=True)#, xlim=[58215,58230])
 
 # + active=""
 # 1000  : 9min 20s
