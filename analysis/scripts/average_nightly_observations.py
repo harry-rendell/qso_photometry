@@ -53,7 +53,6 @@ if __name__ == '__main__':
     averaged = data_io.dispatch_function(lightcurve_statistics.groupby_apply_average, chunks, kwargs)
     end   = time.time()
     print('Elapsed:',time.strftime("%Hh %Mm %Ss",time.gmtime(end-start)))
-    np.savetxt(wdir+'data/surveys/{}/{}/unclean/{}_band/average_nightly_obs_log.txt'.format(SURVEY, OBJ, BAND), np.array(log), fmt='%s')
 
     # Add the data from nights with multiple observations back on
     df = single_obs.append(averaged).sort_values([ID,'mjd'])
