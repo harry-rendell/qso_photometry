@@ -5,7 +5,10 @@ import matplotlib.pyplot as plt
 from scipy.stats import binned_statistic
 from bokeh.plotting import figure, output_notebook, show
 from bokeh.layouts import column
-from ..config import cfg
+import sys
+sys.path.append('../')
+from funcs.config import cfg
+from funcs.preprocessing import data_io, parse, lightcurve_statistics
 
 wdir = cfg.USER.W_DIR
 DTYPES = {'catalogue': np.uint8, 'mag': np.float32, 'magerr': np.float32, 'mjd': np.float64, 'uid': np.uint32, 'uid_s':np.uint32}
@@ -64,10 +67,11 @@ class analysis():
 		# NOTE: Removed 'rename' above since unclean has mag and mag_ps columns. Cleaned photometry has mag only.
 		# TODO: Would be good to add in print statments saying: 'lost n1 readings due to -9999, n2 to -ve errors etc'
 
+		# This is done in preprocess_raw_lightcurves
 		# Remove bad values from SDSS (= -9999) and large outliers (bad data)
-		self.df = self.df[(self.df['mag'] < 25) & (self.df['mag'] > 15)]
+		# self.df = self.df[(self.df['mag'] < 25) & (self.df['mag'] > 15)]
 		# Remove -ve errors (why are they there?) and readings with >0.5 error
-		self.df = self.df[ (self.df['magerr'] > 0) & (self.df['magerr'] < 0.5)]
+		# self.df = self.df[ (self.df['magerr'] > 0) & (self.df['magerr'] < 0.5)]
 
 		# Remove objects with a single observation.
 		self.df = self.df[self.df.index.duplicated(keep=False)]

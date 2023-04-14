@@ -31,10 +31,10 @@ from funcs.analysis.plotting import plot_magerr_hist, plot_mag_dist
 
 # # Merging lcs from unaveraged data
 
-obj = 'calibStars'
-ID  = 'uid_s'
-# obj = 'qsos'
-# ID  = 'uid'
+# obj = 'calibStars'
+# ID  = 'uid_s'
+obj = 'qsos'
+ID  = 'uid'
 
 nrows = None
 bounds={'mag_ps':(15,25),'magerr':(0,2)}
@@ -42,7 +42,7 @@ bounds={'mag_ps':(15,25),'magerr':(0,2)}
 colors = pd.read_csv('../../data/computed/{}/colors_sdss.csv'.format(obj), index_col=0)
 
 sdss = obj_survey('sdss', obj, ID)
-sdss.read_in_raw(nrows, melted=True, save=False)
+sdss.read_in_raw(nrows, save=False)
 sdss.transform_to_ps(colors=colors, color='g-r', system='tonry')
 sdss.df = filter_data(sdss.df, bounds)#, bands = 'ugriz') # apply filter after transformation so any bad transformations are removed
 # sdss.residual_raw({'g':0.0148, 'r':0.0049, 'i':0.0198, 'z':0.042}) # apply residuals
