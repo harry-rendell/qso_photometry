@@ -24,7 +24,7 @@ def average_nightly_obs(group):
             mag_mean = np.nan
             uid = group.index[0]
             err_msg = 'Error with uid: '+str(uid)+'. Could not average mags at mjd(s): '+str(mjd)+'\n'
-            with open(cfg.USER.W_DIR + 'analysis/scripts/logs/average_nightly_obs_log.txt', 'a+') as myfile:
+            with open(cfg.USER.W_DIR + 'python/scripts/logs/average_nightly_obs_log.txt', 'a+') as myfile:
                 myfile.write(err_msg)
         else:
             mag = mag[mask] # remove points that are 1mag away from the median of the group

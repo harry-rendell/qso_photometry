@@ -17,7 +17,7 @@ import numpy as np
 __C.USER = edict()
 
 # Working directory
-__C.USER.W_DIR = '/disk1/hrb/python/'
+__C.USER.W_DIR = '/disk1/hrb/qso_photometry/'
 
 # Set below to True to use multiple cores during computationally intensive tasks.
 # Single core is not currently well supported, may cause errors when setting this to False.

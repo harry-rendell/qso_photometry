@@ -17,7 +17,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 import sys
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
+sys.path.insert(0, os.path.join(os.getcwd(), "..", ".."))
 from module.config import cfg
 from module.preprocessing import colour_transform, parse, data_io
 
