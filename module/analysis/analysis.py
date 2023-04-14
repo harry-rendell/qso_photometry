@@ -5,10 +5,7 @@ import matplotlib.pyplot as plt
 from scipy.stats import binned_statistic
 from bokeh.plotting import figure, output_notebook, show
 from bokeh.layouts import column
-import sys
-sys.path.append('../')
-from funcs.config import cfg
-from funcs.preprocessing import data_io, parse, lightcurve_statistics
+from ..config import cfg
 
 wdir = cfg.USER.W_DIR
 DTYPES = {'catalogue': np.uint8, 'mag': np.float32, 'magerr': np.float32, 'mjd': np.float64, 'uid': np.uint32, 'uid_s':np.uint32}

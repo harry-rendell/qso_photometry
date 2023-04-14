@@ -38,7 +38,7 @@ import matplotlib.pyplot as plt
 from multiprocessing import Pool
 # from profilestats import profile
 from scipy.stats import binned_statistic
-from funcs.analysis import *
+from module.analysis import *
 from os import listdir
 import os
 data_path = '/disk1/hrb/python/'

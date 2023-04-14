@@ -14,12 +14,11 @@
 
 import pandas as pd
 import numpy as np
-from multiprocessing import Pool
 import os
 import sys
-sys.path.append('../')
-from funcs.config import cfg
-from funcs.preprocessing import parse, colour_transform, data_io
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
+from module.config import cfg
+from module.preprocessing import parse, data_io
 
 OBJ    = 'qsos'
 ID     = 'uid'

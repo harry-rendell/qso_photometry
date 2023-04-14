@@ -20,7 +20,7 @@ pd.options.mode.chained_assignment = None
 import numpy as np
 import matplotlib.pyplot as plt
 from multiprocessing import Pool
-from funcs.analysis.analysis import analysis
+from module.analysis.analysis import analysis
 import celerite
 from celerite import terms
 # %matplotlib inline
@@ -43,7 +43,7 @@ redshift_bool = True
 # band = 'r'
 # redshift_bool = False
 
-# Here we load the analysis class. This has various attibutes and methods outlined in /funcs/analysis.py
+# Here we load the analysis class. This has various attibutes and methods outlined in /module/analysis.py
 # Examples:
 # Photometry is in dr.df
 

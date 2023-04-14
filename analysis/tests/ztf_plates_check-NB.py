@@ -27,7 +27,7 @@ from time import time
 import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 pd.options.mode.chained_assignment = None
-from funcs.preprocessing.dtdm import dtdm_raw_analysis
+from module.preprocessing.dtdm import dtdm_raw_analysis
 
 dtdm_star = dtdm_raw_analysis('calibStars','uid_s','r')
 

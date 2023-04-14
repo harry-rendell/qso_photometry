@@ -13,15 +13,10 @@
 # ---
 
 import pandas as pd
-pd.options.mode.chained_assignment = None
-import numpy as np
-from astropy.table import Table
-import matplotlib.pyplot as plt
-import matplotlib
-from multiprocessing import Pool
-# from profilestats import profile
-from scipy.stats import binned_statistic
-from funcs.analysis.analysis import *
+import os
+import sys
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from module.analysis.analysis import *
 # %matplotlib inline
 
 # +
@@ -35,7 +30,7 @@ redshift_bool = True
 # band = 'r'
 # redshift_bool = False
 
-# Here we load the analysis class. This has various attibutes and methods outlined in /funcs/analysis.py
+# Here we load the analysis class. This has various attibutes and methods outlined in /module/analysis.py
 # Examples:
 # Photometry is in dr.df
 

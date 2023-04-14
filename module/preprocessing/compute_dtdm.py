@@ -1,7 +1,7 @@
-aimport pandas as pd
+import pandas as pd
 import numpy as np
 from multiprocessing import Pool
-from funcs.analysis
+from ..analysis import analysis
 from time import time
 
 wdir = '/home/hrb/python/'

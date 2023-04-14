@@ -18,9 +18,9 @@ import pandas as pd
 pd.options.mode.chained_assignment = None
 import numpy as np
 import matplotlib.pyplot as plt
-from funcs.analysis.analysis import *
-from funcs.analysis.obj_survey import obj_survey
-from funcs.preprocessing.parse import intersection, filter_data
+from module.analysis.analysis import *
+from module.analysis.obj_survey import obj_survey
+from module.preprocessing.parse import intersection, filter_data
 import seaborn as sns
 # import matplotlib
 # font = {'size' : 18}
@@ -38,7 +38,7 @@ def reader(n_subarray):
 # from multiprocessing import Pool
 # # from profilestats import profile
 # from scipy.stats import binned_statistic
-# from funcs.analysis.analysis import *
+# from module.analysis.analysis import *
 # %matplotlib inline
 #
 #

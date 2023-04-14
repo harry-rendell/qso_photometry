@@ -26,7 +26,7 @@ from time import time
 import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 pd.options.mode.chained_assignment = None
-from funcs.preprocessing.dtdm import dtdm_raw_analysis
+from module.preprocessing.dtdm import dtdm_raw_analysis
 
 wdir = '/disk1/hrb/python/'
 

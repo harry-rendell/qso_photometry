@@ -231,7 +231,7 @@ class sim():
 # +
 import sys
 sys.path.append('../')
-from funcs.analysis.analysis import analysis
+from module.analysis.analysis import analysis
 # obj = 'qsos'
 # ID  = 'uid'
 redshift_bool = False

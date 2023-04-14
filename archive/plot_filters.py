@@ -14,7 +14,7 @@
 
 import sys
 sys.path.append('../')
-from funcs.analysis.plot_filters import plot_filters
+from module.analysis.plot_filters import plot_filters
 import matplotlib
 font = {'size'   : 17}
 matplotlib.rc('font', **font)

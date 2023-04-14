@@ -17,9 +17,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 import sys
-sys.path.append('../')
-from funcs.config import cfg
-from funcs.preprocessing import colour_transform, parse, data_io
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
+from module.config import cfg
+from module.preprocessing import colour_transform, parse, data_io
 
 OBJ    = 'qsos'
 ID     = 'uid'

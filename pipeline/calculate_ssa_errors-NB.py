@@ -22,11 +22,11 @@ rc('font', **{'size':18})
 from multiprocessing import Pool
 # from profilestats import profile
 from scipy.stats import binned_statistic
-from funcs.analysis.analysis import *
+from module.analysis.analysis import *
 from os import listdir
 import os
 import time
-from funcs.preprocessing.binning import bin_data
+from module.preprocessing.binning import bin_data
 import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
@@ -69,7 +69,7 @@ import matplotlib
 from multiprocessing import Pool
 # from profilestats import profile
 from scipy.stats import binned_statistic
-from funcs.analysis.analysis import *
+from module.analysis.analysis import *
 # %matplotlib inline
 
 def reader(n_subarray):

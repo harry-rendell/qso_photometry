@@ -22,12 +22,12 @@ from multiprocessing import Pool
 font = {'size'   : 18}
 matplotlib.rc('font', **font)
 
-# from funcs.star_survey import star_survey#, reader
+# from module.star_survey import star_survey#, reader
 import sys
 sys.path.append('../')
 wdir = '/disk1/hrb/python/'
-from funcs.analysis.obj_survey import obj_survey#, reader
-from funcs.preprocessing.parse import intersection, filter_data
+from module.analysis.obj_survey import obj_survey#, reader
+from module.preprocessing.parse import intersection, filter_data
 
 # # PS colors
 
@@ -99,7 +99,7 @@ ztf.transform_to_ps(colors=colors)
 ps.df = ps.df.reset_index('filtercode')
 ps.df
 
-from funcs.plotting import plot_magerr_hist
+from module.plotting import plot_magerr_hist
 ax = plot_magerr_hist([sdss, ps, ztf], bands='griz', quantiles=[0.09,0.10,0.11,0.12], show_lines=0, savename = 'plots/calibStars/stars_magerr_hist', magerr=0.6)
 
 sdss.df
@@ -171,8 +171,8 @@ import matplotlib
 font = {'size' : 18}
 matplotlib.rc('font', **font)
 
-from funcs.obj_survey import obj_survey#, reader
-from funcs.parse import intersection, filter_data
+from module.obj_survey import obj_survey#, reader
+from module.parse import intersection, filter_data
 
 
 def compute_colors(survey):

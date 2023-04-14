@@ -21,7 +21,8 @@ font = {'size' : 18}
 matplotlib.rc('font', **font)
 from scipy.stats import linregress
 import sys
-sys.path.insert(1, '/disk1/hrb/python/analysis/')
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
+
 
 obj = 'calibStars'
 ID  = 'uid_s'
@@ -54,12 +55,12 @@ p_r2 = np.array([-0.21768903, -0.15050923])
 colors = pd.read_csv('../../data/computed/{}/colors_sdss.csv'.format(obj), index_col=0)
 
 pd.options.mode.chained_assignment = None
-from funcs.analysis.analysis import *
+from module.analysis.analysis import *
 def reader(n_subarray):
     return pd.read_csv('../../data/merged/{}/{}_band/lc_{}.csv'.format(obj,band,n_subarray), comment='#', nrows=None, index_col = ID, dtype = {'catalogue': np.uint8, 'mag_ps': np.float32, 'magerr': np.float32, 'mjd': np.float64, ID: np.uint32})
 
 
-# Here we load the analysis class. This has various attibutes and methods outlined in /funcs/analysis.py
+# Here we load the analysis class. This has various attibutes and methods outlined in /module/analysis.py
 # Examples:
 # Photometry is in dr.df
 # Grouped statistics is in dr.grouped
@@ -262,7 +263,7 @@ from multiprocessing import Pool
 import sys
 sys.path.append('../')
 from scipy.stats import binned_statistic
-from funcs.analysis.analysis import *
+from module.analysis.analysis import *
 # %matplotlib inline
 
 def reader(n_subarray):

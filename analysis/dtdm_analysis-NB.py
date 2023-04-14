@@ -26,13 +26,13 @@ from multiprocessing import Pool
 # from profilestats import profile
 from scipy.stats import binned_statistic, skew, iqr
 from scipy.optimize import curve_fit
-from funcs.analysis.analysis import *
-from funcs.preprocessing.binning import bin_data  
+from module.analysis.analysis import *
+from module.preprocessing.binning import bin_data
 from os import listdir
 import os
 import time
 
-from funcs.preprocessing.dtdm import dtdm, dtdm_key
+from module.preprocessing.dtdm import dtdm, dtdm_key
 
 # +
 config = {'obj':'qsos','ID':'uid','t_max':23576,'n_bins_t':200,'n_bins_m':200, 'n_bins_m2':248, 

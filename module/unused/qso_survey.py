@@ -2,31 +2,32 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from multiprocessing import Pool
-import seaborn as sns
 
 def reader(args):
 	n_subarray, nrows = args
-	return pd.read_csv('/disk1/hrb/python/data/surveys/ztf/calibStars/lc_{}.csv'.format(n_subarray), nrows = nrows, usecols=[0,2,3,4,5,7], index_col=['uid_s','filtercode'])
+	return pd.read_csv('/disk1/hrb/python/data/surveys/ztf/dr2_clr/lc_{}.csv'.format(n_subarray), usecols = [0,1,2,3,4,5,6,7,8], index_col = ['uid','filtercode'], nrows=nrows, dtype = {'oid': np.uint64, 'mag': np.float32, 'magerr': np.float32, 'mjd': np.float64, 'uid': np.uint32})
 
-class star_survey():
+class qso_survey():
 	def __init__(self, survey):
 		self.name = survey
 #		 self.plt_color = {'u':'m', 'g':'g', 'r':'r','i':'k','z':'b'}[band]
-
+		
 	def read_in_raw(self, nrows=None):
+		
 		if self.name == 'sdss':
-			self.df = pd.read_csv('/disk1/hrb/python/data/surveys/sdss/calibStars/calibStarsSecondary.csv', sep=',', nrows = nrows, index_col='uid_s', usecols=[0,2,3,4,5,6,7,8,9,10,11,12])
+			self.df = pd.read_csv('/disk1/hrb/python/data/surveys/sdss/raw_sdss_secondary.csv',index_col='uid', nrows=nrows, usecols=[0,9,10,11,12,13,14,15,16,17,18,19])
 			# Add columns for colors
 			for b1, b2 in zip('gri','riz'):
-				self.df[b1+'-'+b2] = self.df['mag_'+b1] - self.df['mag_'+b2]
-			
+				self.df[b1+'-'+b2] = self.df[b1+'psf'] - self.df[b2+'psf']
+			self.df.rename(columns={**{b+'psf':'mag_'+b for b in 'ugriz'},**{b+'psferr':'magerr_'+b for b in 'ugriz'}}, inplace=True)
+
 		elif self.name == 'ps':
-			cols = ['uid_s', 'filter', 'obsTime',# 'objID',
+			cols = ['uid', 'filter', 'obsTime',# 'objID',
 					'psfFlux', 'psfFluxErr']
-			dtype1 = {'uid_s': np.uint32, 'objID': np.uint64, 'obsTime': np.float64,'psfFlux': np.float32, 'psfFluxErr': np.float32}
+			dtype1 = {'uid': np.uint32, 'objID': np.uint64, 'obsTime': np.float64,'psfFlux': np.float32, 'psfFluxErr': np.float32}
 
-			self.df = pd.read_csv('/disk1/hrb/python/data/surveys/ps/calibStars/PS_secondary_calibStars.csv', nrows = nrows, usecols = cols, dtype = dtype1)
-
+			self.df = pd.read_csv('/disk1/hrb/python/data/surveys/ps/ps_secondary.csv', index_col=['uid','filtercode'], nrows=nrows, usecols=[0,3,4,7,8])
+			
 			# Drop bad values
 			self.df = self.df[self.df['psfFlux']!=0]
 
@@ -34,10 +35,9 @@ class star_survey():
 			self.df['mag'] = -2.5*np.log10(self.df['psfFlux']) + 8.90
 			self.df['magerr'] = 1.086*self.df['psfFluxErr']/self.df['psfFlux']
 			self.df = self.df.drop(['psfFlux','psfFluxErr'], axis = 1)
-			self.df = self.df.set_index(['uid_s','filtercode'])
 			
 		elif self.name == 'ztf':
-			if __name__ == 'funcs.star_survey':
+			if __name__ == 'module.qso_survey':
 				pool = Pool(4)
 				try:
 					print('attempting parallel reading')
@@ -46,14 +46,14 @@ class star_survey():
 					df_list = pool.map(reader, [(0, nrows), (1, nrows), (2, nrows), (3, nrows)])
 				self.df = pd.concat(df_list)
 				print('completed parallel reading')
-
+			
 		else:
 			print('Error, unrecognised survey')
 	
 	def pivot(self, read_in=True):
 		if self.name == 'sdss':
 			if read_in:
-				self.df_pivot = pd.read_csv('/disk1/hrb/python/data/surveys/{}/calibStars/gb.csv'.format(self.name), index_col='uid_s', dtype={'count':np.uint16}) 
+				self.df_pivot = pd.read_csv('/disk1/hrb/python/data/surveys/{}/gb.csv'.format(self.name), index_col='uid', dtype={'count':np.uint16}) 
 			if not read_in:
 				def stats(group):
 					"""
@@ -83,11 +83,11 @@ class star_survey():
 
 					return {**mean_dict, **meanps_dict, **meanerr_dict, **{'count':int(count), 'mean_gr':mean_gr, 'meanerr_gr':meanerr_gr, 'mean_ri':mean_ri, 'meanerr_ri':meanerr_ri, 'mean_iz':mean_iz, 'meanerr_iz':meanerr_ri}}#, mean_airmass
 
-				self.df_pivot = self.df.groupby('uid_s').apply(stats).apply(pd.Series)
+				self.df_pivot = self.df.groupby('uid').apply(stats).apply(pd.Series)
 		else:
 			if read_in:
-				grouped = pd.read_csv('/disk1/hrb/python/data/surveys/{}/calibStars/gb.csv'.format(self.name), index_col=['uid_s','filtercode'], dtype={'count':np.uint16}) 
-				
+				grouped = pd.read_csv('/disk1/hrb/python/data/surveys/{}/gb.csv'.format(self.name), index_col=['uid','filtercode'], dtype={'count':np.uint16}) 
+
 			elif not read_in:
 				print('creating uid chunks to assign to each core')
 				uids = np.array_split(self.df.index,4)
@@ -96,19 +96,19 @@ class star_survey():
 				uid_2 = np.setdiff1d(uids[2].unique(),uid_1,assume_unique=True)
 				uid_3 = np.setdiff1d(uids[3].unique(),uid_2,assume_unique=True)
 				print('assigning chunk to each core')
-				if __name__ == 'funcs.star_survey':
+				if __name__ == 'module.qso_survey':
 					pool = Pool(4)
 					df_list = pool.map(groupby_apply, [self.df.loc[uid_0],self.df.loc[uid_1],self.df.loc[uid_2],self.df.loc[uid_3]])
 					grouped = pd.concat(df_list)
 #			 self.grouped = grouped
 			self.df_pivot = grouped.reset_index('filtercode').pivot(columns='filtercode', values=grouped.columns)
 			self.df_pivot.columns = ["_".join(x) for x in self.df_pivot.columns.ravel()]
-		
+
 	def transform_to_ps(self, colors=None):
 		# Transform original data using colors. Adds column '_ps' with color corrected data
 		if self.name == 'ztf':
-			self.df = self.df.merge(colors, how='left', on='uid_s') #merge colors onto ztf df
-			self.df = self.df.reset_index('uid_s').set_index(['uid_s','filtercode'])	   #add filtercode to index
+			self.df = self.df.join(colors, how='left', on='uid') #merge colors onto ztf df
+			self.df = self.df.reset_index('uid').set_index(['uid','filtercode'])	   #add filtercode to index
 			self.df['mag_ps'] = 0
 			slidx = pd.IndexSlice[:, ['r','g']]
 			self.df.loc[slidx,'mag_ps'] = (self.df.loc[slidx,'mag'] + self.df.loc[slidx,'clrcoeff']*(self.df.loc[slidx,'mean_gr']))
@@ -132,7 +132,7 @@ class star_survey():
 		mag = self.df_pivot['mean_'+band]
 # 		self.masks = pd.DataFrame(data = {'17>mag':(mag<17),'17<mag<18':(17<mag)&(mag<18), '18<mag<19':(18<mag)&(mag<19), '19<mag<20':(19<mag)&(mag<20), 'mag>20':(mag>20)})
 		self.masks = pd.DataFrame(data={str(lb)+'<mag<'+str(ub):(lb<mag)&(mag<ub) for lb, ub in np.array([bounds[:-1],bounds[1:]]).T})
-			
+
 	def plot_offset_distrib(self, other, scale='log', save=False, range=(-0.5,0.5), **kwargs):	  
 		fig, axes = plt.subplots(3,2,figsize=(23,18))
 		bands = 'gri' #add this to argument?
@@ -161,7 +161,7 @@ class star_survey():
 		plt.subplots_adjust(hspace = 0.4)
 		
 		return axes
-		
+			
 	def correlate_offset_color_hist_sns(self, other, band, color, vmin, vmax):
 		from matplotlib.colors import LogNorm
 	#     fig, ax = plt.subplots(2,3,figsize=(21,14))
@@ -182,11 +182,11 @@ class star_survey():
 
 		plot1.ax_joint.axhline(y=0, lw=0.5, ls='--')
 		plot2.ax_joint.axhline(y=0, lw=0.5, ls='--')
-
+		
 	def correlate_mag_magerr_hist_sns(self, band, vmin, vmax, save=False):
-	#     fig, ax = plt.subplots(2,3,figsize=(21,14))
 		from matplotlib.colors import LogNorm
 
+	#     fig, ax = plt.subplots(2,3,figsize=(21,14))
 		if self.name == 'sdss':
 			data = self.df
 			xname = 'mag_'+band

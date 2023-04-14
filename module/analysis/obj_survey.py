@@ -95,7 +95,7 @@ class obj_survey():
 			self.df = self.df.set_index([self.ID,'filtercode'])
 			
 		elif self.name == 'ztf':
-			if __name__ == 'funcs.analysis.'+self.__class__.__name__:
+			if __name__ == 'module.analysis.'+self.__class__.__name__:
 				pool = Pool(4)
 				try:
 					print('attempting parallel reading')
@@ -162,7 +162,7 @@ class obj_survey():
 				uid_2 = np.setdiff1d(uids[2].unique(),uid_1,assume_unique=True)
 				uid_3 = np.setdiff1d(uids[3].unique(),uid_2,assume_unique=True)
 				print('assigning chunk to each core')
-				if __name__ == 'funcs.qso_survey':
+				if __name__ == 'module.qso_survey':
 					pool = Pool(4)
 					df_list = pool.map(groupby_apply, [self.df.loc[uid_0],self.df.loc[uid_1],self.df.loc[uid_2],self.df.loc[uid_3]])
 					grouped = pd.concat(df_list)

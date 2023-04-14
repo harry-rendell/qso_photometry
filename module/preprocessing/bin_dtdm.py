@@ -2,11 +2,11 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from multiprocessing import Pool
-from funcs.analysis import analysis
+from module.analysis import analysis
 from os import listdir
 import os
 import time
-from funcs.preprocessing.binning import bin_data
+from binning import bin_data
 
 wdir = '/disk1/hrb/python/'
 band = 'r'

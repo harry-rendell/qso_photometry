@@ -17,7 +17,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import sys
 sys.path.append('../')
-from funcs.analysis.analysis import *
+from module.analysis.analysis import *
 # %matplotlib inline
 
 obj = 'qsos'

@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from funcs.preprocessing.binning import bin_data
+from module.preprocessing.binning import bin_data
 from scipy.stats import binned_statistic, skew, skewtest, iqr, kurtosis, kurtosistest
 from os import listdir, path
 from multiprocessing import Pool
@@ -529,7 +529,7 @@ class dtdm_raw_analysis():
 		"""
 		if hasattr(self, 'df'):
 			del self.df
-		if __name__ == 'funcs.preprocessing.dtdm':
+		if __name__ == 'module.preprocessing.dtdm':
 			n_cores = 4
 			p = Pool(n_cores)
 			self.df = pd.concat(p.map(self.read_dtdm, self.fnames[n_cores*n_chunk:(n_chunk+1)*n_cores]))

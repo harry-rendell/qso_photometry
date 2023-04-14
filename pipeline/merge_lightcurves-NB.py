@@ -25,9 +25,9 @@ from multiprocessing import Pool
 import sys
 sys.path.append('../')
 
-from funcs.analysis.obj_survey import obj_survey
-from funcs.preprocessing.parse import intersection, filter_data
-from funcs.analysis.plotting import plot_magerr_hist, plot_mag_dist
+from module.analysis.obj_survey import obj_survey
+from module.preprocessing.parse import intersection, filter_data
+from module.analysis.plotting import plot_magerr_hist, plot_mag_dist
 
 # # Merging lcs from unaveraged data
 

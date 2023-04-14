@@ -24,9 +24,9 @@ matplotlib.rc('font', **font)
 import sys
 sys.path.append('../')
 
-from funcs.analysis.obj_survey import obj_survey
-from funcs.preprocessing.parse import intersection, filter_data
-from funcs.analysis.plotting import plot_magerr_hist, plot_mag_dist
+from module.analysis.obj_survey import obj_survey
+from module.preprocessing.parse import intersection, filter_data
+from module.analysis.plotting import plot_magerr_hist, plot_mag_dist
 
 # # Using raw (unaveraged) data
 
@@ -135,9 +135,9 @@ import sys
 sys.path.append('../')
 path = '/disk1/hrb/python/'
 
-from funcs.analysis.obj_survey import obj_survey#, reader
-from funcs.preprocessing.parse import intersection, filter_data
-from funcs.analysis.plotting import plot_magerr_hist, plot_mag_dist
+from module.analysis.obj_survey import obj_survey#, reader
+from module.preprocessing.parse import intersection, filter_data
+from module.analysis.plotting import plot_magerr_hist, plot_mag_dist
 
 # colors = pd.read_csv('computed/colors_ps_last.csv', index_col=0)
 colors = pd.read_csv(path + 'data/computed/qsos/colors_sdss.csv', index_col=0)
