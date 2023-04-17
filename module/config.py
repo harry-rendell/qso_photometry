@@ -143,6 +143,8 @@ __C.PREPROC.LIMIT_MAG.ZTF = {
 # Magnitude error threshold
 __C.PREPROC.MAG_ERR_THRESHOLD = 0.198
 
+# Bounds to use on parse.filter_data in average_nightly_observations.py when removing bad data.
+__C.PREPROC.FILTER_BOUNDS = {'mag':(15,25),'magerr':(0,2)}
 
 #------------------------------------------------------------------------------
 # Analysis
