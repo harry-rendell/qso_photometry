@@ -36,6 +36,7 @@ def dispatch_reader(kwargs, multiproc=True, i=0):
 	"""
 	if multiproc:
 		if __name__ == 'module.preprocessing.data_io':
+			print('Reading using {} cores'.format(cfg.USER.N_CORES))
 			pool = Pool(cfg.USER.N_CORES)
 			df = pool.map(reader, [(j, kwargs) for j in range(4)]) # This 4 is dictated by how many chunks we have split our data into. Currently 4.
 			df = pd.concat(df, ignore_index=True) # overwrite immediately for prevent holding unnecessary dataframes in memory
@@ -75,6 +76,7 @@ def dispatch_writer(chunks, kwargs):
 	Dispatching function for writer
 	"""
 	if __name__ == 'module.preprocessing.data_io':
+		print('Writing using {} cores'.format(cfg.USER.N_CORES))
 		pool = Pool(cfg.USER.N_CORES)
 		pool.map(writer, [(i, chunk, kwargs) for i, chunk in enumerate(chunks)])
 
@@ -84,6 +86,7 @@ def dispatch_function(function, chunks, kwargs={}):
 	"""
 	dtypes = kwargs['dtypes'] if 'dtypes' in kwargs else None
 	if __name__ == 'module.preprocessing.data_io':
+		print('Dispatching function on {} cores'.format(cfg.USER.N_CORES))
 		pool = Pool(cfg.USER.N_CORES)
 		df = pool.map(function, [chunk for chunk in chunks]) # This 4 is dictated by how many chunks we have split our data into. Currently 4.
 		df = pd.concat(df, ignore_index=False) # overwrite immediately for prevent holding unnecessary dataframes in memory
