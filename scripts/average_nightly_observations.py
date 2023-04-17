@@ -3,7 +3,8 @@ import numpy as np
 import time
 import os
 import sys
-sys.path.insert(0, os.path.join(os.getcwd(), ".."))from module.config import cfg
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from module.config import cfg
 from module.preprocessing import data_io, parse, lightcurve_statistics
 
 if __name__ == '__main__':
