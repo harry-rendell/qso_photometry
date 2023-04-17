@@ -6,15 +6,27 @@ import sys
 sys.path.insert(0, os.path.join(os.getcwd(), ".."))from module.config import cfg
 from module.preprocessing import data_io, parse, lightcurve_statistics
 
-if __name__ == '__main__':
-    OBJ    = 'qsos'
-    ID     = 'uid'
-    BAND   = 'r'
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--object", type=str, required=True, help ="qsos or calibStars")
+    parser.add_argument("--band", type=str, required=True, help="filterband for analysis")
+    parser.add_argument("--survey", type=str, required=True, help="SDSS, PS or ZTF")
+    parser.add_argument("--n_cores", type=int, help="Number of cores to use. If left blank, then this value is taken from N_CORES in the config file.")
+    parser.add_argument("--n_rows", type=int, help="Number of rows to read in from the photometric data")
+    parser.add_argument("--n_skiprows", type=int, help="Number of chunks of n_rows to skip when reading in photometric data")
+    args = parser.parse_args()
+    
+    OBJ = args.object.lower()
+    BAND   = args.band.lower()
+    SURVEY = args.survey.lower()
+
+    ID = 'uid' if (OBJ == 'qsos') else 'uid_s'
     wdir   = cfg.USER.W_DIR
-    nrows  = None
-    skiprows = None if nrows == None else nrows * 0
-    SURVEY = 'ztf'
-    print('using {} cores'.format(cfg.USER.N_CORES))
+    nrows = args.n_rows
+    skiprows = None if nrows == None else nrows * args.n_skiprows
+    
+    if args.n_cores:
+        cfg.USER.N_CORES = args.n_cores
 
     kwargs = {'dtypes': cfg.PREPROC.lc_dtypes,
           'nrows': nrows,
@@ -25,8 +37,7 @@ if __name__ == '__main__':
     df = data_io.dispatch_reader(kwargs, multiproc=True)
 
     # Remove obviously bad data
-    bounds={'mag':(15,25),'magerr':(0,2)}
-    parse.filter_data(df, bounds=bounds, dropna=True, inplace=True)
+    parse.filter_data(df, bounds=cfg.PREPROC.FILTER_BOUNDS, dropna=True, inplace=True)
 
     # Read in grouped data
     grouped = pd.read_csv(wdir+'data/surveys/{}/{}/unclean/{}_band/grouped.csv'.format(SURVEY, OBJ, BAND), usecols=[ID, 'mag_med','mag_std']).set_index(ID)
