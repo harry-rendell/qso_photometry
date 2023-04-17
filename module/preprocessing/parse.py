@@ -30,7 +30,7 @@ def filter_data(df, bounds, dropna=True, inplace=False):
 	Note, using inplace=True is approx ~30% more memory efficient and prevents additional dataframes being stored.
 	Use inplace=False when testing bounds, but then switch to inplace=True once suitable bounds have been found. 
 	"""
-
+	print('Filtering with bounds:',bounds)
 	if not inplace:
 		df = df.copy()
 	# Create set of boolean numpy arrays which are true if the key is within the bounds.
