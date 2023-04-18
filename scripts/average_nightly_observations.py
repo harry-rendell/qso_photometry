@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import time
+import argparse
 import os
 import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -16,18 +17,28 @@ if __name__ == "__main__":
     parser.add_argument("--n_rows", type=int, help="Number of rows to read in from the photometric data")
     parser.add_argument("--n_skiprows", type=int, help="Number of chunks of n_rows to skip when reading in photometric data")
     args = parser.parse_args()
+    print('args:',args)
     
     OBJ = args.object.lower()
     BAND   = args.band.lower()
     SURVEY = args.survey.lower()
 
     ID = 'uid' if (OBJ == 'qsos') else 'uid_s'
-    wdir   = cfg.USER.W_DIR
+    wdir = cfg.USER.W_DIR
     nrows = args.n_rows
     skiprows = None if nrows == None else nrows * args.n_skiprows
     
     if args.n_cores:
         cfg.USER.N_CORES = args.n_cores
+
+    # Make log directory
+    log_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'logs')
+    if not os.path.exists(log_dir):
+        os.makedirs(log_dir)
+
+    # Append to the log, but write arguments to make it clear what the output is for.
+    with open(os.path.join(log_dir,'average_nightly_obs_log.txt'),'a+') as file:
+        file.write(str(args))
 
     kwargs = {'dtypes': cfg.PREPROC.lc_dtypes,
           'nrows': nrows,
@@ -70,7 +81,7 @@ if __name__ == "__main__":
     df.index = df.index.astype('uint32')
 
     # Add comment to start of csv file
-    comment = """# CSV of photometry transformed to PS with preprocessing and cleaning.
+    comment = """# CSV of photometry with preprocessing asnd cleaning.
 # mag      : transformed photometry in PanSTARRS photometric system
 # mag_orig : original photometry in native {} photometric system.\n""".format(SURVEY.upper())
 
