@@ -16,6 +16,7 @@ if __name__ == "__main__":
     parser.add_argument("--n_cores", type=int, help="Number of cores to use. If left blank, then this value is taken from N_CORES in the config file.")
     parser.add_argument("--n_rows", type=int, help="Number of rows to read in from the photometric data")
     parser.add_argument("--n_skiprows", type=int, help="Number of chunks of n_rows to skip when reading in photometric data")
+    parser.add_argument("--dry_run", action='store_true', help="Number of chunks of n_rows to skip when reading in photometric data")
     args = parser.parse_args()
     print('args:',args)
     
@@ -25,8 +26,11 @@ if __name__ == "__main__":
 
     ID = 'uid' if (OBJ == 'qsos') else 'uid_s'
     wdir = cfg.USER.W_DIR
+    
     nrows = args.n_rows
-    skiprows = None if nrows == None else nrows * args.n_skiprows
+    skiprows = args.n_skiprows
+    if args.n_skiprows and nrows is not None:
+        skiprows = nrows * args.n_skiprows
     
     if args.n_cores:
         cfg.USER.N_CORES = args.n_cores
@@ -35,10 +39,6 @@ if __name__ == "__main__":
     log_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'logs')
     if not os.path.exists(log_dir):
         os.makedirs(log_dir)
-
-    # Append to the log, but write arguments to make it clear what the output is for.
-    with open(os.path.join(log_dir,'average_nightly_obs_log.txt'),'a+') as file:
-        file.write(str(args))
 
     kwargs = {'dtypes': cfg.PREPROC.lc_dtypes,
           'nrows': nrows,
@@ -50,6 +50,9 @@ if __name__ == "__main__":
 
     # Remove obviously bad data
     parse.filter_data(df, bounds=cfg.PREPROC.FILTER_BOUNDS, dropna=True, inplace=True)
+
+    # make header for output
+    print('Unable to average the following:\n'+ID+', mjd')
 
     # Read in grouped data
     grouped = pd.read_csv(wdir+'data/surveys/{}/{}/unclean/{}_band/grouped.csv'.format(SURVEY, OBJ, BAND), usecols=[ID, 'mag_med','mag_std']).set_index(ID)
@@ -79,16 +82,19 @@ if __name__ == "__main__":
     # Add the data from nights with multiple observations back on
     df = single_obs.append(averaged).sort_values([ID,'mjd'])
     df.index = df.index.astype('uint32')
+    
+    if args.dry_run:
+        print(df)
+    else:
+        # Add comment to start of csv file
+        comment = """# CSV of photometry with preprocessing asnd cleaning.
+    # mag      : transformed photometry in PanSTARRS photometric system
+    # mag_orig : original photometry in native {} photometric system.\n""".format(SURVEY.upper())
 
-    # Add comment to start of csv file
-    comment = """# CSV of photometry with preprocessing asnd cleaning.
-# mag      : transformed photometry in PanSTARRS photometric system
-# mag_orig : original photometry in native {} photometric system.\n""".format(SURVEY.upper())
+        # keyword arguments to pass to our writing function
+        kwargs = {'comment':comment,
+                  'basepath':cfg.USER.W_DIR + 'data/surveys/{}/{}/clean/{}_band/'.format(SURVEY, OBJ, BAND)}
 
-    # keyword arguments to pass to our writing function
-    kwargs = {'comment':comment,
-              'basepath':cfg.USER.W_DIR + 'data/surveys/{}/{}/clean/{}_band/'.format(SURVEY, OBJ, BAND)}
-
-    chunks = parse.split_into_non_overlapping_chunks(df, 4)
-    data_io.dispatch_writer(chunks, kwargs)
+        chunks = parse.split_into_non_overlapping_chunks(df, 4)
+        data_io.dispatch_writer(chunks, kwargs)
 

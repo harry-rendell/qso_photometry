@@ -23,10 +23,8 @@ def average_nightly_obs(group):
         if mask.sum()==0:
             mag_mean = np.nan
             uid = group.index[0]
-            err_msg = 'Error with uid: '+str(uid)+'. Could not average mags at mjd: '+str(int(mjd[0]))+'\n'
-            print(err_msg)
-            with open(cfg.USER.W_DIR + 'python/scripts/logs/average_nightly_obs_log.txt', 'a') as myfile:
-                myfile.write(err_msg)
+            err_uids = str(uid)+', '+str(int(mjd[0]))
+            print(err_uids, flush=True)
                 
         else:
             mag = mag[mask] # remove points that are 1mag away from the median of the group
