@@ -24,5 +24,8 @@ def plot_series(df, uids, axes=None, grouped=None, **kwargs):
 			mask = ( abs(x['mag']-y['mag_med']) > 3*y['mag_std'] ).values
 			ax.scatter(x[mask]['mjd'], x[mask]['mag'], color='r', s=30)
 
+	if len(uids)==1:
+		axes=axes[0]
+		
 	plt.subplots_adjust(hspace=0)
 	return axes
