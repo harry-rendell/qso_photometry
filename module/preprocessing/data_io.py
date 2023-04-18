@@ -35,10 +35,12 @@ def dispatch_reader(kwargs, multiproc=True, i=0):
 	Dispatching function for reader
 	"""
 	if multiproc:
+		n_files = 4 # This 4 is dictated by how many chunks we have split our photometry data into. Currently 4.
 		if __name__ == 'module.preprocessing.data_io':
 			print('Reading using {} cores'.format(cfg.USER.N_CORES))
-			pool = Pool(cfg.USER.N_CORES)
-			df = pool.map(reader, [(j, kwargs) for j in range(4)]) # This 4 is dictated by how many chunks we have split our data into. Currently 4.
+			print('Spawning {} processes'.format(n_files))
+			pool = Pool(n_files)
+			df = pool.map(reader, [(j, kwargs) for j in range(n_files)])
 			df = pd.concat(df, ignore_index=True) # overwrite immediately for prevent holding unnecessary dataframes in memory
 			if 'ID' in kwargs:
 				return df.set_index(kwargs['ID'])
@@ -74,10 +76,12 @@ def writer(args):
 def dispatch_writer(chunks, kwargs):
 	"""
 	Dispatching function for writer
+	TODO: Is it bad that we sometimes spawn more processes than needed?
 	"""
 	if __name__ == 'module.preprocessing.data_io':
 		print('Writing using {} cores'.format(cfg.USER.N_CORES))
-		pool = Pool(cfg.USER.N_CORES)
+		print('Spawning {} processes'.format(len(chunks)))
+		pool = Pool(len(chunks))
 		pool.map(writer, [(i, chunk, kwargs) for i, chunk in enumerate(chunks)])
 
 def dispatch_function(function, chunks, kwargs={}):
@@ -87,7 +91,8 @@ def dispatch_function(function, chunks, kwargs={}):
 	dtypes = kwargs['dtypes'] if 'dtypes' in kwargs else None
 	if __name__ == 'module.preprocessing.data_io':
 		print('Dispatching function on {} cores'.format(cfg.USER.N_CORES))
-		pool = Pool(cfg.USER.N_CORES)
+		print('Spawning {} processes'.format(len(chunks)))
+		pool = Pool(len(chunks))
 		df = pool.map(function, [chunk for chunk in chunks]) # This 4 is dictated by how many chunks we have split our data into. Currently 4.
 		df = pd.concat(df, ignore_index=False) # overwrite immediately for prevent holding unnecessary dataframes in memory
 		dtypes = {k:v for k,v in dtypes.items() if k in df.columns}
