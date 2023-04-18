@@ -1,14 +1,16 @@
 data/
 plots/
 .idea/
+archive/
 **.pdf
 **/computed/
 **/.ipynb_checkpoints
 ***.DS_Store
-**/__pycache__
+***__pycache__
 **.pyc
 **.csv
 **.ipynb
 **.png
 **.jpg
 **.pdf
+**.log
