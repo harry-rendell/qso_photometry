@@ -66,7 +66,7 @@ __C.COLLECTION.ZTF = edict()
 __C.COLLECTION.ZTF.dtypes = {
 					'oid': np.uint64, # note, uint32 is not large enough for ztf oids
 					'clrcoeff': np.float32,
-					'clrcounc': np.float32,
+					'limitmag': np.float32,
 					'mjd': np.float32, # reduced from float64
 					'mag': np.float32,
 					'magerr': np.float32, 
