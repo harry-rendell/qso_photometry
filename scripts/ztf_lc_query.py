@@ -1,57 +1,60 @@
 import pandas as pd
 import numpy as np
+import argparse
 import os
-
-# Note, we could improve this by writing to csv in mode='a' which appends data. ie separate data by filtercode and save to respective csv's.
-
-def split_save(oid_batch,n,i):
-	oid_batch_half = np.array_split(oid_batch,2)
-	# Note: clrcounc provides uncertainty in clrcoeff. Could be used to propogate errors in transformation but this is not currently implemented.
-	# On further inspection, the max and median of clrcounc are on the order 1e-2 and 1e-5 respectively across our data, which is too small to worry about given mag uncertainties
-	df = pd.DataFrame(columns=['oid','mjd','mag','magerr','filtercode','clrcoeff','limitmag'])
-	for j, oids in enumerate(oid_batch_half):
-		url = base_url.format(''.join(['&ID='+str(oid) for oid in oids])[1:])
-		try:
-			df_sub = pd.read_csv(url, usecols = ['oid','mjd','mag','magerr','filtercode','clrcoeff','limitmag'])
-			df = df.append(df_sub)
-		except:
-			print('error downloading batch {}, {}/{}'.format(n, i, n_request))
-			unable_to_download += 'lc_{:01d}_{:04d}'.format(n,i)
-	df.to_csv(output_folder+'raw_lcs/lc_{:01d}_{:04d}.csv'.format(n,i), index=False)
-	print('batch {}, {}/{}: split save complete'.format(n, i, n_request))
-
-def obtain_ztf_lightcurves(n):
-	oids = np.array_split(pd.read_csv(ztf_oids_fname, squeeze=True, index_col='uid', dtype=np.uint64).values, n_cores)[n]
-	for i, oid_batch in enumerate(np.array_split(oids, n_request)):
-		if not os.path.isfile(output_folder+'raw_lcs/lc_{:01d}_{:04d}.csv'.format(n,i)):
-			url = base_url.format(''.join(['&ID='+str(oid) for oid in oid_batch])[1:])
-			try:
-				print('batch {}: requesting {}/{}'.format(n, i, n_request))
-				df = pd.read_csv(url, usecols = ['oid', 'mjd', 'mag','magerr','filtercode','magzp','clrcoeff','clrcounc','airmass'])
-				df.to_csv(output_folder+'raw_lcs/lc_{:01d}_{:04d}.csv'.format(n,i), index=False)
-				print('batch {}: saving     {}/{}'.format(n, i, n_request))
-			except Exception as e:
-				print('response:',e)
-				print('batch {}, {}/{}: URL too long, splitting and saving'.format(n, i, n_request))
-				try:
-					split_save(oid_batch,n,i)
-				except:
-					print('Cannot save',n,i)
-
-			print('batch {}: finished'.format(n))
-			print(unable_to_download)
-		else:
-			print('lc_{:01d}_{:04d}.csv already exists'.format(n,i))
-
-unable_to_download = []
-n_request = 1500 #total number of requests per core. We require n s.t. len(ztf_oids.txt)/(n_request * n_cores) < 350. 350 is approx the max no. oids we can ask for in http request.
-n_cores   = 4
-obj = "qsos"
-ztf_oids_fname  = "/disk1/hrb/python/queries/ztf/{}/ztf_oids.csv".format(obj)
-output_folder = "/disk1/hrb/python/data/surveys/ztf/{}/dr6/".format(obj)
-base_url = "https://irsa.ipac.caltech.edu/cgi-bin/ZTF/nph_light_curves?{}&FORMAT=csv&BAD_CATFLAGS_MASK=32768"
-
+import sys
 from multiprocessing import Pool
-if __name__ == '__main__':
-	p = Pool(4)
-	p.map(obtain_ztf_lightcurves,[0,1,2,3])
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from module.config import cfg
+from urllib.error import HTTPError
+
+def request_and_save_photometry(oid_batch, suffix):
+	base_url = "https://irsa.ipac.caltech.edu/cgi-bin/ZTF/nph_light_curves?{}&FORMAT=csv&BAD_CATFLAGS_MASK=32768"
+	url = base_url.format(''.join(['&ID='+str(oid) for oid in oid_batch])[1:])
+	df = pd.read_csv(url, usecols = ['oid','mjd','mag','magerr','filtercode','clrcoeff','limitmag'], dtype=cfg.COLLECTION.ZTF.dtypes)
+	for band in 'gri':
+		df[df['filtercode']=='z'+band].to_csv(output_folder+'{}_band/lc_{:01d}.csv'.format(band, suffix), index=False, mode='a')
+
+def split_save(oid_batch, suffix, n_chunks):
+	# split into n chunks and save individually
+	for oid_batch_halved in np.array_split(oid_batch, n_chunks):
+		request_and_save_photometry(oid_batch_halved, suffix)
+
+def obtain_ztf_lightcurves(suffix):
+	oids = np.array_split(pd.read_csv(ztf_oids_fname, squeeze=True, usecols=['oid'], dtype=np.uint64).values, cfg.USER.N_CORES)[suffix]
+	for i, oid_batch in enumerate(np.array_split(oids, n_requests)):
+		for n_chunks in [1,2,4,8]:
+			try:
+				print('batch {}, {}/{} requesting     in {} chunk(s)'.format(suffix, i, n_requests, n_chunks))
+				split_save(oid_batch, suffix, n_chunks)
+				print('batch {}, {}/{} success saving in {} chunk(s)'.format(suffix, i, n_requests, n_chunks))
+				success = True
+				break
+			except HTTPError as e:
+				print('batch {}, {}/{} HTTPError      in {} chunk(s)'.format(suffix, i, n_requests, n_chunks))
+				success = False
+		if not success:
+			print('ERROR: batch {}, {}/{} - Unable to save despite splitting into 8 chunks'.format(suffix, i, n_requests))
+
+if __name__ == "__main__":
+	parser = argparse.ArgumentParser()
+	parser.add_argument("--object", type=str, required=True, help ="qsos or calibStars")
+	parser.add_argument("--n_cores", type=int, help="Number of cores to use. If left blank, then this value is taken from N_CORES in the config file.")
+	parser.add_argument("--n_requests", type=int, default=1500, help="Total number of requests per core. We require this number s.t. len(ztf_oids.txt)/(n_request * n_cores) < 350. 350 is approx the max no. oids we can ask for in http request.")
+	args = parser.parse_args()
+
+	print('args:',args)
+	if args.n_cores:
+		cfg.USER.N_CORES = args.n_cores
+
+	n_requests = args.n_requests
+	ztf_oids_fname  = cfg.USER.W_DIR + "python/pipeline/queries/ztf/{}/ztf_oids.csv".format(args.object)
+	output_folder = cfg.USER.W_DIR + "data/surveys/ztf/{}/dr6/".format(args.object)
+
+	# clear previous saved lightcurves
+	for band in 'gri':
+		for i in range(4):
+			open(output_folder+'{}_band/lc_{:01d}.csv'.format(band, i), 'w').close()
+
+	p = Pool(cfg.USER.N_CORES)
+	p.map(obtain_ztf_lightcurves,range(cfg.USER.N_CORES))
