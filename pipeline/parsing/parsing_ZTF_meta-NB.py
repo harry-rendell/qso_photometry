@@ -32,8 +32,9 @@ ax[1].set(ylabel='Number of sources at given magnitude', xlabel='median magnitud
 # ### Remove sources that do not satisfy following constraints
 # 1. At least 2 observations
 # 2. Within 1" of coordinates
+# 3. Fainter than 21.2 (limiting mags in gri are 20.8, 20.6 and 19.9 respectively but allow some buffer)
 
-mask = (meta_data['ngoodobsrel']>1) & (meta_data['dist_x']<1)
+mask = (meta_data['ngoodobsrel']>1) & (meta_data['dist_x']<1) & (meta_data['medianmag']<21.2)
 meta_data_restricted = meta_data[mask]
 print('fraction of data removed with constraints above: {:.2f}%'.format((~mask).sum()/len(mask)*100))
 
@@ -46,12 +47,10 @@ ax[0].set(yscale='log', ylabel='Number of sources at given distance', xlabel='di
 meta_data_restricted['medianmag'].hist(bins=200, ax=ax[1], range=(15,25))
 ax[1].set(ylabel='Number of sources at given magnitude', xlabel='median magnitude (mag)')
 
-save_oids = False
+save_oids = True
 if save_oids:
     meta_data_restricted['oid'].to_csv('../ztf_oids.csv')
 
 meta_data_restricted['oid'].is_unique
 
 meta_data_restricted[meta_data_restricted['oid'].duplicated(keep=False)].sort_values('oid')
-
-
