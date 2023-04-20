@@ -64,4 +64,3 @@ if __name__ == "__main__":
         else:
             output_folder = cfg.USER.W_DIR+'data/surveys/{}/{}/{}/{}_band/'.format(SURVEY, OBJ, is_clean_str, band) 
             grouped.to_csv(output_folder + 'grouped.csv')
-        del grouped
