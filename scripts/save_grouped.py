@@ -49,7 +49,6 @@ if __name__ == "__main__":
                   'ID':ID}
 
         df = data_io.dispatch_reader(kwargs)
-        print(df[df['magerr']<0])
         # Remove obviously bad data
         bounds={'mag':(15,25),'magerr':(0,2)}
         parse.filter_data(df, bounds=bounds, dropna=True, inplace=True)
