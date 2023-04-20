@@ -10,8 +10,9 @@ from urllib.error import HTTPError
 
 def request_and_save_photometry(oid_batch, suffix):
 	base_url = "https://irsa.ipac.caltech.edu/cgi-bin/ZTF/nph_light_curves?{}&FORMAT=csv&BAD_CATFLAGS_MASK=32768"
-	url = base_url.format(''.join(['&ID='+str(oid) for oid in oid_batch])[1:])
+	url = base_url.format(''.join(['&ID='+str(oid) for oid in oid_batch['oid']])[1:])
 	df = pd.read_csv(url, usecols = ['oid','mjd','mag','magerr','filtercode','clrcoeff','limitmag'], dtype=cfg.COLLECTION.ZTF.dtypes)
+	df = df.merge(oid_batch, on='oid', how='left', sort=False)
 	for band in 'gri':
 		df[df['filtercode']=='z'+band].to_csv(output_folder+'{}_band/lc_{:01d}.csv'.format(band, suffix), index=False, mode='a')
 
@@ -21,20 +22,20 @@ def split_save(oid_batch, suffix, n_chunks):
 		request_and_save_photometry(oid_batch_halved, suffix)
 
 def obtain_ztf_lightcurves(suffix):
-	oids = np.array_split(pd.read_csv(ztf_oids_fname, squeeze=True, usecols=['oid'], dtype=np.uint64).values, cfg.USER.N_CORES)[suffix]
+	oids = np.array_split(pd.read_csv(ztf_oids_fname, usecols=['uid','oid'], dtype=np.uint64), cfg.USER.N_CORES)[suffix]
 	for i, oid_batch in enumerate(np.array_split(oids, n_requests)):
 		for n_chunks in [1,2,4,8]:
 			try:
-				print('batch {}, {}/{} requesting     in {} chunk(s)'.format(suffix, i, n_requests, n_chunks))
+				print('batch {}, {}/{} requesting     in {} chunk(s)'.format(suffix, i+1, n_requests, n_chunks), flush=True)
 				split_save(oid_batch, suffix, n_chunks)
-				print('batch {}, {}/{} success saving in {} chunk(s)'.format(suffix, i, n_requests, n_chunks))
+				print('batch {}, {}/{} success saving in {} chunk(s)'.format(suffix, i+1, n_requests, n_chunks), flush=True)
 				success = True
 				break
 			except HTTPError as e:
-				print('batch {}, {}/{} HTTPError      in {} chunk(s)'.format(suffix, i, n_requests, n_chunks))
+				print('batch {}, {}/{} HTTPError      in {} chunk(s)'.format(suffix, i+1, n_requests, n_chunks), flush=True)
 				success = False
 		if not success:
-			print('ERROR: batch {}, {}/{} - Unable to save despite splitting into 8 chunks'.format(suffix, i, n_requests))
+			print('ERROR: batch {}, {}/{} - Unable to save despite splitting into 8 chunks'.format(suffix, i+1, n_requests), flush=True)
 
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser()
