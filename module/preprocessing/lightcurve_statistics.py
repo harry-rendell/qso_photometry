@@ -2,9 +2,9 @@ import numpy as np
 import pandas as pd
 from ..config import cfg
 
-# def groupby_apply_stats(args):
-#     df, kwargs = args
-#     return df.groupby(df.index.names).apply(stats).apply(pd.Series).astype(cfg.PREPROC.stats_dtypes)
+def groupby_apply_features(df):
+    s = df.groupby(df.index.name).apply(calculate_features)
+    return pd.DataFrame(s.values.tolist(), index=s.index, dtype='float32')
 
 def groupby_apply_average(df):
     s = df.groupby([df.index.name, 'mjd_floor']).apply(average_nightly_obs)
@@ -13,6 +13,10 @@ def groupby_apply_average(df):
 def groupby_apply_stats(df):
     s = df.groupby(df.index.name).apply(stats)
     return pd.DataFrame(s.values.tolist(), index=s.index, dtype='float32')
+
+def calculate_features(group):
+    mjd, mag, magerr = group[['mjd','mag','magerr']].values.T
+
 
 def average_nightly_obs(group):
     n = len(group)
@@ -39,9 +43,7 @@ def average_nightly_obs(group):
 
 def stats(group):
     # assign pandas columns to numpy arrays
-    mjds       = group['mjd'].values
-    mag        = group['mag'].values
-    magerr     = group['magerr'].values
+    mjd, mag, magerr = group[['mjd','mag','magerr']].values.T
 
     # number of observations
     n_tot   = len(group)
