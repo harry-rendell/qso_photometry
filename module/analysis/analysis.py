@@ -320,7 +320,7 @@ class analysis():
 			
 			dm2_de2 = dtdm[:,1]**2 - dmagerr**2
 			
-			duid = np.full(int(n*(n-1)/2),uid,dtype='uint32')
+			duid = np.full(n*(n-1)//2,uid,dtype='uint32')
 			
 			# collate data to DataFrame and append
 			df = df.append(pd.DataFrame(data={self.ID:duid,'dt':dtdm[:,0],'dm':dtdm[:,1], 'de':dmagerr, 'dm2_de2':dm2_de2, 'cat':dcat}))
