@@ -25,7 +25,6 @@ if __name__ == "__main__":
     SURVEY = args.survey.lower()
 
     ID = 'uid' if (OBJ == 'qsos') else 'uid_s'
-    wdir = cfg.USER.W_DIR
     
     nrows = args.n_rows
     skiprows = args.n_skiprows
@@ -35,16 +34,11 @@ if __name__ == "__main__":
     if args.n_cores:
         cfg.USER.N_CORES = args.n_cores
 
-    # Make log directory
-    log_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'logs')
-    if not os.path.exists(log_dir):
-        os.makedirs(log_dir)
-
     kwargs = {'dtypes': cfg.PREPROC.lc_dtypes,
-          'nrows': nrows,
-          'skiprows': skiprows,
-          'basepath': wdir+'data/surveys/{}/{}/unclean/{}_band/'.format(SURVEY, OBJ, BAND),
-          'ID':ID}
+              'nrows': nrows,
+              'skiprows': skiprows,
+              'basepath': cfg.USER.W_DIR+'data/surveys/{}/{}/unclean/{}_band/'.format(SURVEY, OBJ, BAND),
+              'ID':ID}
 
     df = data_io.dispatch_reader(kwargs, multiproc=True)
 
@@ -55,7 +49,7 @@ if __name__ == "__main__":
     print('Unable to average the following:\n'+ID+', mjd')
 
     # Read in grouped data
-    grouped = pd.read_csv(wdir+'data/surveys/{}/{}/unclean/{}_band/grouped.csv'.format(SURVEY, OBJ, BAND), usecols=[ID, 'mag_med','mag_std']).set_index(ID)
+    grouped = pd.read_csv(cfg.USER.W_DIR+'data/surveys/{}/{}/unclean/{}_band/grouped.csv'.format(SURVEY, OBJ, BAND), usecols=[ID, 'mag_med','mag_std']).set_index(ID)
     uids = grouped.index[grouped['mag_med']<cfg.PREPROC.LIMIT_MAG[SURVEY.upper()][BAND]]
     df = df[df.index.isin(uids)]
 
