@@ -38,7 +38,8 @@ if __name__ == "__main__":
 
     if args.n_cores:
         cfg.USER.N_CORES = args.n_cores
-
+    
+    start = time.time()
     for band in args.band:
         print(band)
         # keyword arguments to pass to our reading function
@@ -59,8 +60,11 @@ if __name__ == "__main__":
         chunks = parse.split_into_non_overlapping_chunks(df_multi_obs, cfg.USER.N_CORES)
         kwargs = {'dtypes':cfg.PREPROC.stats_dtypes}
         grouped = data_io.dispatch_function(lightcurve_statistics.groupby_apply_stats, chunks, kwargs)
+        output_fpath = cfg.USER.W_DIR+'data/surveys/{}/{}/{}/{}_band/'.format(SURVEY, OBJ, is_clean_str, band) + 'grouped.csv'
         if args.dry_run:
             print(grouped)
+            print('output file path:',output_fpath)
         else:
-            output_folder = cfg.USER.W_DIR+'data/surveys/{}/{}/{}/{}_band/'.format(SURVEY, OBJ, is_clean_str, band) 
-            grouped.to_csv(output_folder + 'grouped.csv')
+            grouped.to_csv(output_fpath)
+            
+        print('Elapsed:',time.strftime("%Hh %Mm %Ss",time.gmtime(time.time()-start)))
