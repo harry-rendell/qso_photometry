@@ -15,7 +15,7 @@ def transform_ztf_to_ps(df, obj, band):
         df['mag'] = (df['mag_orig'] + df['clrcoeff']*df['mean_ri']).astype(cfg.COLLECTION.ZTF.dtypes.mag)
     else:
         raise Exception('Unrecognised band: '+band)
-    return df[['mjd', 'mag', 'mag_orig', 'magerr']]
+    return df[['mjd', 'mag', 'mag_orig', 'magerr']].dropna(subset=['mag']) # There are some NaN entries in colors_sdss.csv
 
 def transform_sdss_to_ps(df, color='g-r', system='tonry'):
     """
