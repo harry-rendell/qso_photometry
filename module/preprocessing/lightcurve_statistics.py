@@ -20,7 +20,7 @@ def calculate_features(group):
 
 def average_nightly_obs(group):
     n = len(group)
-    mjd, mag, magerr, mag_median, mag_std = group[['mjd','mag','magerr','mag_med','mag_std']].values.T
+    mjd, mag, mag_orig, magerr, mag_median, mag_std = group[['mjd','mag','mag_orig','magerr','mag_med','mag_std']].values.T
     
     if np.ptp(mag) > 0.5:
         mask = abs(mag-mag_median) < 5*mag_std
@@ -38,8 +38,9 @@ def average_nightly_obs(group):
     mjd_mean  = np.mean(mjd)
     magerr_mean = ((magerr ** 2).sum()/n) ** 0.5 # sum errors in quadrature. Do not use 'error on optimal average' since it makes the errors unphysically small.
     mag_mean  = -2.5*np.log10(np.average(10**(-(mag-8.9)/2.5), weights = magerr**-2)) + 8.9
-        
-    return {'mjd':mjd_mean, 'mag':mag_mean, 'magerr':magerr_mean}
+    mag_orig_mean  = -2.5*np.log10(np.average(10**(-(mag_orig-8.9)/2.5), weights = magerr**-2)) + 8.9    
+
+    return {'mjd':mjd_mean, 'mag':mag_mean, 'mag_orig':mag_orig_mean, 'magerr':magerr_mean}
 
 def stats(group):
     # assign pandas columns to numpy arrays
