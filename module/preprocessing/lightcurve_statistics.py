@@ -49,8 +49,8 @@ def stats(group):
     n_tot   = len(group)
 
     # time
-    mjd_min =  mjds.min()
-    mjd_max =  mjds.max()
+    mjd_min =  mjd.min()
+    mjd_max =  mjd.max()
     mjd_ptp =  np.ptp(group['mjd'])
 
     # magnitudes, using PS system
