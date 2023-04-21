@@ -32,4 +32,4 @@ def transform_sdss_to_ps(df, color='g-r', system='tonry'):
         slidx = pd.IndexSlice[:, band]
         x = df.loc[slidx, color]
         df.loc[slidx, 'mag'] = df.loc[slidx, 'mag_orig'] + a0 + a1*x + a2*(x**2) + a3*(x**3)
-    return df[['mjd', 'mag', 'mag_orig', 'magerr']]
+    return df[['mjd', 'mag', 'mag_orig', 'magerr']].dropna(subset=['mag'])
