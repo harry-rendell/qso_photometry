@@ -81,8 +81,8 @@ if __name__ == "__main__":
         print(df)
     else:
         # Add comment to start of csv file
-        comment = """# CSV of photometry with preprocessing asnd cleaning.
-# mag : transformed photometry in PanSTARRS photometric system""".format(SURVEY.upper())
+        comment = """# CSV of photometry with preprocessing and cleaning.
+# mag : photometry in PanSTARRS photometric system"""
 
         # keyword arguments to pass to our writing function
         kwargs = {'comment':comment,
