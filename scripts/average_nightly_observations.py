@@ -37,6 +37,7 @@ if __name__ == "__main__":
     kwargs = {'dtypes': cfg.PREPROC.lc_dtypes,
               'nrows': nrows,
               'skiprows': skiprows,
+              'usecols': [ID,'mjd','mag','magerr'],
               'basepath': cfg.USER.W_DIR+'data/surveys/{}/{}/unclean/{}_band/'.format(SURVEY, OBJ, BAND),
               'ID':ID}
 
@@ -81,7 +82,7 @@ if __name__ == "__main__":
         print(df)
     else:
         # Add comment to start of csv file
-        comment = """# CSV of photometry with preprocessing and cleaning.
+        comment = """# CSV of photometry with preprocessing and cleaning
 # mag : photometry in PanSTARRS photometric system"""
 
         # keyword arguments to pass to our writing function

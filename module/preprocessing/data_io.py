@@ -68,7 +68,7 @@ def writer(args):
 
 	f = open(basepath+'lc_{}.csv'.format(i), mode)
 	if 'comment' in kwargs:
-		f.write(kwargs['comment'])
+		f.write(kwargs['comment']+"\n")
 	chunk.to_csv(f)
 
 def dispatch_writer(chunks, kwargs):
