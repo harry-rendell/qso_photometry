@@ -109,6 +109,13 @@ __C.PREPROC.stats_dtypes = {'n_tot': np.uint16, # Increase this to uint32 if we 
 						    'magerr_med': np.float32,
 						    'magerr_opt_std': np.float32}
 
+# maybe not needed as the types stay consistent
+__C.PREPROC.pairwise_dtypes = {'uid': np.uint32,
+							   'dt':np.float32,
+							   'dm':np.float32,
+							   'de':np.float32
+							   }
+
 # Limiting magnitudes
 __C.PREPROC.LIMIT_MAG = edict()
 
@@ -145,6 +152,12 @@ __C.PREPROC.MAG_ERR_THRESHOLD = 0.198
 
 # Bounds to use on parse.filter_data in average_nightly_observations.py when removing bad data.
 __C.PREPROC.FILTER_BOUNDS = {'mag':(15,25),'magerr':(0,2)}
+
+__C.PREPROC.SURVEY_IDS =   {'sss_r1': 1,
+							'sss_r2': 3,
+						 	'sdss': 5,
+							'ps': 7,
+						 	'ztf': 11}
 
 #------------------------------------------------------------------------------
 # Analysis
