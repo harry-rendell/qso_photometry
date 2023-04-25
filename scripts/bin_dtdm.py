@@ -86,7 +86,7 @@ def bin_chunks(indicies):
 
         ########
 
-w
+
 	return dts_binned_tot, dms_binned_tot, dm2_de2_binned_tot, des_binned_tot, dcat_tot
 
 ##########################################
