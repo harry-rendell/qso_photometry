@@ -5,10 +5,13 @@ import matplotlib.pyplot as plt
 from scipy.stats import binned_statistic
 from bokeh.plotting import figure, output_notebook, show
 from bokeh.layouts import column
-from ..config import cfg
+import os
+import sys
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from module.config import cfg
+from module.preprocessing import data_io, parse, lightcurve_statistics
 
 wdir = cfg.USER.W_DIR
-DTYPES = {'catalogue': np.uint8, 'mag': np.float32, 'magerr': np.float32, 'mjd': np.float64, 'uid': np.uint32, 'uid_s':np.uint32}
 
 def calc_moments(bins,weights):
 	"""
@@ -17,16 +20,6 @@ def calc_moments(bins,weights):
 	x = bins*weights
 	z = (x-x.mean(axis=1)[:,np.newaxis])/x.std(axis=1)[:,np.newaxis]
 	return x.mean(axis=1), (z**4).mean(axis = 1) - 3
-
-def reader(args):
-	"""
-	Reading function for multiprocessing
-	"""
-	n_subarray, basepath, nrows = args
-	return pd.read_csv(basepath+'lc_{}.csv'.format(n_subarray), 
-					   comment='#',
-					   dtype = DTYPES,
-					   nrows=nrows)
 
 class analysis():
 	def __init__(self, ID, obj, band):
@@ -58,20 +51,17 @@ class analysis():
 			basepath = wdir+'data/merged/{}/{}_band/'.format(self.obj, self.band)
 		else:
 			basepath = wdir+'data/merged/{}/{}_band/unclean/'.format(self.obj, self.band)
-		pool = Pool(4)
-		df_list = pool.map(reader, [(i, basepath, nrows) for i in range(4)])
-		self.df = pd.concat(df_list, ignore_index=True).set_index(self.ID) #.rename(columns={'mag_ps':'mag'}) 
-		# NOTE: Removed 'rename' above since unclean has mag and mag_ps columns. Cleaned photometry has mag only.
-		# TODO: Would be good to add in print statments saying: 'lost n1 readings due to -9999, n2 to -ve errors etc'
 
-		# This is done in preprocess_raw_lightcurves
-		# Remove bad values from SDSS (= -9999) and large outliers (bad data)
-		# self.df = self.df[(self.df['mag'] < 25) & (self.df['mag'] > 15)]
-		# Remove -ve errors (why are they there?) and readings with >0.5 error
-		# self.df = self.df[ (self.df['magerr'] > 0) & (self.df['magerr'] < 0.5)]
+		kwargs = {'dtypes': cfg.PREPROC.lc_dtypes,
+		          'nrows': nrows,
+		          'basepath': basepath, # we should make this path more general so it is consistent between surveys
+		          'ID': self.ID}
+
+		self.df = data_io.dispatch_reader(kwargs, multiproc=True)
 
 		# Remove objects with a single observation.
 		self.df = self.df[self.df.index.duplicated(keep=False)]
+		
 		if redshift:
 			# add on column for redshift. Use squeeze = True when reading in a single column.
 			self.redshifts = pd.read_csv(wdir+'data/catalogues/qsos/dr14q/dr14q_uid_desig_z.csv', index_col=self.ID, usecols=[self.ID,'z'], squeeze=True).rename('redshift')
