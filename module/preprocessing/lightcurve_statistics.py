@@ -48,44 +48,69 @@ def stats(group):
     # number of observations
     n_tot   = len(group)
 
-    # time
-    mjd_min =  mjd.min()
-    mjd_max =  mjd.max()
-    mjd_ptp =  np.ptp(group['mjd'])
+    if n_tot == 1:
+        mjd_min = mjd[0]
+        mjd_max = mjd[0]
+        mjd_ptp = 0
+        mag_min = np.nan
+        mag_max = np.nan
+        mag_mean = mag[0]
+        mag_med = mag[0]
+        mag_opt_mean = np.nan
+        mag_opt_mean_flux = np.nan
+        mag_std = np.nan
+        magerr_max = np.nan
+        magerr_mean = magerr[0]
+        magerr_med = magerr[0]
+        magerr_opt_std = np.nan
 
-    # magnitudes, using PS system
-    mag_min = min(mag)
-    mag_max = max(mag)
-    mag_med = -2.5*np.log10(np.median(10**(-(mag-8.9)/2.5))) + 8.9
-    mag_mean= -2.5*np.log10(np.mean  (10**(-(mag-8.9)/2.5))) + 8.9
-    mag_std = np.std(mag)
-    
-    # native (untransformed) magnitudes
-    if 'mag_orig' in group:
-        mag_native = group['mag_orig'].values
-        mag_med_native  = -2.5*np.log10(np.median(10**(-(mag_native-8.9)/2.5))) + 8.9
-        mag_mean_native = -2.5*np.log10(np.mean  (10**(-(mag_native-8.9)/2.5))) + 8.9
-        mag_stats_native = {'mag_mean_native':mag_mean_native,
-                            'mag_med_native':mag_med_native}
+        if 'mag_orig' in group:
+            mag_mean_native = group['mag_orig'].values[0]
+            mag_med_native = group['mag_orig'].values[0]
+            mag_stats_native = {'mag_mean_native':mag_mean_native,
+                                'mag_med_native':mag_med_native}
+        else:
+            mag_stats_native = {}
+            
     else:
-        mag_stats_native = {}
-    
-    # magnitude errors
-    magerr_max = magerr.max()
-    magerr_med = np.median(magerr)
-    magerr_mean= np.mean(magerr)
-    
-    # using flux flux
-    flux = 10**(-(mag-8.9)/2.5)
-    fluxerr = 0.921*flux*magerr # ln(10)/2.5 ~ 0.921
-    fluxerr_mean_opt = ( flux*(fluxerr**-2) ).sum()/(fluxerr**-2).sum()
-    # calculate the optimal flux average then convert back to mags
-    mag_opt_mean_flux = -2.5*np.log10(fluxerr_mean_opt) + 8.9
-    # magerr_opt_std_flux = not clear how to calculate this. magerr_opt_std should suffice.
+        # time
+        mjd_min =  mjd.min()
+        mjd_max =  mjd.max()
+        mjd_ptp =  np.ptp(group['mjd'])
 
-    # optimal (inverse-variance weighted) averages (see aaa04)
-    mag_opt_mean   = ( mag*(magerr**-2) ).sum()/(magerr**-2).sum()
-    magerr_opt_std = (magerr**-2).sum()**-0.5
+        # magnitudes, using PS system
+        mag_min = min(mag)
+        mag_max = max(mag)
+        mag_med = -2.5*np.log10(np.median(10**(-(mag-8.9)/2.5))) + 8.9
+        mag_mean= -2.5*np.log10(np.mean  (10**(-(mag-8.9)/2.5))) + 8.9
+        mag_std = np.std(mag)
+        
+        # native (untransformed) magnitudes
+        if 'mag_orig' in group:
+            mag_native = group['mag_orig'].values
+            mag_med_native  = -2.5*np.log10(np.median(10**(-(mag_native-8.9)/2.5))) + 8.9
+            mag_mean_native = -2.5*np.log10(np.mean  (10**(-(mag_native-8.9)/2.5))) + 8.9
+            mag_stats_native = {'mag_mean_native':mag_mean_native,
+                                'mag_med_native':mag_med_native}
+        else:
+            mag_stats_native = {}
+        
+        # magnitude errors
+        magerr_max = magerr.max()
+        magerr_med = np.median(magerr)
+        magerr_mean= np.mean(magerr)
+        
+        # using flux flux
+        flux = 10**(-(mag-8.9)/2.5)
+        fluxerr = 0.921*flux*magerr # ln(10)/2.5 ~ 0.921
+        fluxerr_mean_opt = ( flux*(fluxerr**-2) ).sum()/(fluxerr**-2).sum()
+        # calculate the optimal flux average then convert back to mags
+        mag_opt_mean_flux = -2.5*np.log10(fluxerr_mean_opt) + 8.9
+        # magerr_opt_std_flux = not clear how to calculate this. magerr_opt_std should suffice.
+
+        # optimal (inverse-variance weighted) averages (see aaa04)
+        mag_opt_mean   = ( mag*(magerr**-2) ).sum()/(magerr**-2).sum()
+        magerr_opt_std = (magerr**-2).sum()**-0.5
 
     return {**{'n_tot':n_tot,
             'mjd_min':mjd_min,

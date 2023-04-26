@@ -54,10 +54,7 @@ if __name__ == "__main__":
         bounds={'mag':(15,25),'magerr':(0,2)}
         parse.filter_data(df, bounds=bounds, dropna=True, inplace=True)
 
-        df_multi_obs = df[df.index.duplicated(keep=False)]
-        del df
-
-        chunks = parse.split_into_non_overlapping_chunks(df_multi_obs, cfg.USER.N_CORES)
+        chunks = parse.split_into_non_overlapping_chunks(df, cfg.USER.N_CORES)
         kwargs = {'dtypes':cfg.PREPROC.stats_dtypes}
         grouped = data_io.dispatch_function(lightcurve_statistics.groupby_apply_stats, chunks, kwargs)
         output_fpath = cfg.USER.W_DIR+'data/surveys/{}/{}/{}/{}_band/'.format(SURVEY, OBJ, is_clean_str, band) + 'grouped.csv'
