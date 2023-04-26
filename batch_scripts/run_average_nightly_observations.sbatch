@@ -3,7 +3,7 @@
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=16
 #SBATCH --job-name=qso_avg
-#SBATCH --mem=42G
+#SBATCH --mem=40G
 #SBATCH -t 99:00:00
 
 # Note, we can run this as a normal batch script using bash <filename>
@@ -15,14 +15,10 @@ cd /home/hrb/qso_photometry/python
 module load anaconda
 source activate astroconda
 
-# python scripts/average_nightly_observations.py --object='qsos' --band='r' --survey='ps'  --n_cores=16 >& sbatch_scripts/log_average_nightly_observations_ps_r.txt
-# python scripts/average_nightly_observations.py --object='qsos' --band='r' --survey='ztf' --n_cores=16 >& sbatch_scripts/log_average_nightly_observations_ztf_r.txt
-
-# python scripts/average_nightly_observations.py --object='qsos' --band='g' --survey='ps'   --n_cores=16 >& sbatch_scripts/log_average_nightly_observations_ps_g.txt
-# python scripts/average_nightly_observations.py --object='qsos' --band='g' --survey='ztf'  --n_cores=16 >& sbatch_scripts/log_average_nightly_observations_ztf_g.txt
-
-# python scripts/average_nightly_observations.py --object='qsos' --band='i' --survey='ps'   --n_cores=16 >& sbatch_scripts/log_average_nightly_observations_ps_i.txt
-# python scripts/average_nightly_observations.py --object='qsos' --band='i' --survey='ztf'  --n_cores=16 >& sbatch_scripts/log_average_nightly_observations_ztf_i.txt
+# use same number of cores as cpus-per-task above
+n_cores=16
 
 # test 
-python scripts/average_nightly_observations.py --object='qsos' --band='r' --survey='ztf'  --n_cores=4 --n_rows=100000 --dry_run >& sbatch_scripts/log_average_nightly_observations_ztf_r.txt
+# python scripts/average_nightly_observations.py --object='qsos' --band='r' --survey='ztf'  --n_cores=4 --n_rows=10000 --dry_run >& batch_scripts/logs/log_average_nightly_observations_test.txt
+
+python scripts/average_nightly_observations.py --object='qsos' --band='gri' --survey='sdss ps ztf' --n_cores=$n_cores >& batch_scripts/logs/log_average_nightly_observations.txt

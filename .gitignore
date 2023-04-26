@@ -2,7 +2,7 @@ data/
 plots/
 .idea/
 archive/
-**.pdf
+logs/
 **/computed/
 **/.ipynb_checkpoints
 ***.DS_Store
@@ -14,3 +14,5 @@ archive/
 **.jpg
 **.pdf
 **.log
+**.out
+**.pdf

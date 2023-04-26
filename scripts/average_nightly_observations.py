@@ -17,13 +17,12 @@ if __name__ == "__main__":
     parser.add_argument("--n_rows", type=int, help="Number of rows to read in from the photometric data")
     parser.add_argument("--n_skiprows", type=int, help="Number of chunks of n_rows to skip when reading in photometric data")
     parser.add_argument("--dry_run", action='store_true', help="Number of chunks of n_rows to skip when reading in photometric data")
+    
     args = parser.parse_args()
+    # Print the arguments for the log
     print('args:',args)
     
     OBJ = args.object.lower()
-    BAND   = args.band.lower()
-    SURVEY = args.survey.lower()
-
     ID = 'uid' if (OBJ == 'qsos') else 'uid_s'
     
     nrows = args.n_rows
@@ -34,61 +33,65 @@ if __name__ == "__main__":
     if args.n_cores:
         cfg.USER.N_CORES = args.n_cores
 
-    kwargs = {'dtypes': cfg.PREPROC.lc_dtypes,
-              'nrows': nrows,
-              'skiprows': skiprows,
-              'usecols': [ID,'mjd','mag','magerr'],
-              'basepath': cfg.USER.W_DIR+'data/surveys/{}/{}/unclean/{}_band/'.format(SURVEY, OBJ, BAND),
-              'ID':ID}
+    for survey in args.survey.lower().split(' '):
+        for band in args.band.lower():
+            print('\nsurvey: {}, band: {}'.format(survey, band))
+            # keyword arguments to pass to our reading function
+            kwargs = {'dtypes': cfg.PREPROC.lc_dtypes,
+                      'nrows': nrows,
+                      'skiprows': skiprows,
+                      'usecols': [ID,'mjd','mag','magerr'],
+                      'basepath': cfg.USER.W_DIR+'data/surveys/{}/{}/unclean/{}_band/'.format(survey, OBJ, band),
+                      'ID':ID}
 
-    df = data_io.dispatch_reader(kwargs, multiproc=True)
+            df = data_io.dispatch_reader(kwargs, multiproc=True)
 
-    # Remove obviously bad data
-    parse.filter_data(df, bounds=cfg.PREPROC.FILTER_BOUNDS, dropna=True, inplace=True)
+            # Remove obviously bad data
+            parse.filter_data(df, bounds=cfg.PREPROC.FILTER_BOUNDS, dropna=True, inplace=True)
 
-    # make header for output
-    print('Unable to average the following:\n'+ID+', mjd')
+            # make header for output
+            print('Unable to average the following:\n'+ID+', mjd')
 
-    # Read in grouped data
-    grouped = pd.read_csv(cfg.USER.W_DIR+'data/surveys/{}/{}/unclean/{}_band/grouped.csv'.format(SURVEY, OBJ, BAND), usecols=[ID, 'mag_med','mag_std']).set_index(ID)
-    uids = grouped.index[grouped['mag_med']<cfg.PREPROC.LIMIT_MAG[SURVEY.upper()][BAND]]
-    df = df[df.index.isin(uids)]
+            # Read in grouped data
+            grouped = pd.read_csv(cfg.USER.W_DIR+'data/surveys/{}/{}/unclean/{}_band/grouped.csv'.format(survey, OBJ, band), usecols=[ID, 'mag_med','mag_std']).set_index(ID)
+            uids = grouped.index[grouped['mag_med']<cfg.PREPROC.LIMIT_MAG[survey.upper()][band]]
+            df = df[df.index.isin(uids)]
 
-    # Discretise mjd
-    df['mjd_floor'] = np.floor(df['mjd']).astype('uint32')
+            # Discretise mjd
+            df['mjd_floor'] = np.floor(df['mjd']).astype('uint32')
 
-    # Separate observations into ones which share another observation on the same night (multi_obs) and those that do not (single_obs)
-    mask = df.reset_index()[[ID,'mjd_floor']].duplicated(keep=False).values
-    single_obs = df[~mask].drop(columns='mjd_floor')
-    multi_obs = df[mask]
-    del df
+            # Separate observations into ones which share another observation on the same night (multi_obs) and those that do not (single_obs)
+            mask = df.reset_index()[[ID,'mjd_floor']].duplicated(keep=False).values
+            single_obs = df[~mask].drop(columns='mjd_floor')
+            multi_obs = df[mask]
+            del df
 
-    # Join lightcurve median and std onto dataframe
-    multi_obs = multi_obs.join(grouped[['mag_med','mag_std']], on=ID)
-    
-    chunks = parse.split_into_non_overlapping_chunks(multi_obs, cfg.USER.N_CORES)
-    kwargs = {'dtypes':cfg.PREPROC.lc_dtypes}
+            # Join lightcurve median and std onto dataframe
+            multi_obs = multi_obs.join(grouped[['mag_med','mag_std']], on=ID)
+            
+            chunks = parse.split_into_non_overlapping_chunks(multi_obs, cfg.USER.N_CORES)
+            kwargs = {'dtypes':cfg.PREPROC.lc_dtypes}
 
-    start = time.time()
-    averaged = data_io.dispatch_function(lightcurve_statistics.groupby_apply_average, chunks, kwargs)
-    end   = time.time()
-    print('Elapsed:',time.strftime("%Hh %Mm %Ss",time.gmtime(end-start)))
+            start = time.time()
+            averaged = data_io.dispatch_function(lightcurve_statistics.groupby_apply_average, chunks, kwargs)
+            end   = time.time()
+            print('Elapsed:',time.strftime("%Hh %Mm %Ss",time.gmtime(end-start)))
 
-    # Add the data from nights with multiple observations back on
-    df = single_obs.append(averaged).sort_values([ID,'mjd'])
-    df.index = df.index.astype('uint32')
-    
-    if args.dry_run:
-        print(df)
-    else:
-        # Add comment to start of csv file
-        comment = """# CSV of photometry with preprocessing and cleaning
+            # Add the data from nights with multiple observations back on
+            df = single_obs.append(averaged).sort_values([ID,'mjd'])
+            df.index = df.index.astype('uint32')
+            
+            if args.dry_run:
+                print(df)
+            else:
+                # Add comment to start of csv file
+                comment = """# CSV of photometry with preprocessing and cleaning
 # mag : photometry in PanSTARRS photometric system"""
 
-        # keyword arguments to pass to our writing function
-        kwargs = {'comment':comment,
-                  'basepath':cfg.USER.W_DIR + 'data/surveys/{}/{}/clean/{}_band/'.format(SURVEY, OBJ, BAND)}
+                # keyword arguments to pass to our writing function
+                kwargs = {'comment':comment,
+                          'basepath':cfg.USER.W_DIR + 'data/surveys/{}/{}/clean/{}_band/'.format(survey, OBJ, band)}
 
-        chunks = parse.split_into_non_overlapping_chunks(df, 4)
-        data_io.dispatch_writer(chunks, kwargs)
-
+                chunks = parse.split_into_non_overlapping_chunks(df, 4)
+                data_io.dispatch_writer(chunks, kwargs)
+print('Finished')

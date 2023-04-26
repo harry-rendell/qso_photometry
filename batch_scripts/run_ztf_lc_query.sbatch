@@ -14,4 +14,4 @@ cd /home/hrb/qso_photometry/python
 # Load anaconda. Omit this if not running on cuillinmodule load anaconda
 source activate astroconda
 
-python scripts/ztf_lc_query.py --object='qsos' --n_cores=4 --n_requests=1500  > sbatch_scripts/log_ztf_lc_query.txt
+python scripts/ztf_lc_query.py --object='qsos' --n_cores=4 --n_requests=1500  > batch_scripts/logs/log_ztf_lc_query.txt
