@@ -60,7 +60,7 @@ if __name__ == "__main__":
 	for band in 'gri':
 		for i in range(4):
 			with open(output_folder+'{}_band/lc_{:01d}.csv'.format(band, i), 'w') as file:
-				file.write(','.join(SAVE_COLS))
+				file.write(','.join(SAVE_COLS) + '\n')
 
 	p = Pool(n_workers)
 	p.map(obtain_ztf_lightcurves,range(n_workers))
