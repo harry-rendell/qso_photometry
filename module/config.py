@@ -89,7 +89,8 @@ __C.PREPROC.lc_dtypes = {'mjd': np.float32,
 						 'mag_orig': np.float32,
 						 'magerr': np.float32,
 						 'uid': np.uint32,
-						 'uid_s': np.uint32}
+						 'uid_s': np.uint32,
+						 'sid': np.uint8}
 
 __C.PREPROC.stats_dtypes = {'n_tot': np.uint16, # Increase this to uint32 if we think we will have more than 2^16 (65,536) observations for a single object
 						    'mjd_min': np.float32,

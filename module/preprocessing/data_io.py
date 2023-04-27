@@ -1,22 +1,27 @@
 import pandas as pd
 from multiprocessing import Pool
 import os
+from .import parse
 from ..config import cfg
 
-def reader(args):
+def reader(fname, kwargs):
 	"""
 	Reading function for multiprocessing
 	"""
-	i, kwargs = args
 	dtypes = kwargs['dtypes'] if 'dtypes' in kwargs else None
 	nrows  = kwargs['nrows']  if 'nrows'  in kwargs else None
 	usecols = kwargs['usecols'] if 'usecols' in kwargs else None
 	skiprows = kwargs['skiprows'] if 'skiprows' in kwargs else None
 	basepath = kwargs['basepath']
+	
+	if 'ID' in kwargs:
+		ID = kwargs['ID']
+	else:
+		raise Exception('ID must be provided in keyword args')
 
 	# Open the file and skip any comments. Leave the file object pointed to the header.
 	# Pass in the header in case we decide to skip rows.
-	with open(basepath+'lc_{}.csv'.format(i)) as file:
+	with open(os.path.join(basepath,fname)) as file:
 		ln = 0
 		for line in file:
 			ln += 1
@@ -28,34 +33,29 @@ def reader(args):
 						   dtype=dtypes,
 						   nrows=nrows,
 						   names=names,
-						   skiprows=skiprows)
+						   skiprows=skiprows).set_index(ID)
 # @profile
-def dispatch_reader(kwargs, multiproc=True, i=0):
+def dispatch_reader(kwargs, multiproc=True, i=0, max_processes=64):
 	"""
 	Dispatching function for reader
 	"""
+	fnames = sorted([f for f in os.listdir(kwargs['basepath']) if (f.startswith('lc_') and f.endswith('.csv'))])
+	n_files = len(fnames)
 	if multiproc:
-		n_files = 4 # This 4 is dictated by how many chunks we have split our photometry data into. Currently 4.
 		if __name__ == 'module.preprocessing.data_io':
-			pool = Pool(n_files)
-			df = pool.map(reader, [(j, kwargs) for j in range(n_files)])
-			df = pd.concat(df, ignore_index=True) # overwrite immediately for prevent holding unnecessary dataframes in memory
-			if 'ID' in kwargs:
-				return df.set_index(kwargs['ID'])
-			else:
-				return df
-	else:
-		df = reader((i, kwargs))
-		if 'ID' in kwargs:
-			return df.set_index(kwargs['ID'])
-		else:
-			return df
+			# Make as many tasks as there are files, unless we have set max_processes
+			n_tasks = min(n_files, max_processes)
+			with Pool(n_tasks) as pool:
+				df = pool.starmap(reader, [(fname, kwargs) for fname in fnames])
+			# sorting is required as we cannot guarantee that starmap returns dataframes in the order we expect.
+			return pd.concat(df, sort=True)
+	else: 
+		return reader((fnames[i], kwargs))
 
-def writer(args):
+def writer(i, chunk, kwargs):
 	"""
 	Writing function for multiprocessing
 	"""
-	i, chunk, kwargs = args
 	mode = kwargs['mode'] if 'mode' in kwargs else 'w'
 	if 'basepath' in kwargs:
 		basepath = kwargs['basepath']
@@ -63,34 +63,69 @@ def writer(args):
 		raise Exception('user must provide path for saving output')
 
 	# if folder does not exist, create it
-	if not os.path.exists(basepath):
-		os.makedirs(basepath)
+	os.makedirs(basepath, exist_ok=True)
 
-	f = open(basepath+'lc_{}.csv'.format(i), mode)
+	f = open(os.path.join(basepath,'lc_{}.csv'.format(i)), mode)
 	if 'comment' in kwargs:
 		f.write(kwargs['comment']+"\n")
 	chunk.to_csv(f)
 
-def dispatch_writer(chunks, kwargs):
+def dispatch_writer(chunks, kwargs, max_processes=64):
 	"""
 	Dispatching function for writer
 	TODO: Is it bad that we sometimes spawn more processes than needed?
 	"""
 	if __name__ == 'module.preprocessing.data_io':
-		pool = Pool(len(chunks))
-		pool.map(writer, [(i, chunk, kwargs) for i, chunk in enumerate(chunks)])
+		n_tasks = min(len(chunks), max_processes)
+		with Pool(n_tasks) as pool:
+			pool.starmap(writer, [(i, chunk, kwargs) for i, chunk in enumerate(chunks)])
 
-def dispatch_function(function, chunks, kwargs={}):
+def process_input(function, df_or_fname, kwargs):
 	"""
-	Dispatch generic function on a set of chunks
+	This function handles inputs
 	"""
-	dtypes = kwargs['dtypes'] if 'dtypes' in kwargs else None
-	if __name__ == 'module.preprocessing.data_io':
-		pool = Pool(len(chunks))
-		df = pool.map(function, [chunk for chunk in chunks]) # This 4 is dictated by how many chunks we have split our data into. Currently 4.
-		df = pd.concat(df, ignore_index=False) # overwrite immediately for prevent holding unnecessary dataframes in memory
-		dtypes = {k:v for k,v in dtypes.items() if k in df.columns}
-		if 'ID' in kwargs:
-			return df.set_index(kwargs['ID']).astype(dtypes)
+	if isinstance(df_or_fname, str):
+		return function(reader(df_or_fname, kwargs), kwargs)
+	else:
+		return function(df_or_fname, kwargs)
+
+def dispatch_function(function, chunks=None, max_processes=64, **kwargs):
+	"""
+	Parameters
+	----------
+	function : function for which we use to dispatch on files or DataFrame object via multiprocessing
+	chunks : DataFrame, list of DataFrames or None
+		if a DataFrame is provided, it will be split automatically into number of max_processes
+		if a list of DataFrames are provided, they are unpacked and passed to 'function'
+		if left as None, then basepath may be provided in kwargs. files that match basepath/lc_{.*}.csv are read and passed
+			to 'function'
+
+	Note, we may provide kwargs as usual or pass a dictionary as **{...}
+
+	Returns
+	-------
+	returns the output of 'function'
+	"""
+	if chunks is None:
+		if 'basepath' in kwargs:
+			chunks = sorted([f for f in os.listdir(kwargs['basepath']) if (f.startswith('lc_') and f.endswith('.csv'))])
 		else:
-			return df.astype(dtypes)
+			raise Exception('Either one of chunks or basepath (in kwargs) must be provided')
+	elif isinstance(chunks, pd.DataFrame):
+		chunks = parse.split_into_non_overlapping_chunks(chunks, max_processes)
+	elif not isinstance(chunks, list):
+		raise Exception('Invalid input')
+
+	if __name__ == 'module.preprocessing.data_io':
+		# Make as many processes as there are files/chunks.
+		n_tasks = min(len(chunks), max_processes)
+		with Pool(n_tasks) as pool:
+			df = pool.starmap(process_input, [(function, chunk, kwargs) for chunk in chunks])
+		df = pd.concat(df, sort=True) # overwrite immediately for prevent holding unnecessary dataframes in memory
+
+		if 'dtypes' in kwargs:
+			dtypes = {k:v for k,v in kwargs['dtypes'].items() if k in df.columns}
+		else:
+			dtypes={}
+
+		return df.astype(dtypes)
