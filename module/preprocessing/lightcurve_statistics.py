@@ -2,16 +2,19 @@ import numpy as np
 import pandas as pd
 from ..config import cfg
 
-def groupby_apply_features(df):
+def groupby_apply_features(df, kwargs):
     s = df.groupby(df.index.name).apply(calculate_features)
     return pd.DataFrame(s.values.tolist(), index=s.index, dtype='float32')
 
-def groupby_apply_average(df):
+def groupby_apply_average(df, kwargs):
     s = df.groupby([df.index.name, 'mjd_floor']).apply(average_nightly_obs)
     return pd.DataFrame(s.values.tolist(), index=s.index, dtype='float32').reset_index('mjd_floor', drop=True)
 
-def groupby_apply_stats(df):
-    s = df.groupby(df.index.name).apply(stats)
+def groupby_apply_stats(df, kwargs):
+    if ('band' in kwargs) & ('band' in df.columns):
+        s = df[df['band'] == kwargs['band']].groupby(df.index.name).apply(stats)
+    else:
+        s = df.groupby(df.index.name).apply(stats)
     return pd.DataFrame(s.values.tolist(), index=s.index, dtype='float32')
 
 def calculate_features(group):
