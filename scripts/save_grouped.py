@@ -46,7 +46,7 @@ if __name__ == "__main__":
         kwargs = {'dtypes': cfg.PREPROC.lc_dtypes,
                   'nrows': nrows,
                   'skiprows': skiprows,
-                  'basepath': cfg.USER.W_DIR+'data/surveys/{}/{}/{}/{}_band/'.format(SURVEY, OBJ, is_clean_str, band),
+                  'basepath': cfg.USER.W_DIR+'data/surveys/{}/{}/{}/{}_band'.format(SURVEY, OBJ, is_clean_str, band),
                   'ID':ID}
 
         df = data_io.dispatch_reader(kwargs)
@@ -57,7 +57,7 @@ if __name__ == "__main__":
         chunks = parse.split_into_non_overlapping_chunks(df, cfg.USER.N_CORES)
         kwargs = {'dtypes':cfg.PREPROC.stats_dtypes}
         grouped = data_io.dispatch_function(lightcurve_statistics.groupby_apply_stats, chunks, kwargs)
-        output_fpath = cfg.USER.W_DIR+'data/surveys/{}/{}/{}/{}_band/'.format(SURVEY, OBJ, is_clean_str, band) + 'grouped.csv'
+        output_fpath = os.path.join(cfg.USER.W_DIR+'data/surveys/{}/{}/{}/{}_band'.format(SURVEY, OBJ, is_clean_str, band), 'grouped.csv')
         if args.dry_run:
             print(grouped)
             print('output file path:',output_fpath)

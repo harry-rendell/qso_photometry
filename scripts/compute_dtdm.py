@@ -66,9 +66,8 @@ dr.read_in(reader, redshift=False, multi_proc=True)
 start = time()
 
 if __name__ == '__main__':
-	p = Pool(n_cores)
-	p.map(savedtdm, loc_uids(dr, lower, upper, width, step, custom=custom))
-
+	with Pool(n_cores) as pool:
+		pool.map(savedtdm, loc_uids(dr, lower, upper, width, step, custom=custom))
 end = time()
 
 print('time taken: {:.2f} minutes'.format((end-start)/60.0))

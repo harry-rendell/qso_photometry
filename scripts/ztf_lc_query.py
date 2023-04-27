@@ -62,5 +62,5 @@ if __name__ == "__main__":
 			with open(output_folder+'{}_band/lc_{:01d}.csv'.format(band, i), 'w') as file:
 				file.write(','.join(SAVE_COLS) + '\n')
 
-	p = Pool(n_workers)
-	p.map(obtain_ztf_lightcurves,range(n_workers))
+	with Pool(n_workers) as pool:
+		pool.map(obtain_ztf_lightcurves,range(n_workers))
