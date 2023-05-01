@@ -77,7 +77,7 @@ def plot_stats_property(self, keys, figax, macleod=False, fit=False, fit_g=False
 
 
 # +
-wdir = '/disk1/hrb/python/'
+wdir = cfg.USER.W_DIR
 obj = 'qsos'
 ID = 'uid'
 band = 'r'

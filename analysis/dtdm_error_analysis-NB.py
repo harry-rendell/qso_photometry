@@ -28,7 +28,7 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 pd.options.mode.chained_assignment = None
 from module.preprocessing.dtdm import dtdm_raw_analysis
 
-wdir = '/disk1/hrb/python/'
+wdir = cfg.USER.W_DIR
 
 # # Splitting by property
 

@@ -25,7 +25,7 @@ import celerite
 from celerite import terms
 # %matplotlib inline
 
-wdir = '/disk1/hrb/python/'
+wdir = cfg.USER.W_DIR
 
 def reader(n_subarray):
     return pd.read_csv(wdir+'data/merged/{}/r_band/with_ssa/lc_{}.csv'.format(obj,n_subarray), nrows=1000, comment='#', index_col = ID, dtype = {'catalogue': np.uint8, 'mag': np.float32, 'magerr': np.float32, 'mjd': np.float64, ID: np.uint32})

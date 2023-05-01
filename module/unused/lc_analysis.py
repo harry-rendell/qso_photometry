@@ -20,7 +20,7 @@ class singlesurvey_prop():
             datatype = {'catalogue': np.uint8, 'mag': np.float32,'magerr': np.float32, 'mjd': np.float64,'uid': np.uint32}
             df = pd.read_csv(fname, usecols = [0,1,2,3,4,5], index_col = 1, dtype = datatype)
         
-        df = df[~df['oid'].isin(np.loadtxt('/disk1/hrb/python/analysis/ztf_oids_outside1arcsec.txt',dtype=np.uint64))]
+        df = df[~df['oid'].isin(np.loadtxt(cfg.USER.W_DIR + 'analysis/ztf_oids_outside1arcsec.txt',dtype=np.uint64))]
 
         df['filtercode'] = df['filtercode'].str[-1]
         df = df[df['filtercode']==self.band]
@@ -72,7 +72,7 @@ class singlesurvey_prop():
     def group(self, keys = ['uid'], read_in = True):
         if read_in == True:
             if len(keys) == 1:
-                self.df_grouped = pd.read_csv('/disk1/hrb/python/data/surveys/ztf/meta_data/ztfdr2_gb_uid_{}.csv'.format(self.band),index_col = 0)
+                self.df_grouped = pd.read_csv(cfg.USER.W_DIR + 'data/surveys/ztf/meta_data/ztfdr2_gb_uid_{}.csv'.format(self.band),index_col = 0)
 
         elif read_in == False:
             self.df_grouped = self.df.groupby(keys).agg({'mag':['mean','std','count'], 'magerr':'mean', 'mjd': ['min', 'max', np.ptp]})
@@ -186,7 +186,7 @@ class multisurvey_prop():
         if catalogue == 'dr12':
             prop_range_all = {'Mi':(-30,-20),'mag_mean':(15,23.5),'mag_std':(0,1),'redshift':(0,5),'Lbol':(44,48),'nEdd':(-3,0.5)}
             self.prop_range = {**prop_range_all, **prop_range_any}
-            vac = pd.read_csv('/disk1/hrb/python/data/catalogues/SDSS_DR12Q_BH_matched.csv', index_col=16)
+            vac = pd.read_csv(cfg.USER.W_DIR + 'data/catalogues/SDSS_DR12Q_BH_matched.csv', index_col=16)
             vac = vac.rename(columns={'z':'redshift'});
         
         # This line is taking ages..?
@@ -223,9 +223,9 @@ class multisurvey_prop():
     def group(self, keys = ['uid'], read_in = True):
         if read_in == True:
             if len(keys) == 1:
-                self.df_grouped = pd.read_csv('/disk1/hrb/python/data/merged/meta_data/df_gb_uid_{}.csv'.format(self.band),index_col = 0)
+                self.df_grouped = pd.read_csv(cfg.USER.W_DIR + 'data/merged/meta_data/df_gb_uid_{}.csv'.format(self.band),index_col = 0)
             elif len(keys) == 2:
-                self.df_grouped = pd.read_csv('/disk1/hrb/python/data/merged/meta_data/df_gb_uid_cat_{}.csv'.format(self.band),index_col = [0,1])
+                self.df_grouped = pd.read_csv(cfg.USER.W_DIR + 'data/merged/meta_data/df_gb_uid_cat_{}.csv'.format(self.band),index_col = [0,1])
             self.df_grouped['mjd_ptp_rf'] = self.df_grouped['mjd_ptp']/(1+self.df_grouped['z'])
         elif read_in == False:
             self.df_grouped = self.df.groupby(keys).agg({'mag':['mean','std','count'], 'magerr':'mean', 'mjd': ['min', 'max', np.ptp]})
@@ -354,8 +354,8 @@ class multisurvey_prop():
 
 
         if read_in != False:
-            dms_binned = np.loadtxt('/disk1/hrb/python/analysis/dtdm/dms_binned_{}_{}.csv'.format(key,read_in), delimiter = ',')
-    #         dts_binned = np.loadtxt('/disk1/hrb/python/analysis/dtdm/dts_binned_{}_{}.csv'.format(key,read_in), delimiter = ',')
+            dms_binned = np.loadtxt(cfg.USER.W_DIR + 'analysis/dtdm/dms_binned_{}_{}.csv'.format(key,read_in), delimiter = ',')
+    #         dts_binned = np.loadtxt(cfg.USER.W_DIR + 'analysis/dtdm/dts_binned_{}_{}.csv'.format(key,read_in), delimiter = ',')
 
         elif read_in == False:
 

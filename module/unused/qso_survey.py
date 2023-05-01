@@ -5,7 +5,7 @@ from multiprocessing import Pool
 
 def reader(args):
 	n_subarray, nrows = args
-	return pd.read_csv('/disk1/hrb/python/data/surveys/ztf/dr2_clr/lc_{}.csv'.format(n_subarray), usecols = [0,1,2,3,4,5,6,7,8], index_col = ['uid','filtercode'], nrows=nrows, dtype = {'oid': np.uint64, 'mag': np.float32, 'magerr': np.float32, 'mjd': np.float64, 'uid': np.uint32})
+	return pd.read_csv(cfg.USER.W_DIR + 'data/surveys/ztf/dr2_clr/lc_{}.csv'.format(n_subarray), usecols = [0,1,2,3,4,5,6,7,8], index_col = ['uid','filtercode'], nrows=nrows, dtype = {'oid': np.uint64, 'mag': np.float32, 'magerr': np.float32, 'mjd': np.float64, 'uid': np.uint32})
 
 class qso_survey():
 	def __init__(self, survey):
@@ -15,7 +15,7 @@ class qso_survey():
 	def read_in_raw(self, nrows=None):
 		
 		if self.name == 'sdss':
-			self.df = pd.read_csv('/disk1/hrb/python/data/surveys/sdss/raw_sdss_secondary.csv',index_col='uid', nrows=nrows, usecols=[0,9,10,11,12,13,14,15,16,17,18,19])
+			self.df = pd.read_csv(cfg.USER.W_DIR + 'data/surveys/sdss/raw_sdss_secondary.csv',index_col='uid', nrows=nrows, usecols=[0,9,10,11,12,13,14,15,16,17,18,19])
 			# Add columns for colors
 			for b1, b2 in zip('gri','riz'):
 				self.df[b1+'-'+b2] = self.df[b1+'psf'] - self.df[b2+'psf']
@@ -26,7 +26,7 @@ class qso_survey():
 					'psfFlux', 'psfFluxErr']
 			dtype1 = {'uid': np.uint32, 'objID': np.uint64, 'obsTime': np.float64,'psfFlux': np.float32, 'psfFluxErr': np.float32}
 
-			self.df = pd.read_csv('/disk1/hrb/python/data/surveys/ps/ps_secondary.csv', index_col=['uid','filtercode'], nrows=nrows, usecols=[0,3,4,7,8])
+			self.df = pd.read_csv(cfg.USER.W_DIR + 'data/surveys/ps/ps_secondary.csv', index_col=['uid','filtercode'], nrows=nrows, usecols=[0,3,4,7,8])
 			
 			# Drop bad values
 			self.df = self.df[self.df['psfFlux']!=0]
@@ -53,7 +53,7 @@ class qso_survey():
 	def pivot(self, read_in=True):
 		if self.name == 'sdss':
 			if read_in:
-				self.df_pivot = pd.read_csv('/disk1/hrb/python/data/surveys/{}/gb.csv'.format(self.name), index_col='uid', dtype={'count':np.uint16}) 
+				self.df_pivot = pd.read_csv(cfg.USER.W_DIR + 'data/surveys/{}/gb.csv'.format(self.name), index_col='uid', dtype={'count':np.uint16}) 
 			if not read_in:
 				def stats(group):
 					"""
@@ -86,7 +86,7 @@ class qso_survey():
 				self.df_pivot = self.df.groupby('uid').apply(stats).apply(pd.Series)
 		else:
 			if read_in:
-				grouped = pd.read_csv('/disk1/hrb/python/data/surveys/{}/gb.csv'.format(self.name), index_col=['uid','filtercode'], dtype={'count':np.uint16}) 
+				grouped = pd.read_csv(cfg.USER.W_DIR + 'data/surveys/{}/gb.csv'.format(self.name), index_col=['uid','filtercode'], dtype={'count':np.uint16}) 
 
 			elif not read_in:
 				print('creating uid chunks to assign to each core')

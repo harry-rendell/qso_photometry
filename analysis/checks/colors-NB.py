@@ -25,7 +25,7 @@ import seaborn as sns
 # import matplotlib
 # font = {'size' : 18}
 # matplotlib.rc('font', **font)
-path = '/disk1/hrb/python/'
+path = cfg.USER.W_DIR
 def reader(n_subarray):
     return pd.read_csv('../data/merged/{}/r_band/with_ssa/lc_{}.csv'.format(obj,n_subarray), comment='#', index_col = ID, dtype = {'catalogue': np.uint8, 'mag': np.float32, 'magerr': np.float32, 'mjd': np.float64, ID: np.uint32})
 

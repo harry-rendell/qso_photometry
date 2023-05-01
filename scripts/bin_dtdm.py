@@ -8,7 +8,7 @@ import os
 import time
 from binning import bin_data
 
-wdir = '/disk1/hrb/python/'
+wdir = cfg.USER.W_DIR
 band = 'r'
 
 config = {'obj':'qsos','ID':'uid'  ,'t_max':6751,'n_bins_t':200,'n_bins_m':200, 'n_bins_m2':248, 'n_t_chunk':19, 'width':2, 'steepness':0.005, 'leftmost_bin':-0.244}

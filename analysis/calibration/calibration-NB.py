@@ -16,7 +16,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-path = '/disk1/hrb/python/'
+path = cfg.USER.W_DIR
 
 
 class calib():

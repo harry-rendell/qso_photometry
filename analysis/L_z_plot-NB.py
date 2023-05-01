@@ -16,7 +16,7 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
-path = '/disk1/hrb/python/'
+path = cfg.USER.W_DIR
 
 df = pd.read_csv(path+'data/catalogues/qsos/dr14q/dr14q_uid_mi_coords.csv', index_col='uid')
 

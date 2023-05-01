@@ -10,7 +10,7 @@ import matplotlib.cm as cmap
 from scipy.optimize import curve_fit
 from scipy.stats import linregress, chisquare
 
-wdir = '/disk1/hrb/python/'
+wdir = cfg.USER.W_DIR
 
 class dtdm():
 	"""
@@ -254,7 +254,7 @@ class dtdm():
 			plt.subplots_adjust(hspace=0.5)
 
 		if save:
-			fig.savefig('/disk1/hrb/python/analysis/plots/{}_{}_dm_hist.pdf'.format(self.obj, self.name), bbox_inches='tight')
+			fig.savefig(cfg.USER.W_DIR + 'analysis/plots/{}_{}_dm_hist.pdf'.format(self.obj, self.name), bbox_inches='tight')
 			plt.close()
 
 		return fig, ax, np.array(r2s_tot).T
@@ -272,7 +272,7 @@ class dtdm():
 			ax.legend()
 
 		if save:
-			fig.savefig('/disk1/hrb/python/analysis/{}/plots/{}_{}_de_hist.pdf'.format(self.obj, self.obj, self.name), bbox_inches='tight')
+			fig.savefig(cfg.USER.W_DIR + 'analysis/{}/plots/{}_{}_de_hist.pdf'.format(self.obj, self.obj, self.name), bbox_inches='tight')
 			plt.close()
 
 		return fig, ax
@@ -290,7 +290,7 @@ class dtdm():
 			ax.legend()
 
 		if save:
-			fig.savefig('/disk1/hrb/python/analysis/{}/plots/{}_{}_dt_hist.pdf'.format(self.obj, self.obj, self.name), bbox_inches='tight')
+			fig.savefig(cfg.USER.W_DIR + 'analysis/{}/plots/{}_{}_dt_hist.pdf'.format(self.obj, self.obj, self.name), bbox_inches='tight')
 			plt.close()
 
 		return fig, ax
@@ -307,7 +307,7 @@ class dtdm():
 		# ax.legend()
 
 		if save:
-			fig.savefig('/disk1/hrb/python/analysis/{}/plots/{}_{}_dt_hist.pdf'.format(self.obj, self.obj, self.name), bbox_inches='tight')
+			fig.savefig(cfg.USER.W_DIR + 'analysis/{}/plots/{}_{}_dt_hist.pdf'.format(self.obj, self.obj, self.name), bbox_inches='tight')
 			plt.close()
 
 		return fig, ax
@@ -487,7 +487,7 @@ class dtdm_key():
 			ax.legend()
 
 		if save:
-			fig.savefig('/disk1/hrb/python/analysis/{}/plots/{}_{}_dm_hist.pdf'.format(self.obj, self.obj, self.name), bbox_inches='tight')
+			fig.savefig(cfg.USER.W_DIR + 'analysis/{}/plots/{}_{}_dm_hist.pdf'.format(self.obj, self.obj, self.name), bbox_inches='tight')
 			plt.close()
 
 		return fig, ax

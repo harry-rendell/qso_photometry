@@ -157,7 +157,7 @@ for surv in survey_list_q[:1]:
     ax, SF = surv.plot_sf_ensemble_iqr(ax, xscale='log', yscale='linear')
 ax.legend()
 ax.set(title='Structure function using IQR method')
-# fig.savefig('/disk1/hrb/python/analysis/{}/plots/{}_SF.jpg'.format(surv.obj,surv.obj), dpi=300, bbox_inches='tight')
+# fig.savefig(cfg.USER.W_DIR + 'analysis/{}/plots/{}_SF.jpg'.format(surv.obj,surv.obj), dpi=300, bbox_inches='tight')
 
 # +
 fig, ax = plt.subplots(1,1, figsize=(15,8))
@@ -192,7 +192,7 @@ ax.text(0.04, 0.92, 'slope: {:.2f}'.format(popt[0]), transform=ax.transAxes)
 # ax.plot(x,y)
 
 print('best fit by power law with exponent: {}'.format(popt[0]))
-# fig.savefig('/disk1/hrb/python/analysis/{}/plots/{}_SF_fit.jpg'.format(surv.obj,surv.obj), dpi=300, bbox_inches='tight')
+# fig.savefig(cfg.USER.W_DIR + 'analysis/{}/plots/{}_SF_fit.jpg'.format(surv.obj,surv.obj), dpi=300, bbox_inches='tight')
 # -
 
 # QSOS
@@ -204,7 +204,7 @@ for surv in survey_list_q[:1]:
 ax.legend()
 ax.set(xlabel='∆t (days)', ylabel='∆m (mags)', ylim=[-0.15,0.3])
 ax.axhline(y=0, lw=1, ls='--', color='k')
-# fig.savefig('/disk1/hrb/python/analysis/{}/plots/{}_drift_mean.jpg'.format(obj,obj), dpi=300, bbox_inches='tight')
+# fig.savefig(cfg.USER.W_DIR + 'analysis/{}/plots/{}_drift_mean.jpg'.format(obj,obj), dpi=300, bbox_inches='tight')
 
 # QSOS
 fig, ax = plt.subplots(1,1, figsize=(23,10))
@@ -215,7 +215,7 @@ for surv in survey_list_s[:1]:
 ax.legend()
 ax.set(xlabel='∆t (days)', ylabel='∆m (mags)', ylim=[-0.15,0.1])
 ax.axhline(y=0, lw=1, ls='--', color='k')
-# fig.savefig('/disk1/hrb/python/analysis/{}/plots/{}_drift_mode.jpg'.format(obj,obj), dpi=300, bbox_inches='tight')
+# fig.savefig(cfg.USER.W_DIR + 'analysis/{}/plots/{}_drift_mode.jpg'.format(obj,obj), dpi=300, bbox_inches='tight')
 
 # +
 # for a in obj_list[:1]:
@@ -273,7 +273,7 @@ all_q.stats()
 all_q.means[0]
 
 fig, ax = all_q.plot_sf_ensemble()
-# fig.savefig('/disk1/hrb/python/analysis/{}/plots/SF_{}_{}.jpg'.format(obj,obj,key), bbox_inches='tight')
+# fig.savefig(cfg.USER.W_DIR + 'analysis/{}/plots/SF_{}_{}.jpg'.format(obj,obj,key), bbox_inches='tight')
 
 fig, ax = plt.subplots(1,1, figsize=(15,10))
 all_q.plot_means(ax)

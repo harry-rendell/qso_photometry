@@ -85,11 +85,11 @@ plot_sf_ensemble
 
 		if read_in != False:
 			if ztf == True:
-				dms_binned = np.loadtxt('/disk1/hrb/python/analysis/dtdm/ztf/dms_binned_{}_{}.csv'.format(key,read_in), delimiter = ',')
+				dms_binned = np.loadtxt(cfg.USER.W_DIR + 'analysis/dtdm/ztf/dms_binned_{}_{}.csv'.format(key,read_in), delimiter = ',')
 			else:
-				dms_binned = np.loadtxt('/disk1/hrb/python/analysis/qsos/computed/dtdm/{}/dms_binned_{}_{}.csv'.format(key,key,read_in), delimiter = ',')
+				dms_binned = np.loadtxt(cfg.USER.W_DIR + 'analysis/qsos/computed/dtdm/{}/dms_binned_{}_{}.csv'.format(key,key,read_in), delimiter = ',')
 
-	#		 dts_binned = np.loadtxt('/disk1/hrb/python/analysis/dtdm/dts_binned_{}_{}.csv'.format(key,read_in), delimiter = ',')
+	#		 dts_binned = np.loadtxt(cfg.USER.W_DIR + 'analysis/dtdm/dts_binned_{}_{}.csv'.format(key,read_in), delimiter = ',')
 
 		elif read_in == False:
 # 			z = self.df_grouped[self.df_grouped['mag_count']>2]['redshift'].loc[uids]

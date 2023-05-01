@@ -35,7 +35,7 @@ import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
 # +
-wdir = '/disk1/hrb/python/'
+wdir = cfg.USER.W_DIR
 band = 'r'
 
 # t_max w/o SSA = 6751 for qsos
