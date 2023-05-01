@@ -20,7 +20,7 @@ import numpy as np
 from astropy.table import Table
 import matplotlib.pyplot as plt
 
-t = Table.read(cfg.USER.W_DIR + 'data/surveys/ztf/calibStars/calibStars_ztf.txt', format='ipac', include_names = ['uid_s_01','dist_x', 'oid', 'ngoodobsrel', 'maxmag', 'minmag', 'medianmag', 'filtercode'])
+t = Table.read(cfg.USER.D_DIR + 'surveys/ztf/calibStars/calibStars_ztf.txt', format='ipac', include_names = ['uid_s_01','dist_x', 'oid', 'ngoodobsrel', 'maxmag', 'minmag', 'medianmag', 'filtercode'])
 
 df=t[~t.mask['oid']].to_pandas(index='uid_s_01')
 df=df[df['ngoodobsrel']>0]
@@ -48,17 +48,17 @@ for i, band in enumerate('gri'):
     n_qso = n_qso[:-1]
     ax[i].plot(0.5*(bins_qso[:-1]+bins_qso[1:]),n_qso*scaling, color = 'b', label = 'qsos')
 
-np.savetxt(cfg.USER.W_DIR + 'data/surveys/ztf/calibStars/calibStars_oids.txt',df['oid'].values, fmt='%i')
+np.savetxt(cfg.USER.D_DIR + 'surveys/ztf/calibStars/calibStars_oids.txt',df['oid'].values, fmt='%i')
 
-df[df['mag_ptp']<0.2]['oid'].to_csv(cfg.USER.W_DIR + 'data/surveys/ztf/calibStars/calibStars_oids_uids.csv')
+df[df['mag_ptp']<0.2]['oid'].to_csv(cfg.USER.D_DIR + 'surveys/ztf/calibStars/calibStars_oids_uids.csv')
 
-np.savetxt(cfg.USER.W_DIR + 'data/surveys/ztf/calibStars/calibStars_oids.txt',df[df['mag_ptp']<0.25]['oid'].values, fmt='%i')
+np.savetxt(cfg.USER.D_DIR + 'surveys/ztf/calibStars/calibStars_oids.txt',df[df['mag_ptp']<0.25]['oid'].values, fmt='%i')
 
 # Remember - ztf one to one match does NOT work, ztf oid is specific to a single band. We need to do many to one match within 1".
 # Run code below to find oids that we are missing.
 # Note that when we do a one to many match we may pick up unwanted neighbouring objects. To remove these, sort by dist_x and remove oid duplicates (keep='first').
 
-t = Table.read(cfg.USER.W_DIR + 'data/surveys/ztf/calibStars/calibStars_ztf.txt', format='ipac', include_names = ['uid_s_01','dist_x', 'oid', 'ngoodobsrel', 'maxmag', 'minmag'])
+t = Table.read(cfg.USER.D_DIR + 'surveys/ztf/calibStars/calibStars_ztf.txt', format='ipac', include_names = ['uid_s_01','dist_x', 'oid', 'ngoodobsrel', 'maxmag', 'minmag'])
 
 df=t.to_pandas(index='uid_s_01')
 df=df[df['ngoodobsrel']>0]
@@ -72,12 +72,12 @@ df = df[~df['oid'].duplicated(keep='first')]
 
 assert df['oid'].is_unique
 
-df[df['mag_ptp']<0.2]['oid'].to_csv(cfg.USER.W_DIR + 'data/surveys/ztf/calibStars/calibStars_oids_uids.csv')
+df[df['mag_ptp']<0.2]['oid'].to_csv(cfg.USER.D_DIR + 'surveys/ztf/calibStars/calibStars_oids_uids.csv')
 
 oids = df[df['mag_ptp']<0.2]['oid'].values
 
-oids_1to1 = np.loadtxt(cfg.USER.W_DIR + 'data/surveys/ztf/calibStars/calibStars_oids_1to1.txt',dtype=np.uint64)
+oids_1to1 = np.loadtxt(cfg.USER.D_DIR + 'surveys/ztf/calibStars/calibStars_oids_1to1.txt',dtype=np.uint64)
 
 oids_diff = np.setdiff1d(oids, oids_1to1)
 
-np.savetxt(cfg.USER.W_DIR + 'data/surveys/ztf/calibStars/calibStars_oids.txt',oids,fmt='%i')
+np.savetxt(cfg.USER.D_DIR + 'surveys/ztf/calibStars/calibStars_oids.txt',oids,fmt='%i')

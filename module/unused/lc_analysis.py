@@ -72,7 +72,7 @@ class singlesurvey_prop():
     def group(self, keys = ['uid'], read_in = True):
         if read_in == True:
             if len(keys) == 1:
-                self.df_grouped = pd.read_csv(cfg.USER.W_DIR + 'data/surveys/ztf/meta_data/ztfdr2_gb_uid_{}.csv'.format(self.band),index_col = 0)
+                self.df_grouped = pd.read_csv(cfg.USER.D_DIR + 'surveys/ztf/meta_data/ztfdr2_gb_uid_{}.csv'.format(self.band),index_col = 0)
 
         elif read_in == False:
             self.df_grouped = self.df.groupby(keys).agg({'mag':['mean','std','count'], 'magerr':'mean', 'mjd': ['min', 'max', np.ptp]})
@@ -186,7 +186,7 @@ class multisurvey_prop():
         if catalogue == 'dr12':
             prop_range_all = {'Mi':(-30,-20),'mag_mean':(15,23.5),'mag_std':(0,1),'redshift':(0,5),'Lbol':(44,48),'nEdd':(-3,0.5)}
             self.prop_range = {**prop_range_all, **prop_range_any}
-            vac = pd.read_csv(cfg.USER.W_DIR + 'data/catalogues/SDSS_DR12Q_BH_matched.csv', index_col=16)
+            vac = pd.read_csv(cfg.USER.D_DIR + 'catalogues/SDSS_DR12Q_BH_matched.csv', index_col=16)
             vac = vac.rename(columns={'z':'redshift'});
         
         # This line is taking ages..?
@@ -223,9 +223,9 @@ class multisurvey_prop():
     def group(self, keys = ['uid'], read_in = True):
         if read_in == True:
             if len(keys) == 1:
-                self.df_grouped = pd.read_csv(cfg.USER.W_DIR + 'data/merged/meta_data/df_gb_uid_{}.csv'.format(self.band),index_col = 0)
+                self.df_grouped = pd.read_csv(cfg.USER.D_DIR + 'merged/meta_data/df_gb_uid_{}.csv'.format(self.band),index_col = 0)
             elif len(keys) == 2:
-                self.df_grouped = pd.read_csv(cfg.USER.W_DIR + 'data/merged/meta_data/df_gb_uid_cat_{}.csv'.format(self.band),index_col = [0,1])
+                self.df_grouped = pd.read_csv(cfg.USER.D_DIR + 'merged/meta_data/df_gb_uid_cat_{}.csv'.format(self.band),index_col = [0,1])
             self.df_grouped['mjd_ptp_rf'] = self.df_grouped['mjd_ptp']/(1+self.df_grouped['z'])
         elif read_in == False:
             self.df_grouped = self.df.groupby(keys).agg({'mag':['mean','std','count'], 'magerr':'mean', 'mjd': ['min', 'max', np.ptp]})

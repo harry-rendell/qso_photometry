@@ -26,12 +26,12 @@ class calib():
         self.ID = ID
         
     def read(self):
-        self.sdss = pd.read_csv(path+'data/merged/{}/{}_band/grouped_stats_{}_sdss.csv'.format(self.obj, self.band, self.band), index_col=self.ID)
-        self.ps   = pd.read_csv(path+'data/merged/{}/{}_band/grouped_stats_{}_ps.csv'  .format(self.obj, self.band, self.band), index_col=self.ID)
-        self.ztf  = pd.read_csv(path+'data/merged/{}/{}_band/grouped_stats_{}_ztf.csv' .format(self.obj, self.band, self.band), index_col=self.ID)
+        self.sdss = pd.read_csv(cfg.USER.D_DIR + 'merged/{}/{}_band/grouped_stats_{}_sdss.csv'.format(self.obj, self.band, self.band), index_col=self.ID)
+        self.ps   = pd.read_csv(cfg.USER.D_DIR + 'merged/{}/{}_band/grouped_stats_{}_ps.csv'  .format(self.obj, self.band, self.band), index_col=self.ID)
+        self.ztf  = pd.read_csv(cfg.USER.D_DIR + 'merged/{}/{}_band/grouped_stats_{}_ztf.csv' .format(self.obj, self.band, self.band), index_col=self.ID)
         
     def join_colors(self):
-        self.colors = pd.read_csv(path+'data/computed/{}/colors_sdss.csv'.format(self.obj), index_col=self.ID)
+        self.colors = pd.read_csv(cfg.USER.D_DIR + 'computed/{}/colors_sdss.csv'.format(self.obj), index_col=self.ID)
         self.sdss = self.sdss.join(self.colors, on=self.ID, how='left')
         self.ps   = self.ps  .join(self.colors, on=self.ID, how='left')
         self.ztf  = self.ztf .join(self.colors, on=self.ID, how='left')

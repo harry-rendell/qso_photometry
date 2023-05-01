@@ -1,10 +1,14 @@
 import pandas as pd
 import numpy as np
-from multiprocessing import Pool
-from ..analysis import analysis
-from time import time
+import time
+import argparse
+import os
+import sys
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from module.config import cfg
+from module.preprocessing import data_io, parse, lightcurve_statistics
 
-wdir = '/home/hrb/python/'
+wdir = cfg.USER.W_DIR
 band = 'r'
 
 #obj  = 'qsos'
@@ -18,7 +22,7 @@ time_key = 'mjd'
 # Use this to read in all data
 # Note we cannot have ID as index_col as we get an error
 def reader(n_subarray):
-	return pd.read_csv(wdir+'data/merged/{}/{}_band/lc_{}.csv'.format(obj, band, n_subarray), comment='#', nrows=None, dtype = {'catalogue': np.uint8, 'mag_ps': np.float32, 'magerr': np.float32, 'mjd': np.float64, ID: np.uint32})
+	return pd.read_csv(cfg.USER.D_DIR + 'merged/{}/{}_band/lc_{}.csv'.format(obj, band, n_subarray), comment='#', nrows=None, dtype = {'catalogue': np.uint8, 'mag_ps': np.float32, 'magerr': np.float32, 'mjd': np.float64, ID: np.uint32})
 
 def loc_uids(self, lower, upper, width, step, custom=None):
 	# width is number of processes per core
@@ -38,7 +42,7 @@ def savedtdm(uid_dict):
 		print('computing: {}'.format(key))
 		df_batch = dr.save_dtdm_rf(uids, time_key=time_key)
 		print('saving:	{}'.format(key))
-		df_batch.to_csv(wdir+'data/computed/{}/dtdm/raw/{}/dtdm_raw_{}_{}.csv'.format(obj,band,band,key),index=False)
+		df_batch.to_csv(cfg.USER.D_DIR + 'computed/{}/dtdm/raw/{}/dtdm_raw_{}_{}.csv'.format(obj,band,band,key),index=False)
 
 #lower = 99.5
 #upper = 101
@@ -48,7 +52,7 @@ def savedtdm(uid_dict):
 #chunks = calc_bounds(lower, upper, width, step)
 
 # Read uids below
-custom = np.loadtxt(wdir+'data/computed/{}/dtdm/raw/{}/missing_uids.csv'.format(obj,band), dtype='int', delimiter=',')
+custom = np.loadtxt(cfg.USER.D_DIR + 'computed/{}/dtdm/raw/{}/missing_uids.csv'.format(obj,band), dtype='int', delimiter=',')
 chunks = custom
 n_cores = len(custom)
 

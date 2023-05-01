@@ -41,7 +41,7 @@ if __name__ == "__main__":
                       'nrows': nrows,
                       'skiprows': skiprows,
                       'usecols': [ID,'mjd','mag','magerr'],
-                      'basepath': cfg.USER.W_DIR+'data/surveys/{}/{}/unclean/{}_band/'.format(survey, OBJ, band),
+                      'basepath': cfg.USER.D_DIR + 'surveys/{}/{}/unclean/{}_band/'.format(survey, OBJ, band),
                       'ID':ID}
 
             df = data_io.dispatch_reader(kwargs, multiproc=True)
@@ -53,7 +53,7 @@ if __name__ == "__main__":
             print('Unable to average the following:\n'+ID+', mjd')
 
             # Read in grouped data
-            grouped = pd.read_csv(cfg.USER.W_DIR+'data/surveys/{}/{}/unclean/{}_band/grouped.csv'.format(survey, OBJ, band), usecols=[ID, 'mag_med','mag_std']).set_index(ID)
+            grouped = pd.read_csv(cfg.USER.D_DIR + 'surveys/{}/{}/unclean/{}_band/grouped.csv'.format(survey, OBJ, band), usecols=[ID, 'mag_med','mag_std']).set_index(ID)
             uids = grouped.index[grouped['mag_med']<cfg.PREPROC.LIMIT_MAG[survey.upper()][band]]
             df = df[df.index.isin(uids)]
 
@@ -90,7 +90,7 @@ if __name__ == "__main__":
 
                 # keyword arguments to pass to our writing function
                 kwargs = {'comment':comment,
-                          'basepath':cfg.USER.W_DIR + 'data/surveys/{}/{}/clean/{}_band/'.format(survey, OBJ, band)}
+                          'basepath':cfg.USER.D_DIR + 'surveys/{}/{}/clean/{}_band/'.format(survey, OBJ, band)}
 
                 chunks = parse.split_into_non_overlapping_chunks(df, 4)
                 data_io.dispatch_writer(chunks, kwargs)

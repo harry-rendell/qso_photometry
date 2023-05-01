@@ -20,7 +20,7 @@ import matplotlib
 from multiprocessing import Pool
 import sys
 sys.path.append('../')
-dpath = cfg.USER.W_DIR + 'data/'
+dpath = cfg.USER.D_DIR + ''
 
 # # SDSS
 # ---

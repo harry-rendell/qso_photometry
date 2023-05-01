@@ -50,7 +50,7 @@ def dispatch_reader(kwargs, multiproc=True, i=0, max_processes=64):
 			# sorting is required as we cannot guarantee that starmap returns dataframes in the order we expect.
 			return pd.concat(df, sort=True)
 	else: 
-		return reader((fnames[i], kwargs))
+		return reader(fnames[i], kwargs)
 
 def writer(i, chunk, kwargs):
 	"""

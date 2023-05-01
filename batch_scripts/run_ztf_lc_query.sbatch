@@ -10,7 +10,7 @@
 # Note, we can run this as a normal batch script using bash <filename>
 
 # The work directory
-cd /home/hrb/qso_photometry/python
+cd /home/hrb/project/qso_photometry
 
 # Load anaconda. Omit this if not running on cuillinmodule load anaconda
 source activate astroconda

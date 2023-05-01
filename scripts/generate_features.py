@@ -38,7 +38,7 @@ if __name__ == "__main__":
     kwargs = {'dtypes': cfg.PREPROC.lc_dtypes,
               'nrows': nrows,
               'skiprows': skiprows,
-              'basepath': cfg.USER.W_DIR+'data/surveys/{}/{}/clean/{}_band/'.format(SURVEY, OBJ, BAND),
+              'basepath': cfg.USER.D_DIR + 'surveys/{}/{}/clean/{}_band/'.format(SURVEY, OBJ, BAND),
               'ID':ID}
 
     df = data_io.dispatch_reader(kwargs, multiproc=True)
@@ -50,5 +50,5 @@ if __name__ == "__main__":
     if args.dry_run:
         print(grouped)
     else:
-        output_folder = cfg.USER.W_DIR+'data/surveys/{}/{}/clean/{}_band/'.format(SURVEY, OBJ, band) 
+        output_folder = cfg.USER.D_DIR + 'surveys/{}/{}/clean/{}_band/'.format(SURVEY, OBJ, band) 
         grouped.to_csv(output_folder + 'features.csv')

@@ -20,8 +20,8 @@ sys.path.insert(0, os.path.join(os.getcwd(), "..", ".."))
 from module.config import cfg
 from module.preprocessing import parse, data_io
 
-OBJ    = 'qsos'
-ID     = 'uid'
+OBJ    = 'calibStars'
+ID     = 'uid_s'
 BAND   = 'r'
 wdir = cfg.USER.W_DIR
 
@@ -29,7 +29,7 @@ wdir = cfg.USER.W_DIR
 
 # + active=""
 # select
-# q.uid as uid, o.objID as objID_ps, 
+# q.uid as uid, o.objID as objID, 
 # o.rra as ra_ps, o.rdec as dec_ps, 
 # q.ra_ref, q.dec_ref,
 # nb.distance as sep,
@@ -40,15 +40,11 @@ wdir = cfg.USER.W_DIR
 #
 # cross apply dbo.fGetNearbyObjEq(q.ra_ref, q.dec_ref, q.sep) as nb
 # join StackObjectThin o on o.objid = nb.objid where o.primaryDetection = 1
-
-# +
-# ps_secondary = pd.read_csv(path + 'calibStars_psoids.csv'.format(),)
-# ps_secondary.head()
 # -
 
-cols = [ID, 'objID', 'filter', 'obsTime', 'psfFlux', 'psfFluxErr']
-ps_secondary = pd.read_csv(wdir + 'data/surveys/ps/{}/ps_secondary.csv'.format(OBJ), dtype=cfg.COLLECTION.PS.dtypes, nrows=None, usecols=cols).set_index(ID).rename({'filter':'filtercode'})
-ps_neighbours = pd.read_csv(wdir + 'data/surveys/ps/{}/dr14q_ps_neighbours.csv'.format(OBJ), dtype=cfg.COLLECTION.PS.dtypes).set_index(ID)
+cols = [ID, 'filter', 'obsTime', 'psfFlux', 'psfFluxErr']
+ps_secondary = pd.read_csv(cfg.USER.D_DIR + 'surveys/ps/{}/ps_secondary.csv'.format(OBJ), dtype=cfg.COLLECTION.PS.dtypes, nrows=None, usecols=cols).set_index(ID).rename({'filter':'filtercode'})
+ps_neighbours = pd.read_csv(cfg.USER.D_DIR + 'surveys/ps/{}/ps_neighbours.csv'.format(OBJ), dtype=cfg.COLLECTION.PS.dtypes).set_index(ID)
 ps_neighbours['sep'] *= 60
 
 # We are querying StackObjectThin thus we expect a one to one match, however, sometimes additional IDs are returned. We filter these out. There are about 421 of these duplicates.
@@ -56,7 +52,7 @@ ps_neighbours['sep'] *= 60
 CHECK_MAX_SEP = True
 if CHECK_MAX_SEP:
     # Note, we queried PanSTARRS for objects within 1". To check this, we can join the coord query table from mastweb and sort by separation to show sep<1"
-    ps_secondary_merged = ps_secondary.join(ps_neighbours, on='uid', lsuffix='_ps')
+    ps_secondary_merged = ps_secondary.join(ps_neighbours, on=ID, lsuffix='_ps')
     ps_secondary_merged.sort_values('sep', ascending=False)
 
 CHECK_FOR_NON_UNIQUE_MATCHES = True
@@ -113,7 +109,7 @@ for band in 'griz':
     chunks = parse.split_into_non_overlapping_chunks(df_ps.loc[pd.IndexSlice[:, band],:].droplevel('filtercode'), 4)
     # keyword arguments to pass to our writing function
     kwargs = {'comment':comment,
-              'basepath':cfg.USER.W_DIR + 'data/surveys/ps/{}/unclean/{}_band/'.format(OBJ, band)}
+              'basepath':cfg.USER.D_DIR + 'surveys/ps/{}/unclean/{}_band/'.format(OBJ, band)}
 
     data_io.dispatch_writer(chunks, kwargs)
 

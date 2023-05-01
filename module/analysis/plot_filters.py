@@ -11,7 +11,7 @@ def plot_filters(**kwargs):
 	fig, ax, sdss, ps, ztf
 	
     """
-	wdir = cfg.USER.W_DIR + 'data/surveys/filters/'
+	wdir = cfg.USER.D_DIR + 'surveys/filters/'
 	sdss  = pd.read_csv(wdir + 'sdss.csv')
 	ztf_g = pd.read_csv(wdir + 'raw/ztf/ztf_g.csv')
 	ztf_r = pd.read_csv(wdir + 'raw/ztf/ztf_r.csv')

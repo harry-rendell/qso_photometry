@@ -9,7 +9,7 @@ cfg = __C
 
 # imports
 import numpy as np
-
+import os
 
 #------------------------------------------------------------------------------
 # User settings
@@ -17,7 +17,10 @@ import numpy as np
 __C.USER = edict()
 
 # Working directory
-__C.USER.W_DIR = '/disk1/hrb/qso_photometry/'
+__C.USER.W_DIR = '/disk1/hrb/project/qso_photometry/'
+
+# Data directory
+__C.USER.D_DIR = '/disk1/hrb/project/data/'
 
 # Set below to True to use multiple cores during computationally intensive tasks.
 # Single core is not currently well supported, may cause errors when setting this to False.
@@ -141,6 +144,8 @@ __C.PREPROC.LIMIT_MAG.PS = {
 							}
 
 # limitingmag can be fetched on a per-observation basis but below is an average
+# Note, using limitmag to filter out observations may be biased as we are selectively removing
+# 	dimmer observations.
 # 5 sigma limiting magnitudes
 __C.PREPROC.LIMIT_MAG.ZTF = {
 							'g': 20.8,
@@ -164,3 +169,18 @@ __C.PREPROC.SURVEY_IDS =   {'sss_r1': 1,
 # Analysis
 #------------------------------------------------------------------------------
 __C.ANALYSIS = edict()
+
+
+
+
+
+
+
+#------------------------------------------------------------------------------
+# Figures
+#------------------------------------------------------------------------------
+__C.FIG = edict()
+
+# Path to style files. Empty string at end ensures trailing slash
+__C.FIG.STYLE_DIR = os.path.join(__C.USER.W_DIR, 'qso_photometry' 'res', 'styles', '')
+

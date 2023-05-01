@@ -66,8 +66,8 @@ dr_star.group(keys = [ID],read_in=True, redshift=redshift_bool, colors=True, sur
 dr_qsos.df_grouped.columns
 
 # +
-colors_stars = pd.read_csv(path+'data/computed/calibStars/colors_sdss.csv', index_col=0)
-colors_qsos  = pd.read_csv(path+'data/computed/qsos/colors_sdss.csv', index_col=0)
+colors_stars = pd.read_csv(cfg.USER.D_DIR + 'computed/calibStars/colors_sdss.csv', index_col=0)
+colors_qsos  = pd.read_csv(cfg.USER.D_DIR + 'computed/qsos/colors_sdss.csv', index_col=0)
 
 fig, axes = plt.subplots(2,2, figsize=(15,15))
 colors_stars.hist(ax=axes, bins=200, alpha = 0.7, density=True, range=(-2,4), label='stars')

@@ -31,7 +31,7 @@ class analysis():
 		self.marker_dict = {1:'^', 3:'v', 5:'D', 7:'s', 11:'o'}
 		self.marker_dict_bokeh = {1:'triangle', 3:'inverted_triangle', 5:'diamond', 7:'square', 11:'circle'}
 		self.survey_dict = {1:'SSS_r1', 3: 'SSS_r2', 5:'SDSS', 7:'PS1', 11:'ZTF'}
-		self.coords = pd.read_csv(wdir+'data/catalogues/qsos/dr14q/dr14q_uid_coords.csv', index_col='uid')
+		self.coords = pd.read_csv(cfg.USER.D_DIR + 'catalogues/qsos/dr14q/dr14q_uid_coords.csv', index_col='uid')
 
 	def read_in(self, catalogue_of_properties = None, redshift=True, cleaned=True, nrows=None):
 		"""
@@ -46,11 +46,11 @@ class analysis():
 		
 		# Default to 4 cores
 		# Use the path below for SSA
-		# basepath = wdir+'data/merged/{}/{}_band/with_ssa/'
+		# basepath = cfg.USER.D_DIR + 'merged/{}/{}_band/with_ssa/'
 		if cleaned:
-			basepath = wdir+'data/merged/{}/{}_band/'.format(self.obj, self.band)
+			basepath = cfg.USER.D_DIR + 'merged/{}/{}_band/'.format(self.obj, self.band)
 		else:
-			basepath = wdir+'data/merged/{}/{}_band/unclean/'.format(self.obj, self.band)
+			basepath = cfg.USER.D_DIR + 'merged/{}/{}_band/unclean/'.format(self.obj, self.band)
 
 		kwargs = {'dtypes': cfg.PREPROC.lc_dtypes,
 		          'nrows': nrows,
@@ -64,7 +64,7 @@ class analysis():
 		
 		if redshift:
 			# add on column for redshift. Use squeeze = True when reading in a single column.
-			self.redshifts = pd.read_csv(wdir+'data/catalogues/qsos/dr14q/dr14q_uid_desig_z.csv', index_col=self.ID, usecols=[self.ID,'z'], squeeze=True).rename('redshift')
+			self.redshifts = pd.read_csv(cfg.USER.D_DIR + 'catalogues/qsos/dr14q/dr14q_uid_desig_z.csv', index_col=self.ID, usecols=[self.ID,'z'], squeeze=True).rename('redshift')
 			self.df = self.df.join(self.redshifts, how = 'left', on=self.ID)
 			self.df['mjd_rf'] = self.df['mjd']/(1+self.df['redshift'])
 
@@ -129,10 +129,10 @@ class analysis():
 		"""
 		if read_in == True:
 			if len(keys) == 1:
-				self.df_grouped = pd.read_csv(wdir+'data/merged/{}/{}_band/grouped_stats_{}_{}.csv'.format(self.obj, self.band, self.band, survey), index_col=0, comment='#')
+				self.df_grouped = pd.read_csv(cfg.USER.D_DIR + 'merged/{}/{}_band/grouped_stats_{}_{}.csv'.format(self.obj, self.band, self.band, survey), index_col=0, comment='#')
 
 			elif len(keys) == 2:
-				self.df_grouped = pd.read_csv(wdir+'data/merged/{}/{}_band/grouped_stats_cat_{}.csv'.format(self.obj, self.band, self.band),index_col = [0,1])
+				self.df_grouped = pd.read_csv(cfg.USER.D_DIR + 'merged/{}/{}_band/grouped_stats_cat_{}.csv'.format(self.obj, self.band, self.band),index_col = [0,1])
 		elif read_in == False:
 			# median_mag_fn/mean_mag_fn calculate mean/median magnitude by fluxes rather than mags themselves
 			mean_mag_fn   = ('mean'  , lambda mag: -2.5*np.log10(np.mean  (10**(-(mag-8.9)/2.5))) + 8.9)
@@ -144,12 +144,12 @@ class analysis():
 		if redshift:
 			if ~hasattr(self, 'redshifts'):
 				# add on column for redshift. Use squeeze = True when reading in a single column.
-				self.redshifts = pd.read_csv(wdir+'data/catalogues/qsos/dr14q/dr14q_uid_desig_z.csv', index_col=self.ID, usecols=[self.ID,'z'], squeeze=True).rename('redshift')
+				self.redshifts = pd.read_csv(cfg.USER.D_DIR + 'catalogues/qsos/dr14q/dr14q_uid_desig_z.csv', index_col=self.ID, usecols=[self.ID,'z'], squeeze=True).rename('redshift')
 			self.df_grouped = self.df_grouped.merge(self.redshifts, on=self.ID)
 			self.df_grouped['mjd_ptp_rf'] = self.df_grouped['mjd_ptp']/(1+self.df_grouped['redshift'])
 		
 		if colors:
-			df_colors = pd.read_csv(wdir+'data/computed/{}/colors_sdss.csv'.format(self.obj), index_col=0)
+			df_colors = pd.read_csv(cfg.USER.D_DIR + 'computed/{}/colors_sdss.csv'.format(self.obj), index_col=0)
 			self.df_grouped = self.df_grouped.join(df_colors, on=self.ID, how='left')
 
 		if restrict:
@@ -179,7 +179,7 @@ class analysis():
 			# cols = z, Mi, L5100, L5100_err, L3000, L3000_err, L1350, L1350_err, MBH_MgII, MBH_CIV, Lbol, Lbol_err, nEdd, sdss_name, ra, dec, uid
 			prop_range_all = {'Mi':(-30,-20),'mag_mean':(15,23.5),'mag_std':(0,1),'redshift':(0,5),'Lbol':(44,48),'nEdd':(-3,0.5)}
 			self.prop_range = {**prop_range_all, **prop_range_any}
-			vac = pd.read_csv(wdir+'data/catalogues/qsos/dr12q/SDSS_DR12Q_BH_matched.csv', index_col=self.ID)
+			vac = pd.read_csv(cfg.USER.D_DIR + 'catalogues/qsos/dr12q/SDSS_DR12Q_BH_matched.csv', index_col=self.ID)
 			vac = vac.rename(columns={'z':'redshift_vac'});
 
 		if catalogue == 'dr14_vac':
@@ -187,7 +187,7 @@ class analysis():
 
 			prop_range_all = {'mag_mean':(15,23.5),'mag_std':(0,1),'redshift':(0,5),'Lbol':(44,48)}
 			self.prop_range = {**prop_range_all, **prop_range_any}
-			vac = pd.read_csv(wdir+'data/catalogues/qsos/dr14q/dr14q_spec_prop_matched.csv', index_col=self.ID)
+			vac = pd.read_csv(cfg.USER.D_DIR + 'catalogues/qsos/dr14q/dr14q_spec_prop_matched.csv', index_col=self.ID)
 			vac = vac.rename(columns={'z':'redshift_vac'});
 
 		print(vac.index)
@@ -211,7 +211,7 @@ class analysis():
 	
 	def merge_slopes():
 		names = ['restframe_all','restframe_ztf']
-		slopes = pd.concat([pd.read_csv(wdir+'data/catalogues{}/slopes_{}.csv'.format(self.obj, name), index_col=self.ID, usecols=[self.ID,'m_optimal']) for name in names], axis=1)
+		slopes = pd.concat([pd.read_csv(cfg.USER.D_DIR + 'catalogues{}/slopes_{}.csv'.format(self.obj, name), index_col=self.ID, usecols=[self.ID,'m_optimal']) for name in names], axis=1)
 		slopes.columns = []
 		self.properties = self.properties.join(slopes, how='left', on=self.ID)
 
