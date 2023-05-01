@@ -5,6 +5,7 @@
 #SBATCH --job-name=qso_avg
 #SBATCH --mem=42G
 #SBATCH -t 99:00:00
+#SBATCH --mail-user=harry.rendell@ed.ac.uk
 
 # Note, we can run this as a normal batch script using bash <filename>
 
