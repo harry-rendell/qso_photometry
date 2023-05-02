@@ -29,13 +29,15 @@ def filter_data(df, bounds, dropna=True, inplace=False):
 	Remove data that lies outside ranges specified in bounds.
 	Note, using inplace=True is approx ~30% more memory efficient and prevents additional dataframes being stored.
 	Use inplace=False when testing bounds, but then switch to inplace=True once suitable bounds have been found. 
+	Note, the bounds are INCLUSIVE.
 	"""
-	print('Filtering with bounds:',bounds)
+	# print('Filtering with bounds:',bounds)
 	if not inplace:
 		df = df.copy()
 	# Create set of boolean numpy arrays which are true if the key is within the bounds.
 	for key, bound in bounds.items():
 		boolean = df[key].between(bound[0], bound[1])
+		print('Enforcing {:.2f} <= {} <= {:.2f}'.format(bound[0],key,bound[1]).ljust(50,' ') + 'Nr points outside bounds: {:,}'.format((~boolean).sum()))
 		if inplace:
 			df[key].where(boolean, np.nan, inplace=True)
 		else:
