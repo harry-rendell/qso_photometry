@@ -22,6 +22,9 @@ __C.USER.W_DIR = '/disk1/hrb/project/qso_photometry/'
 # Data directory
 __C.USER.D_DIR = '/disk1/hrb/project/data/'
 
+# Results directory. Leave this unchanged.
+__C.USER.R_DIR = os.path.join(__C.USER.W_DIR, 'res', '')
+
 # Set below to True to use multiple cores during computationally intensive tasks.
 # Single core is not currently well supported, may cause errors when setting this to False.
 __C.USER.USE_MULTIPROCESSING = True
@@ -77,6 +80,14 @@ __C.COLLECTION.ZTF.dtypes = {
 					'uid_s': np.uint32
 						 }
 
+__C.COLLECTION.CALIBSTAR_dtypes = {
+							'ra': np.float32,
+							'dec': np.float32,
+							'n_epochs': np.uint32,
+							**{'mag_mean_'+b: np.float32 for b in 'gri'},
+							**{'mag_mean_err_'+b: np.float32 for b in 'gri'}
+								}
+
 
 # 'uid': np.uint32,
 # 'uid_s':np.uint32,
@@ -96,22 +107,12 @@ __C.PREPROC.lc_dtypes = {'mjd': np.float32,
 						 'sid': np.uint8}
 
 __C.PREPROC.stats_dtypes = {'n_tot': np.uint16, # Increase this to uint32 if we think we will have more than 2^16 (65,536) observations for a single object
-						    'mjd_min': np.float32,
-						    'mjd_max': np.float32,
-						    'mjd_ptp': np.float32,
-						    'mag_min': np.float32,
-						    'mag_max': np.float32,
-						    'mag_mean': np.float32,
-						    'mag_med': np.float32,
-						    'mag_mean_native': np.float32,
-						    'mag_med_native': np.float32,
-						    'mag_opt_mean': np.float32,
-						    'mag_opt_mean_flux': np.float32,
-						    'mag_std': np.float32,
-						    'magerr_max': np.float32,
-						    'magerr_mean': np.float32,
-						    'magerr_med': np.float32,
-						    'magerr_opt_std': np.float32}
+						    **{x:np.float32 for x in ['mjd_min','mjd_max','mjd_ptp',
+													  'mag_min','mag_max','mag_mean','mag_med',
+													  'mag_std',
+													  'mag_mean_native','mag_med_native',
+													  'mag_opt_mean','mag_opt_mean_flux','magerr_opt_std',
+													  'magerr_max','magerr_mean','magerr_med']}}
 
 # maybe not needed as the types stay consistent
 __C.PREPROC.pairwise_dtypes = {'uid': np.uint32,
@@ -166,10 +167,9 @@ __C.PREPROC.SURVEY_IDS =   {'sss_r1': 1,
 						 	'ztf': 11}
 
 #------------------------------------------------------------------------------
-# Analysis
+# Analysis and results
 #------------------------------------------------------------------------------
-__C.ANALYSIS = edict()
-
+__C.RES = edict()
 
 
 
