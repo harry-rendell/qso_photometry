@@ -182,5 +182,5 @@ __C.ANALYSIS = edict()
 __C.FIG = edict()
 
 # Path to style files. Empty string at end ensures trailing slash
-__C.FIG.STYLE_DIR = os.path.join(__C.USER.W_DIR, 'qso_photometry' 'res', 'styles', '')
+__C.FIG.STYLE_DIR = os.path.join(__C.USER.W_DIR, 'res', 'styles', '')
 
