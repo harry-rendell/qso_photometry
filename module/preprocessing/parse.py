@@ -24,20 +24,25 @@ def intersection(*args):
 	print('---------------------------------')
 	return surveys
 
-def filter_data(df, bounds, dropna=True, inplace=False):
+def filter_data(df, bounds={}, dropna=True, inplace=False, valid_uids=None):
 	"""
 	Remove data that lies outside ranges specified in bounds.
 	Note, using inplace=True is approx ~30% more memory efficient and prevents additional dataframes being stored.
 	Use inplace=False when testing bounds, but then switch to inplace=True once suitable bounds have been found. 
 	Note, the bounds are INCLUSIVE.
 	"""
-	# print('Filtering with bounds:',bounds)
+	# Restrict our dataframe rows with indices contained in valid_uids, if provided.
+	n = len(df.index)
+	if valid_uids is not None:
+		mask = df.index.isin(valid_uids.index)
+		df = df[mask]
+		print('No. rows removed that are not in valid_uids: {:,}\n'.format( (~mask).sum() ))
 	if not inplace:
 		df = df.copy()
 	# Create set of boolean numpy arrays which are true if the key is within the bounds.
 	for key, bound in bounds.items():
 		boolean = df[key].between(bound[0], bound[1])
-		print('Enforcing {:.2f} <= {} <= {:.2f}'.format(bound[0],key,bound[1]).ljust(50,' ') + 'Nr points outside bounds: {:,}'.format((~boolean).sum()))
+		print('Enforcing {:.2f} <= {} <= {:.2f}'.format(bound[0],key,bound[1]).ljust(50,' ') + 'No. points outside bounds: {:,}'.format((~boolean).sum()))
 		if inplace:
 			df[key].where(boolean, np.nan, inplace=True)
 		else:
@@ -45,14 +50,14 @@ def filter_data(df, bounds, dropna=True, inplace=False):
 	
 	# Drop rows with no observations in any band
 	if dropna:
-		n = len(df.index)
 		if inplace:
 			df.dropna(axis=0, how='any', inplace=True)
 		else:
 			df = df.dropna(axis=0, how='any', inplace=False)
-		print('num obs before:  {:,}'.format(n))
-		print('num obs after:   {:,}'.format(len(df.index)))
-		print('num obs removed: {:,}'.format(n - len(df.index)))
+		print('-'*85)
+		print('No. rows before:  {:,}'.format(n))
+		print('No. rows after:   {:,}'.format(len(df.index)))
+		print('No. rows removed: {:,} ({:.2f}%)'.format(n - len(df.index), (1-len(df.index)/n)*100))
 	
 	return df
 
