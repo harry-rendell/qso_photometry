@@ -47,7 +47,7 @@ if __name__ == "__main__":
             df = data_io.dispatch_reader(kwargs, multiproc=True)
 
             # Remove obviously bad data and uids that should not be present.
-            valid_uids = pd.read_csv(cfg.USER.D_DIR + 'catalogues/{}/{}_subsample_coords.csv'.format(OBJ), usecols=[ID], index_col=ID, comment='#')
+            valid_uids = pd.read_csv(cfg.USER.D_DIR + 'catalogues/{}/{}_subsample_coords.csv'.format(OBJ, OBJ), usecols=[ID], index_col=ID, comment='#')
             parse.filter_data(df, bounds=cfg.PREPROC.FILTER_BOUNDS, dropna=True, inplace=True, valid_uids=valid_uids)
 
             # make header for output
@@ -70,11 +70,11 @@ if __name__ == "__main__":
             # Join lightcurve median and std onto dataframe
             multi_obs = multi_obs.join(grouped[['mag_med','mag_std']], on=ID)
             
-            chunks = parse.split_into_non_overlapping_chunks(multi_obs, cfg.USER.N_CORES)
+            chunks = parse.split_into_non_overlapping_chunks(multi_obs, args.n_cores)
             kwargs = {'dtypes':cfg.PREPROC.lc_dtypes}
 
             start = time.time()
-            averaged = data_io.dispatch_function(lightcurve_statistics.groupby_apply_average, chunks, kwargs)
+            averaged = data_io.dispatch_function(lightcurve_statistics.groupby_apply_average, chunks=chunks, max_processes=args.n_cores, kwargs=kwargs)
             end   = time.time()
             print('Elapsed:',time.strftime("%Hh %Mm %Ss",time.gmtime(end-start)))
 

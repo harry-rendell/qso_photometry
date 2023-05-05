@@ -16,42 +16,42 @@ cd /home/hrb/project/qso_photometry
 module load anaconda
 source activate astroconda
 
-n_cores=16
+n_cores=32
 
 #------------------------------------------------------------------------------
-# 
+# Save grouped data (using uncleaned photometry)
 #------------------------------------------------------------------------------
 python scripts/save_grouped.py --object='qsos'       --band='gri' --survey='sdss ps ztf' --n_cores=$n_cores > batch_scripts/logs/log_save_grouped_qsos.txt
 python scripts/save_grouped.py --object='calibStars' --band='gri' --survey='sdss ps ztf' --n_cores=$n_cores > batch_scripts/logs/log_save_grouped_calibStars.txt
 
 
 #------------------------------------------------------------------------------
-# 
+# Average observations in the same night
 #------------------------------------------------------------------------------
 python scripts/average_nightly_observations.py --object='qsos'       --band='gri' --survey='sdss ps ztf' --n_cores=$n_cores >& batch_scripts/logs/log_average_nightly_observations_qsos.txt
 python scripts/average_nightly_observations.py --object='calibStars' --band='gri' --survey='sdss ps ztf' --n_cores=$n_cores >& batch_scripts/logs/log_average_nightly_observations_calibStars.txt
 
 
 #------------------------------------------------------------------------------
-# 
+# Save grouped data (using cleaned photometry)
 #------------------------------------------------------------------------------
 python scripts/save_grouped.py --object='qsos'       --band='gri' --survey='sdss ps ztf' --n_cores=$n_cores --cleaned > batch_scripts/logs/log_save_grouped_clean_qsos.txt
 python scripts/save_grouped.py --object='calibStars' --band='gri' --survey='sdss ps ztf' --n_cores=$n_cores --cleaned > batch_scripts/logs/log_save_grouped_clean_calibStars.txt
 
 #------------------------------------------------------------------------------
-# 
+# Merge survey data and save to to data/merged/clean/
 #------------------------------------------------------------------------------
 python scripts/merge_survey_data.py --object='qsos'       --band='gri' --survey='sdss ps ztf' --n_cores=$n_cores > batch_scripts/logs/log_merge_survey_data_qsos.txt
 python scripts/merge_survey_data.py --object='calibStars' --band='gri' --survey='sdss ps ztf' --n_cores=$n_cores > batch_scripts/logs/log_merge_survey_data_calibStars.txt
 
 #------------------------------------------------------------------------------
-# 
+# Save grouped data (using cleaned, merged photometry) and save to data/merged/clean/
 #------------------------------------------------------------------------------
 python scripts/save_grouped_merged.py --object='qsos'       --band='gri' --n_cores=$n_cores > batch_scripts/logs/log_save_grouped_merged_qsos.txt
 python scripts/save_grouped_merged.py --object='calibStars' --band='gri' --n_cores=$n_cores > batch_scripts/logs/log_save_grouped_merged_calibStars.txt
 
 #------------------------------------------------------------------------------
-# 
+# Save features
 #------------------------------------------------------------------------------
 python scripts/generate_features.py --object='qsos'       --band='gri' --survey='sdss ps ztf' --n_cores=$n_cores > batch_scripts/logs/log_generate_features_qsos.txt
 python scripts/generate_features.py --object='calibStars' --band='gri' --survey='sdss ps ztf' --n_cores=$n_cores > batch_scripts/logs/log_generate_features_calibStars.txt

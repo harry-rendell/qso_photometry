@@ -37,7 +37,7 @@ if __name__ == "__main__":
               'nrows': nrows,
               'skiprows': skiprows,
               'basepath': cfg.USER.D_DIR + 'merged/{}/clean/'.format(OBJ),
-              'usecols': ['uid','mjd','mag','magerr','band'],
+              'usecols': [ID,'mjd','mag','magerr','band'],
               'ID':ID}
 
     for band in args.band:
