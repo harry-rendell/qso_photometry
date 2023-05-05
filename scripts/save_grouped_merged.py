@@ -19,7 +19,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     print('args:',args)
     
-    OBJ = args.object.lower()
+    OBJ = args.object
 
     ID = 'uid' if (OBJ == 'qsos') else 'uid_s'
     nrows = args.n_rows

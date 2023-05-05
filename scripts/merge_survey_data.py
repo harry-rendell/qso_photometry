@@ -16,7 +16,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     print('args:',args)
     
-    OBJ = args.object.lower()
+    OBJ = args.object
     ID     = 'uid'
     SAVE_COLS = ['uid','mjd','mag','magerr','band','sid']
 

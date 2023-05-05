@@ -21,7 +21,7 @@ if __name__ == "__main__":
     print('args:',args)
 
 
-    OBJ = args.object.lower()
+    OBJ = args.object
     BAND   = args.band.lower()
     SURVEY = args.survey.lower()
 

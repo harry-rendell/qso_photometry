@@ -22,7 +22,7 @@ if __name__ == "__main__":
     # Print the arguments for the log
     print('args:',args)
     
-    OBJ = args.object.lower()
+    OBJ = args.object
     ID = 'uid' if (OBJ == 'qsos') else 'uid_s'
 
     nrows = args.n_rows
@@ -65,4 +65,4 @@ if __name__ == "__main__":
                 grouped.to_csv(output_fpath)
                 
             print('Elapsed:',time.strftime("%Hh %Mm %Ss",time.gmtime(time.time()-start)))
-print('Finished')
+    print('Finished')

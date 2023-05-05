@@ -22,7 +22,7 @@ if __name__ == "__main__":
     # Print the arguments for the log
     print('args:',args)
     
-    OBJ = args.object.lower()
+    OBJ = args.object
     ID = 'uid' if (OBJ == 'qsos') else 'uid_s'
     
     nrows = args.n_rows
@@ -46,8 +46,9 @@ if __name__ == "__main__":
 
             df = data_io.dispatch_reader(kwargs, multiproc=True)
 
-            # Remove obviously bad data
-            parse.filter_data(df, bounds=cfg.PREPROC.FILTER_BOUNDS, dropna=True, inplace=True)
+            # Remove obviously bad data and uids that should not be present.
+            valid_uids = pd.read_csv(cfg.USER.D_DIR + 'catalogues/{}/{}_subsample_coords.csv'.format(OBJ), usecols=[ID], index_col=ID, comment='#')
+            parse.filter_data(df, bounds=cfg.PREPROC.FILTER_BOUNDS, dropna=True, inplace=True, valid_uids=valid_uids)
 
             # make header for output
             print('Unable to average the following:\n'+ID+', mjd')
@@ -85,13 +86,12 @@ if __name__ == "__main__":
                 print(df)
             else:
                 # Add comment to start of csv file
-                comment = """# CSV of photometry with preprocessing and cleaning
-# mag : photometry in PanSTARRS photometric system"""
-
+                comment = ( "# CSV of photometry with preprocessing and cleaning.\n"
+                            "# mag : photometry in PanSTARRS photometric system")
                 # keyword arguments to pass to our writing function
                 kwargs = {'comment':comment,
                           'basepath':cfg.USER.D_DIR + 'surveys/{}/{}/clean/{}_band/'.format(survey, OBJ, band)}
 
                 chunks = parse.split_into_non_overlapping_chunks(df, 4)
                 data_io.dispatch_writer(chunks, kwargs)
-print('Finished')
+    print('Finished')
