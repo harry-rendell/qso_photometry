@@ -54,15 +54,15 @@ if __name__ == "__main__":
             bounds={'mag':(15,25),'magerr':(0,2)}
             parse.filter_data(df, bounds=bounds, dropna=True, inplace=True)
 
-            chunks = parse.split_into_non_overlapping_chunks(df, cfg.USER.N_CORES)
+            chunks = parse.split_into_non_overlapping_chunks(df, args.n_cores)
             kwargs = {'dtypes':cfg.PREPROC.stats_dtypes}
-            grouped = data_io.dispatch_function(lightcurve_statistics.groupby_apply_stats, chunks, kwargs)
-            output_fpath = cfg.USER.D_DIR + 'surveys/{}/{}/{}/{}_band'.format(survey, OBJ, is_clean_str, band) + 'grouped.csv'
+            grouped = data_io.dispatch_function(lightcurve_statistics.groupby_apply_stats, chunks=chunks, max_processes=args.n_cores, kwargs=kwargs)
+            output_fpath = os.path.join(cfg.USER.D_DIR, 'surveys/{}/{}/{}/{}_band'.format(survey, OBJ, is_clean_str, band), 'grouped.csv')
             if args.dry_run:
                 print(grouped)
                 print('output file path:',output_fpath)
             else:
                 grouped.to_csv(output_fpath)
-                
+
             print('Elapsed:',time.strftime("%Hh %Mm %Ss",time.gmtime(time.time()-start)))
     print('Finished')
