@@ -11,6 +11,8 @@ from module.preprocessing import data_io, parse
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--object", type=str, required=True, help ="qsos or calibStars")
+    parser.add_argument("--band", type=str, required=True, help="filterband for analysis")
+    parser.add_argument("--survey", type=str, required=True, help="SDSS, PS or ZTF")
     parser.add_argument("--n_rows", type=int, help="Number of rows to read in from the photometric data")
     parser.add_argument("--dry_run", action='store_true', help="Use this flag to print output instead of saving")
     args = parser.parse_args()
@@ -20,17 +22,17 @@ if __name__ == "__main__":
     ID     = 'uid'
     SAVE_COLS = ['uid','mjd','mag','magerr','band','sid']
 
-    for SURVEY in ['sdss','ps','ztf']:
-        for BAND in 'gri':
+    for survey in args.survey.lower().split(' '):
+        for band in args.band.lower():
             nrows  = None
             kwargs = {'dtypes': cfg.PREPROC.lc_dtypes,
                       'nrows': nrows,
                       'ID':ID,
-                      'basepath': cfg.USER.D_DIR + 'surveys/{}/{}/clean/{}_band/'.format(SURVEY, OBJ, BAND)}
+                      'basepath': cfg.USER.D_DIR + 'surveys/{}/{}/clean/{}_band/'.format(survey, OBJ, band)}
             
             df = data_io.dispatch_reader(kwargs, multiproc=True)
-            df['band'] = np.array(BAND, dtype=np.dtype(('U',1)))
-            df['sid'] = np.array(cfg.PREPROC.SURVEY_IDS[SURVEY], dtype=np.uint8)
+            df['band'] = np.array(band, dtype=np.dtype(('U',1)))
+            df['sid'] = np.array(cfg.PREPROC.SURVEY_IDS[survey], dtype=np.uint8)
             
             for uid, chunk in zip(*parse.split_into_non_overlapping_chunks(df, 36, bin_size=15000)):
                 if not chunk.empty:
