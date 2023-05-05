@@ -3,6 +3,12 @@ from multiprocessing import Pool
 import os
 from .import parse
 from ..config import cfg
+from astropy.table import Table
+from astropy.io import ascii
+
+def to_ipac(df, save_as, columns):
+	t = Table.from_pandas(df[columns], index=True)
+	ascii.write(t, save_as, format='ipac', overwrite=True)
 
 def reader(fname, kwargs):
 	"""
@@ -12,6 +18,7 @@ def reader(fname, kwargs):
 	nrows  = kwargs['nrows']  if 'nrows'  in kwargs else None
 	usecols = kwargs['usecols'] if 'usecols' in kwargs else None
 	skiprows = kwargs['skiprows'] if 'skiprows' in kwargs else None
+	delimiter = kwargs['delimiter'] if 'delimiter' in kwargs else ','
 	basepath = kwargs['basepath']
 	
 	if 'ID' in kwargs:
@@ -25,7 +32,7 @@ def reader(fname, kwargs):
 		ln = 0
 		for line in file:
 			ln += 1
-			if not line.strip().startswith("#"):
+			if not line.strip().startswith(('#','|','\\')):
 				names = line.replace('\n','').split(',')
 				break
 		return pd.read_csv(file,
@@ -33,8 +40,9 @@ def reader(fname, kwargs):
 						   dtype=dtypes,
 						   nrows=nrows,
 						   names=names,
-						   skiprows=skiprows).set_index(ID)
-# @profile
+						   skiprows=skiprows,
+						   delimiter=delimiter).set_index(ID)
+
 def dispatch_reader(kwargs, multiproc=True, i=0, max_processes=64):
 	"""
 	Dispatching function for reader
@@ -67,7 +75,8 @@ def writer(i, chunk, kwargs):
 
 	f = open(os.path.join(basepath,'lc_{}.csv'.format(i)), mode)
 	if 'comment' in kwargs:
-		f.write(kwargs['comment']+"\n")
+		newline = '' if kwargs['comment'].endswith('\n') else '\n'
+		f.write(kwargs['comment']+newline)
 	chunk.to_csv(f)
 
 def dispatch_writer(chunks, kwargs, max_processes=64):
