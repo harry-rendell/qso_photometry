@@ -42,49 +42,50 @@ __C.COLLECTION = edict()
 
 __C.COLLECTION.SDSS = edict()
 # Datatypes
+# mag converted from real[4] with similar precision
+# magerr converted from real[4] with similar precision
 __C.COLLECTION.SDSS.dtypes = {
-					'mjd': np.float32,
-					'mag': np.float32, # converted from real[4] with similar precision
-					'magerr': np.float32, # converted from real[4] with similar precision
-					'uid': np.uint32,
-					'uid_s': np.uint32,
-					'g-r': np.float32,
-					'r-i': np.float32,
-					'i-z': np.float32
+							 **{'uid'    : np.uint32,  'uid_s'  : np.uint32,
+								'objID'  : np.uint64,  'mjd'    : np.float32,
+								'ra'     : np.float64, 'ra_ref' : np.float64,
+								'dec'    : np.float64, 'dec_ref': np.float64,
+								'get_nearby_distance': np.float32},
+							 **{band + 'psf'   : np.float64 for band in 'ugriz'},
+							 **{band + 'psferr': np.float64 for band in 'ugriz'},
 						 }
 
 __C.COLLECTION.PS = edict()
 # Datatypes
 __C.COLLECTION.PS.dtypes = {
-					'objID': np.uint64, 
-					'obsTime': np.float32, # converted from float[8] with reduced precision
-					'psfFlux': np.float64, # converted from float[8] with similar precision. Since this is flux we use double precision.
+					'objID'     : np.uint64, 
+					'obsTime'   : np.float32, # converted from float[8] with reduced precision
+					'psfFlux'   : np.float64, # converted from float[8] with similar precision. Since this is flux we use double precision.
 					'psfFluxErr': np.float64, # converted from float[8] with similar precision.
-					'mjd': np.float32,
-					'mag': np.float32,
-					'magerr': np.float32,
-					'uid': np.uint32,
-					'uid_s': np.uint32
+					'mjd'       : np.float32,
+					'mag'       : np.float32,
+					'magerr'    : np.float32,
+					'uid'       : np.uint32,
+					'uid_s'     : np.uint32
 						 }
 
 __C.COLLECTION.ZTF = edict()
 # Datatypes
 __C.COLLECTION.ZTF.dtypes = {
-					'oid': np.uint64, # note, uint32 is not large enough for ztf oids
+					'oid'     : np.uint64, # note, uint32 is not large enough for ztf oids
 					'clrcoeff': np.float32,
 					'limitmag': np.float32,
-					'mjd': np.float32, # reduced from float64
-					'mag': np.float32,
-					'magerr': np.float32, 
-					'uid': np.uint32,
-					'uid_s': np.uint32
+					'mjd'     : np.float32, # reduced from float64
+					'mag'     : np.float32,
+					'magerr'  : np.float32, 
+					'uid'     : np.uint32,
+					'uid_s'   : np.uint32
 						 }
 
 __C.COLLECTION.CALIBSTAR_dtypes = {
-							'ra': np.float32,
-							'dec': np.float32,
+							'ra'      : np.float64,
+							'dec'     : np.float64,
 							'n_epochs': np.uint32,
-							**{'mag_mean_'+b: np.float32 for b in 'gri'},
+							**{'mag_mean_'+b    : np.float32 for b in 'gri'},
 							**{'mag_mean_err_'+b: np.float32 for b in 'gri'}
 								}
 
@@ -98,13 +99,13 @@ __C.COLLECTION.CALIBSTAR_dtypes = {
 __C.PREPROC = edict()
 
 # Datatypes
-__C.PREPROC.lc_dtypes = {'mjd': np.float32,
-						 'mag': np.float32,
+__C.PREPROC.lc_dtypes = {'mjd'     : np.float32,
+						 'mag'     : np.float32,
 						 'mag_orig': np.float32,
-						 'magerr': np.float32,
-						 'uid': np.uint32,
-						 'uid_s': np.uint32,
-						 'sid': np.uint8}
+						 'magerr'  : np.float32,
+						 'uid'     : np.uint32,
+						 'uid_s'   : np.uint32,
+						 'sid'     : np.uint8}
 
 __C.PREPROC.stats_dtypes = {'n_tot': np.uint16, # Increase this to uint32 if we think we will have more than 2^16 (65,536) observations for a single object
 						    **{x:np.float32 for x in ['mjd_min','mjd_max','mjd_ptp',
@@ -116,9 +117,9 @@ __C.PREPROC.stats_dtypes = {'n_tot': np.uint16, # Increase this to uint32 if we 
 
 # maybe not needed as the types stay consistent
 __C.PREPROC.pairwise_dtypes = {'uid': np.uint32,
-							   'dt':np.float32,
-							   'dm':np.float32,
-							   'de':np.float32
+							   'dt' :np.float32,
+							   'dm' :np.float32,
+							   'de' :np.float32
 							   }
 
 # Limiting magnitudes
