@@ -115,6 +115,14 @@ __C.PREPROC.stats_dtypes = {'n_tot': np.uint16, # Increase this to uint32 if we 
 													  'mag_opt_mean','mag_opt_mean_flux','magerr_opt_std',
 													  'magerr_max','magerr_mean','magerr_med']}}
 
+__C.PREPROC.dtdm_dtypes = {'uid'	: np.uint32,
+						   'uid_s' 	: np.uint32,
+						   'dm' 	: np.float32,
+						   'dm' 	: np.float32,
+						   'de'		: np.float32,
+						   'dm2_de2': np.float32,
+						   'dsid'	: np.uint8}
+
 # maybe not needed as the types stay consistent
 __C.PREPROC.pairwise_dtypes = {'uid': np.uint32,
 							   'dt' :np.float32,
