@@ -20,8 +20,8 @@ if __name__ == "__main__":
     print('args:',args)
     
     OBJ = args.object
-
     ID = 'uid' if (OBJ == 'qsos') else 'uid_s'
+
     nrows = args.n_rows
     skiprows = args.n_skiprows
     if args.n_skiprows and nrows is not None:
@@ -29,8 +29,6 @@ if __name__ == "__main__":
 
     if args.n_cores:
         cfg.USER.N_CORES = args.n_cores
-    
-    start = time.time()
 
     # keyword arguments to pass to our reading function
     kwargs = {'dtypes': {**cfg.PREPROC.lc_dtypes, **cfg.PREPROC.stats_dtypes},
@@ -40,6 +38,8 @@ if __name__ == "__main__":
               'usecols': [ID,'mjd','mag','magerr','band'],
               'ID':ID}
 
+    start = time.time()
+    
     for band in args.band:
         kwargs['band'] = band
         grouped = data_io.dispatch_function(lightcurve_statistics.groupby_apply_stats, chunks=None, max_processes=cfg.USER.N_CORES, **kwargs)
@@ -50,5 +50,5 @@ if __name__ == "__main__":
             print('output file path:',output_fpath)
         else:
             grouped.to_csv(output_fpath)
-        
+
     print('Elapsed:',time.strftime("%Hh %Mm %Ss",time.gmtime(time.time()-start)))

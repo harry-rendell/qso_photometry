@@ -94,8 +94,12 @@ def process_input(function, df_or_fname, kwargs):
 	This function handles inputs
 	"""
 	if isinstance(df_or_fname, str):
+		# In this case, are provided a filename. Read it with reader() then pass to function()
+		# Add the fname to the dictionary so function() can access it if necessary.
+		kwargs['fname'] = df_or_fname
 		return function(reader(df_or_fname, kwargs), kwargs)
 	else:
+		# In this case, df_or_fname is a DataFrame chunk.
 		return function(df_or_fname, kwargs)
 
 def dispatch_function(function, chunks=None, max_processes=64, **kwargs):
@@ -127,14 +131,20 @@ def dispatch_function(function, chunks=None, max_processes=64, **kwargs):
 
 	if __name__ == 'module.preprocessing.data_io':
 		# Make as many processes as there are files/chunks.
+		# There may be more elements in chunks than there are processes,
+		#   in this case the tasks will do them in turn.
 		n_tasks = min(len(chunks), max_processes)
 		with Pool(n_tasks) as pool:
-			df = pool.starmap(process_input, [(function, chunk, kwargs) for chunk in chunks])
-		df = pd.concat(df, sort=True) # overwrite immediately for prevent holding unnecessary dataframes in memory
+			output = pool.starmap(process_input, [(function, chunk, kwargs) for chunk in chunks])
+		
+		if not all(o is None for o in output):
+			# If it is better to save chunks rather than concatenate result into one DataFrame
+			#    (eg in case of calculate dtdm) then only run this block if a result is returned.
+			output = pd.concat(output, sort=True) # overwrite immediately for prevent holding unnecessary dataframes in memory
 
-		if 'dtypes' in kwargs:
-			dtypes = {k:v for k,v in kwargs['dtypes'].items() if k in df.columns}
-		else:
-			dtypes={}
+			if 'dtypes' in kwargs:
+				dtypes = {k:v for k,v in kwargs['dtypes'].items() if k in output.columns}
+			else:
+				dtypes={}
 
-		return df.astype(dtypes)
+			return output.astype(dtypes)
