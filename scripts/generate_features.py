@@ -21,7 +21,7 @@ if __name__ == "__main__":
     print('args:',args)
 
 
-    OBJ = args.object.lower()
+    OBJ = args.object
     BAND   = args.band.lower()
     SURVEY = args.survey.lower()
 
@@ -35,20 +35,21 @@ if __name__ == "__main__":
     if args.n_cores:
         cfg.USER.N_CORES = args.n_cores
 
-    kwargs = {'dtypes': cfg.PREPROC.lc_dtypes,
-              'nrows': nrows,
-              'skiprows': skiprows,
-              'basepath': cfg.USER.D_DIR + 'surveys/{}/{}/clean/{}_band/'.format(SURVEY, OBJ, BAND),
-              'ID':ID}
+    for survey in args.survey.lower().split(' '):
+        for band in args.band.lower():
+            reader_kwargs = {'dtypes': cfg.PREPROC.lc_dtypes,
+                             'nrows': nrows,
+                             'skiprows': skiprows,
+                             'basepath': cfg.USER.D_DIR + 'surveys/{}/{}/clean/{}_band/'.format(survey, OBJ, band),
+                             'ID':ID}
 
-    df = data_io.dispatch_reader(kwargs, multiproc=True)
-
-
-    chunks = parse.split_into_non_overlapping_chunks(df, cfg.USER.N_CORES)
-    kwargs = {'dtypes':cfg.PREPROC.stats_dtypes}
-    grouped = data_io.dispatch_function(lightcurve_statistics.groupby_apply_features, chunks, kwargs)
-    if args.dry_run:
-        print(grouped)
-    else:
-        output_folder = cfg.USER.D_DIR + 'surveys/{}/{}/clean/{}_band/'.format(SURVEY, OBJ, band) 
-        grouped.to_csv(output_folder + 'features.csv')
+            df = data_io.dispatch_reader(reader_kwargs, multiproc=True)
+            chunks = parse.split_into_non_overlapping_chunks(df, cfg.USER.N_CORES)
+            fn_kwargs = {'dtypes':cfg.PREPROC.stats_dtypes}
+            grouped = data_io.dispatch_function(lightcurve_statistics.groupby_apply_features, chunks=chunks, max_processes=args.n_cores, kwargs=fn_kwargs)
+            
+            if args.dry_run:
+                print(grouped)
+            else:
+                output_folder = cfg.USER.D_DIR + 'surveys/{}/{}/clean/{}_band/'.format(survey, OBJ, band) 
+                grouped.to_csv(output_folder + 'features.csv')

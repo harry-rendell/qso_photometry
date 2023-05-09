@@ -3,6 +3,12 @@ from multiprocessing import Pool
 import os
 from .import parse
 from ..config import cfg
+from astropy.table import Table
+from astropy.io import ascii
+
+def to_ipac(df, save_as, columns):
+	t = Table.from_pandas(df[columns], index=True)
+	ascii.write(t, save_as, format='ipac', overwrite=True)
 
 def reader(fname, kwargs):
 	"""
@@ -12,6 +18,7 @@ def reader(fname, kwargs):
 	nrows  = kwargs['nrows']  if 'nrows'  in kwargs else None
 	usecols = kwargs['usecols'] if 'usecols' in kwargs else None
 	skiprows = kwargs['skiprows'] if 'skiprows' in kwargs else None
+	delimiter = kwargs['delimiter'] if 'delimiter' in kwargs else ','
 	basepath = kwargs['basepath']
 	
 	if 'ID' in kwargs:
@@ -25,7 +32,7 @@ def reader(fname, kwargs):
 		ln = 0
 		for line in file:
 			ln += 1
-			if not line.strip().startswith("#"):
+			if not line.strip().startswith(('#','|','\\')):
 				names = line.replace('\n','').split(',')
 				break
 		return pd.read_csv(file,
@@ -33,8 +40,9 @@ def reader(fname, kwargs):
 						   dtype=dtypes,
 						   nrows=nrows,
 						   names=names,
-						   skiprows=skiprows).set_index(ID)
-# @profile
+						   skiprows=skiprows,
+						   delimiter=delimiter).set_index(ID)
+
 def dispatch_reader(kwargs, multiproc=True, i=0, max_processes=64):
 	"""
 	Dispatching function for reader
@@ -67,7 +75,8 @@ def writer(i, chunk, kwargs):
 
 	f = open(os.path.join(basepath,'lc_{}.csv'.format(i)), mode)
 	if 'comment' in kwargs:
-		f.write(kwargs['comment']+"\n")
+		newline = '' if kwargs['comment'].endswith('\n') else '\n'
+		f.write(kwargs['comment']+newline)
 	chunk.to_csv(f)
 
 def dispatch_writer(chunks, kwargs, max_processes=64):
@@ -85,8 +94,12 @@ def process_input(function, df_or_fname, kwargs):
 	This function handles inputs
 	"""
 	if isinstance(df_or_fname, str):
+		# In this case, are provided a filename. Read it with reader() then pass to function()
+		# Add the fname to the dictionary so function() can access it if necessary.
+		kwargs['fname'] = df_or_fname
 		return function(reader(df_or_fname, kwargs), kwargs)
 	else:
+		# In this case, df_or_fname is a DataFrame chunk.
 		return function(df_or_fname, kwargs)
 
 def dispatch_function(function, chunks=None, max_processes=64, **kwargs):
@@ -118,14 +131,20 @@ def dispatch_function(function, chunks=None, max_processes=64, **kwargs):
 
 	if __name__ == 'module.preprocessing.data_io':
 		# Make as many processes as there are files/chunks.
+		# There may be more elements in chunks than there are processes,
+		#   in this case the tasks will do them in turn.
 		n_tasks = min(len(chunks), max_processes)
 		with Pool(n_tasks) as pool:
-			df = pool.starmap(process_input, [(function, chunk, kwargs) for chunk in chunks])
-		df = pd.concat(df, sort=True) # overwrite immediately for prevent holding unnecessary dataframes in memory
+			output = pool.starmap(process_input, [(function, chunk, kwargs) for chunk in chunks])
+		
+		if not all(o is None for o in output):
+			# If it is better to save chunks rather than concatenate result into one DataFrame
+			#    (eg in case of calculate dtdm) then only run this block if a result is returned.
+			output = pd.concat(output, sort=True) # overwrite immediately for prevent holding unnecessary dataframes in memory
 
-		if 'dtypes' in kwargs:
-			dtypes = {k:v for k,v in kwargs['dtypes'].items() if k in df.columns}
-		else:
-			dtypes={}
+			if 'dtypes' in kwargs:
+				dtypes = {k:v for k,v in kwargs['dtypes'].items() if k in output.columns}
+			else:
+				dtypes={}
 
-		return df.astype(dtypes)
+			return output.astype(dtypes)

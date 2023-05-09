@@ -3,7 +3,10 @@ import pandas as pd
 from ..config import cfg
 
 def groupby_apply_features(df, kwargs):
-    s = df.groupby(df.index.name).apply(calculate_features)
+    if ('band' in kwargs) & ('band' in df.columns):
+        s = df[df['band'] == kwargs['band']].groupby(df.index.name).apply(calculate_statistics)
+    else:
+        s = df.groupby(df.index.name).apply(calculate_statistics)
     return pd.DataFrame(s.values.tolist(), index=s.index, dtype='float32')
 
 def groupby_apply_average(df, kwargs):
