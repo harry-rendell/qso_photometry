@@ -68,7 +68,7 @@ df['mag_ptp'].hist(range = (0,1.75), bins=300, ax=ax[0])
 df['mag_ptp'].hist(range = (0,1.75), bins=300, cumulative=True, density=True, ax=ax[1])
 
 df = df.sort_values('dist_x')
-df = df[~df['oid'].duplicated(keep='first')]
+df = df[~df['oid'].duplicated(keep='first').values]
 
 assert df['oid'].is_unique
 
