@@ -11,18 +11,21 @@ cfg = __C
 import numpy as np
 import os
 
+# Root directory of project
+__C.ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+
 #------------------------------------------------------------------------------
 # User settings
 #------------------------------------------------------------------------------
 __C.USER = edict()
 
 # Working directory
-__C.USER.W_DIR = '/disk1/hrb/project/qso_photometry/'
+__C.USER.W_DIR = os.path.join(__C.ROOT_DIR, 'qso_photometry', '')
 
 # Data directory
-__C.USER.D_DIR = '/disk1/hrb/project/data/'
+__C.USER.D_DIR = os.path.join(__C.ROOT_DIR, 'data', '')
 
-# Results directory. Leave this unchanged.
+# Results directory.
 __C.USER.R_DIR = os.path.join(__C.USER.W_DIR, 'res', '')
 
 # Set below to True to use multiple cores during computationally intensive tasks.

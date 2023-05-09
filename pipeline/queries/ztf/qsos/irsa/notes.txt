@@ -1,4 +1,0 @@
-1. query_coords_*.txt are data/catalogues/qsos/dr14q/dr14q_uid_coords_ipac.txt split into 6 chunks
-2. result*.csv are the results of the above put into https://irsa.ipac.caltech.edu/cgi-bin/Gator/nph-scan?submit=Select&projshort=ZTF
-3. The above are combined using combine.sh in this directory
-4. 

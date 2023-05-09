@@ -16,29 +16,80 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.cm as cmap
-import matplotlib
-font = {'size' : 18}
-matplotlib.rc('font', **font)
 from scipy.stats import linregress
+from astropy.time import Time
+import os
 import sys
 sys.path.insert(0, os.path.join(os.getcwd(), "..", ".."))
+from module.config import cfg
+from module.preprocessing import parse, data_io
+# import matplotlib
+# font = {'size' : 18}
+# matplotlib.rc('font', **font)
 
-obj = 'calibStars'
-ID  = 'uid_s'
-# obj = 'qsos'
+ID = 'uid_s'
+OBJ = 'calibStars'
 # ID = 'uid'
-band = 'r'
-# SSA_band = {'g':'B', 'r':'R', 'i':'I'}[band]
+# OBJ = 'qsos'
 
-plate_table = pd.read_csv('../../data/surveys/supercosmos/plate_table_full.csv',usecols=['surveyID','raPnt','decPnt'], skiprows=[1])
+# ---
+# # Cell below is for acquiring SSA data
 
-df = pd.read_csv('../../data/surveys/supercosmos/{}/ssa_secondary_{}_raw.csv'.format(obj,obj), index_col=ID)
-duplicates = np.loadtxt('../../data/catalogues/calibStars/duplicate_calibStars.txt', comments='#', dtype='int')
-# df['distance'] *= 60 # redefine distance s1o it is in arcsec
+# +
+SAVE_COORDS_IN_CHUNKS = False
+SAVE_SECONDARY = False
 
+def remove_nonmatches(df):
+    df_sorted = df.reset_index().sort_values('distance')
+    mask = df_sorted.duplicated(subset=[ID,'mjd','filterID','surveyID'], keep='first').values
+    return df_sorted[~mask].sort_values([df.index.name,'mjd','distance']).set_index(df.index.name)
+
+if SAVE_COORDS_IN_CHUNKS:
+    """
+    Run this block to save our coordinates in a size and format that ssa.roe.ac.uk/xmatch.html can handle
+    """
+    coords = pd.read_csv(cfg.USER.D_DIR + 'catalogues/{}/{}_subsample_coords.csv'.format(OBJ, OBJ))
+    for i, chunk in enumerate(np.array_split(coords,3)):
+        chunk.to_csv(cfg.USER.D_DIR + 'surveys/supercosmos/{}/coord_chunks/chunk_{}.csv'.format(OBJ, i+1), index=False, header=False, columns=[ID, 'ra', 'dec'], sep=' ')
+        
+# Note that surveyID in detection and plate match up completely
+detection = pd.concat([pd.read_csv(cfg.USER.D_DIR + 'surveys/supercosmos/{}/results/chunk_{}_results.csv'.format(OBJ, i)) for i in [1,2,3]])
+
+# The query to generate the table below is in queries/ssa.sql
+plate = pd.read_csv(cfg.USER.D_DIR + 'surveys/supercosmos/plate_table.csv', usecols = ['plateID','fieldID','filterID','utDateObs'])
+merged = detection.merge(plate, on='plateID').sort_values('up_name')
+
+# Convert arcmin to arcsec
+merged['distance'] *= 60
+
+# Remove rows with no matches
+merged = merged[merged['objID'] != 0]
+
+# Convert YYYY-MM-DD HH:MM:SS to MJD
+times = merged['utDateObs'].to_list()
+merged['mjd'] = Time(times).mjd
+
+merged['filterID'] = merged['filterID'].str.strip()
+merged = merged.rename(columns={'up_name':ID})
+merged = merged[[ID,'distance','smag','surveyID','filterID','mjd']].set_index(ID)
+merged = remove_nonmatches(merged)
+merged = merged[merged['distance']<1.5]
+
+# Plot out distance matching
+fig, ax = plt.subplots(1,1, figsize=(15,5))
+ax.hist(merged['distance'], bins=100);
+
+if SAVE_SECONDARY:
+    merged.astype({'smag':np.float32, 'surveyID':np.uint8, 'mjd':np.uint32}).to_csv(cfg.USER.D_DIR + 'surveys/supercosmos/{}/ssa_secondary.csv'.format(OBJ))
+# -
+
+# ---
+# # Cells below are for parsing ssa_secondary.csv
+
+df = pd.read_csv(cfg.USER.D_DIR + 'surveys/supercosmos/{}/ssa_secondary.csv'.format(OBJ)).set_index(ID)
+
+# We only want the two R bands as they are the only reliable ones.
 df = df[(df['surveyID']==2) | (df['surveyID']==9)]
-df = df[~df.index.isin(duplicates)]
-df = df.query('distance<0.0167')
 df = df.rename(columns={'smag':'mag'})
 df
 
@@ -51,12 +102,12 @@ p_r2 = np.array([-0.21768903, -0.15050923])
 # df['mjd']=t.mjd
 # -
 
-colors = pd.read_csv('../../data/computed/{}/colors_sdss.csv'.format(obj), index_col=0)
+colors = pd.read_csv(cfg.USER.D_DIR + 'computed/{}/colors_sdss.csv'.format(obj), index_col=0)
 
 pd.options.mode.chained_assignment = None
 from module.analysis.analysis import *
 def reader(n_subarray):
-    return pd.read_csv('../../data/merged/{}/{}_band/lc_{}.csv'.format(obj,band,n_subarray), comment='#', nrows=None, index_col = ID, dtype = {'catalogue': np.uint8, 'mag_ps': np.float32, 'magerr': np.float32, 'mjd': np.float64, ID: np.uint32})
+    return pd.read_csv(cfg.USER.D_DIR + 'merged/{}/{}_band/lc_{}.csv'.format(obj,band,n_subarray), comment='#', nrows=None, index_col = ID, dtype = {'catalogue': np.uint8, 'mag_ps': np.float32, 'magerr': np.float32, 'mjd': np.float64, ID: np.uint32})
 
 
 # Here we load the analysis class. This has various attibutes and methods outlined in /module/analysis.py
@@ -66,8 +117,15 @@ def reader(n_subarray):
 # DR12 VAC properties are in dr.properties
 dr = analysis(ID, obj)
 
-dr.read_in(reader, redshift=False)
-dr.band = band
+# +
+SURVEY = 'ps'
+BAND = 'r'
+kwargs = {'dtypes': cfg.PREPROC.lc_dtypes,
+          'ID':ID,
+          'basepath': cfg.USER.D_DIR + 'surveys/{}/{}/clean/{}_band/'.format(SURVEY, OBJ, BAND)}
+
+df = data_io.dispatch_reader(kwargs, multiproc=True)
+# -
 
 sdss = dr.df[dr.df['catalogue']==5].groupby(ID).agg({'mag':'mean'}).rename(columns={'mag':'mag_sdss'})
 # ps   = dr.df[dr.df['catalogue']==7].groupby(ID).agg({'mag':'mean'}).rename(columns={'mag':'mag_ps'})
