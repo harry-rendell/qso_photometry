@@ -32,7 +32,7 @@ def read_in(self, catalogue_of_properties = None, redshift=True, cleaned=True, n
     self.df = data_io.dispatch_reader(kwargs, multiproc=True)
 
     # Remove objects with a single observation.
-    self.df = self.df[self.df.index.duplicated(keep=False)]
+    self.df = self.df[self.df.index.duplicated(keep=False).values]
     
     if redshift:
         # add on column for redshift. Use squeeze = True when reading in a single column.
