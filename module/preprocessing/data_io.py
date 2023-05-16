@@ -65,6 +65,8 @@ def writer(i, chunk, kwargs):
 	Writing function for multiprocessing
 	"""
 	mode = kwargs['mode'] if 'mode' in kwargs else 'w'
+	savecols = kwargs['savecols'] if 'savecols' in kwargs else None
+
 	if 'basepath' in kwargs:
 		basepath = kwargs['basepath']
 	else:
@@ -73,17 +75,20 @@ def writer(i, chunk, kwargs):
 	# if folder does not exist, create it
 	os.makedirs(basepath, exist_ok=True)
 
-	f = open(os.path.join(basepath,'lc_{}.csv'.format(i)), mode)
-	if 'comment' in kwargs:
-		newline = '' if kwargs['comment'].endswith('\n') else '\n'
-		f.write(kwargs['comment']+newline)
-	chunk.to_csv(f)
+	with open(os.path.join(basepath,'lc_{}.csv'.format(i)), mode) as f:
+		if 'comment' in kwargs:
+			newline = '' if kwargs['comment'].endswith('\n') else '\n'
+			f.write(kwargs['comment']+newline)
+		chunk.to_csv(f, columns=savecols)
 
 def dispatch_writer(chunks, kwargs, max_processes=64):
 	"""
 	Dispatching function for writer
 	TODO: Is it bad that we sometimes spawn more processes than needed?
 	"""
+	# If we are passed a DataFrame rather than a list of DataFrames, wrap it in a list.
+	if isinstance(chunks, pd.DataFrame): chunks = [chunks]
+
 	if __name__ == 'module.preprocessing.data_io':
 		n_tasks = min(len(chunks), max_processes)
 		with Pool(n_tasks) as pool:
