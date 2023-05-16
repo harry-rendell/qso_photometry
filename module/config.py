@@ -166,6 +166,11 @@ __C.PREPROC.LIMIT_MAG.ZTF = {
 							'i': 19.9
 							}
 
+# TODO: find what this should actually be
+__C.PREPROC.LIMIT_MAG.SUPERCOSMOS = {
+									'r': 21,
+									}
+
 # Magnitude error threshold
 __C.PREPROC.MAG_ERR_THRESHOLD = 0.198
 
