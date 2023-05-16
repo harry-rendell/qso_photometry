@@ -74,7 +74,7 @@ bounds = {
         **{'phot_err_'+b: (0,0.5) for b in 'gri'} # CONDITION (2)
          }
 
-star_data_filtered = parse.filter_data(raw_star_data, bounds, dropna=True, inplace=False)
+star_data_filtered = parse.filter_data(raw_star_data, bounds, dropna=True,)
 print('Star data:')
 display(star_data_filtered)
 
@@ -100,13 +100,23 @@ for band in 'gri':
     b = pd.DataFrame(pd.cut(grouped_qsos['mag_mean_'+band], np.linspace(15,23,n))).value_counts().rename('qso_counts_'+band).reset_index(level=0).set_index('mag_mean_'+band)
     counts.append(a.join(b, on='mag_mean_'+band).reset_index().set_index('uid_s').rename({'mag_mean_'+band:'mag_mean_binned_'+band},axis=1))
 star_data_filtered = star_data_filtered.join(counts)
+# -
+
+grouped_qsos
+
+grouped_sdss
+
+
+
+
 
 # + active=""
 # plt.style.available
 
 # +
-SAVE_FIG = True
-SAVE_SUBSAMPLE = True
+SAVE_FIG = False
+SAVE_SUBSAMPLE = False
+SAVE_COLORS = False
 
 #------------------------------------------------------------------------------
 # Take a subsample of the star data, weighting by the number of qsos in each bin
@@ -158,5 +168,5 @@ if SAVE_SUBSAMPLE:
 for b1, b2 in zip('gri','riz'):
     subsample[b1+'-'+b2] = subsample['mag_mean_'+b1] - subsample['mag_mean_'+b2]
 
-subsample.to_csv(ddir+'computed/calibStars/colors_sdss.csv', columns=['g-r','r-i','i-z'])
-
+if SAVE_COLORS:
+    subsample.to_csv(ddir+'computed/calibStars/colors_sdss.csv', columns=['g-r','r-i','i-z'])

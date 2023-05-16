@@ -24,7 +24,7 @@ def intersection(*args):
 	print('---------------------------------')
 	return surveys
 
-def filter_data(df, bounds={}, dropna=True, inplace=False, valid_uids=None):
+def filter_data(df, bounds={}, dropna=True, valid_uids=None):
 	"""
 	Remove data that lies outside ranges specified in bounds.
 	Note, using inplace=True is approx ~30% more memory efficient and prevents additional dataframes being stored.
@@ -32,28 +32,21 @@ def filter_data(df, bounds={}, dropna=True, inplace=False, valid_uids=None):
 	Note, the bounds are INCLUSIVE.
 	"""
 	# Restrict our dataframe rows with indices contained in valid_uids, if provided.
+	df = df.copy()
 	n = len(df.index)
 	if valid_uids is not None:
 		mask = df.index.isin(valid_uids.index)
 		df = df[mask]
 		print('No. rows removed that are not in valid_uids: {:,}\n'.format( (~mask).sum() ))
-	if not inplace:
-		df = df.copy()
 	# Create set of boolean numpy arrays which are true if the key is within the bounds.
 	for key, bound in bounds.items():
 		boolean = df[key].between(bound[0], bound[1])
 		print('Enforcing {:.2f} <= {} <= {:.2f}'.format(bound[0],key,bound[1]).ljust(50,' ') + 'No. points outside bounds: {:,}'.format((~boolean).sum()))
-		if inplace:
-			df[key].where(boolean, np.nan, inplace=True)
-		else:
-			df[key] = df[key].where(boolean, np.nan, inplace=False)
+		df[key] = df[key].where(boolean, np.nan, inplace=False)
 	
 	# Drop rows with no observations in any band
 	if dropna:
-		if inplace:
-			df.dropna(axis=0, how='any', inplace=True)
-		else:
-			df = df.dropna(axis=0, how='any', inplace=False)
+		df = df.dropna(axis=0, how='any', inplace=False)
 		print('-'*85)
 		print('No. rows before:  {:,}'.format(n))
 		print('No. rows after:   {:,}'.format(len(df.index)))

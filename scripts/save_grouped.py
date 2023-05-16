@@ -52,7 +52,7 @@ if __name__ == "__main__":
             df = data_io.dispatch_reader(kwargs)
             # Remove obviously bad data
             bounds={'mag':(15,25),'magerr':(0,2)}
-            parse.filter_data(df, bounds=bounds, dropna=True, inplace=True)
+            df = parse.filter_data(df, bounds=bounds, dropna=True)
 
             chunks = parse.split_into_non_overlapping_chunks(df, args.n_cores)
             kwargs = {'dtypes':cfg.PREPROC.stats_dtypes}
