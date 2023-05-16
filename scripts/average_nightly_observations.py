@@ -40,47 +40,50 @@ if __name__ == "__main__":
             kwargs = {'dtypes': cfg.PREPROC.lc_dtypes,
                       'nrows': nrows,
                       'skiprows': skiprows,
-                      'usecols': [ID,'mjd','mag','magerr'],
+                      'usecols': [ID,'mjd','mag','mag_orig','magerr'],
                       'basepath': cfg.USER.D_DIR + 'surveys/{}/{}/unclean/{}_band/'.format(survey, OBJ, band),
                       'ID':ID}
 
             df = data_io.dispatch_reader(kwargs, multiproc=True)
-
-            # Remove obviously bad data and uids that should not be present.
-            valid_uids = pd.read_csv(cfg.USER.D_DIR + 'catalogues/{}/{}_subsample_coords.csv'.format(OBJ, OBJ), usecols=[ID], index_col=ID, comment='#')
-            parse.filter_data(df, bounds=cfg.PREPROC.FILTER_BOUNDS, dropna=True, inplace=True, valid_uids=valid_uids)
-
-            # make header for output
-            print('Unable to average the following:\n'+ID+', mjd')
 
             # Read in grouped data
             grouped = pd.read_csv(cfg.USER.D_DIR + 'surveys/{}/{}/unclean/{}_band/grouped.csv'.format(survey, OBJ, band), usecols=[ID, 'mag_med','mag_std']).set_index(ID)
             uids = grouped.index[grouped['mag_med']<cfg.PREPROC.LIMIT_MAG[survey.upper()][band]]
             df = df[df.index.isin(uids)]
 
+            # Remove obviously bad data and uids that should not be present.
+            valid_uids = pd.read_csv(cfg.USER.D_DIR + 'catalogues/{}/{}_subsample_coords.csv'.format(OBJ, OBJ), usecols=[ID], index_col=ID, comment='#')
+            df = parse.filter_data(df, bounds=cfg.PREPROC.FILTER_BOUNDS, dropna=True, valid_uids=valid_uids)
+
             # Discretise mjd
             df['mjd_floor'] = np.floor(df['mjd']).astype('uint32')
 
             # Separate observations into ones which share another observation on the same night (multi_obs) and those that do not (single_obs)
             mask = df.reset_index()[[ID,'mjd_floor']].duplicated(keep=False).values
-            single_obs = df[~mask].drop(columns='mjd_floor')
-            multi_obs = df[mask]
-            del df
+            if mask.sum() != 0:
+                single_obs = df[~mask].drop(columns='mjd_floor')
+                multi_obs = df[mask]
+                del df
 
-            # Join lightcurve median and std onto dataframe
-            multi_obs = multi_obs.join(grouped[['mag_med','mag_std']], on=ID)
-            
-            chunks = parse.split_into_non_overlapping_chunks(multi_obs, args.n_cores)
-            kwargs = {'dtypes':cfg.PREPROC.lc_dtypes}
+                # Join lightcurve median and std onto dataframe
+                multi_obs = multi_obs.join(grouped[['mag_med','mag_std']], on=ID)
+                
+                chunks = parse.split_into_non_overlapping_chunks(multi_obs, args.n_cores)
+                kwargs = {'dtypes':cfg.PREPROC.lc_dtypes}
 
-            start = time.time()
-            averaged = data_io.dispatch_function(lightcurve_statistics.groupby_apply_average, chunks=chunks, max_processes=args.n_cores, kwargs=kwargs)
-            end   = time.time()
-            print('Elapsed:',time.strftime("%Hh %Mm %Ss",time.gmtime(end-start)))
+                # make header for output
+                print('Unable to average the following:\n'+ID+', mjd')
 
-            # Add the data from nights with multiple observations back on
-            df = single_obs.append(averaged).sort_values([ID,'mjd'])
-            df.index = df.index.astype('uint32')
+                start = time.time()
+                averaged = data_io.dispatch_function(lightcurve_statistics.groupby_apply_average, chunks=chunks, max_processes=args.n_cores, kwargs=kwargs)
+                end   = time.time()
+                print('Elapsed:',time.strftime("%Hh %Mm %Ss",time.gmtime(end-start)))
+
+                # Add the data from nights with multiple observations back on
+                df = single_obs.append(averaged).sort_values([ID,'mjd'])
+                df.index = df.index.astype('uint32')
+            else:
+                print('No observations on the same night to average.')
             
             if args.dry_run:
                 print(df)
