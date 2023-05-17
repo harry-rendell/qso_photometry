@@ -43,30 +43,38 @@ def transform_sdss_to_ps(df, color='g-r', system='tonry'):
 #------------------------------------------------------------------------------
 
 class ssa_transform():
-    def __init__(self, obj, band, band_ssa, ref_survey_name):
+    def __init__(self, obj, band_ssa, ref_survey_name, ssa_secondary_dict):
         self.obj = obj
         self.ID = 'uid' if obj == 'qsos' else 'uid_s'
-        self.band = band
         self.band_ssa = band_ssa
+        self.band = band_ssa[0]
         self.qso_color_range = {'g-r':(-0.09786, 0.63699), 'r-i':(-0.11934, 0.44450), 'i-z':(-0.19706, 0.57335)}
         self.ref_survey_name = ref_survey_name
+        self.parse(ssa_secondary_dict[obj])
+
+    def parse(self, df=None):
+        if df is None:
+            df = pd.read_csv(cfg.USER.D_DIR + 'surveys/supercosmos/{}/ssa_secondary.csv'.format(self.obj)).set_index(self.ID)
+        else:
+            assert df.index.name == self.ID, "Not using the right DataFrame"
+        surveyID_dict = {'r1':(5,9), 'r2_north': (7,), 'r2_south': (2,),
+                         'g_north':(6,), 'g_south':(1,),
+                         'i_north':(8,), 'i_south':(3,)}
         
-    def read(self):
-        df = pd.read_csv(cfg.USER.D_DIR + 'surveys/supercosmos/{}/ssa_secondary.csv'.format(self.obj)).set_index(self.ID)
-        self.ssa_secondary = df
-        surveyID_dict = {'r1':2, 'r2':9}
-        df = df[df['surveyID']==surveyID_dict[self.band_ssa]].rename(columns={'smag':'mag_orig'})
+        mask = np.array([(df['surveyID'] == sid).values for sid in surveyID_dict[self.band_ssa]]).any(axis=0)
+        df = df[mask].rename(columns={'smag':'mag_orig'})
+        
         kwargs = {'dtypes': cfg.PREPROC.stats_dtypes,
                   'ID':self.ID,
                   'basepath': cfg.USER.D_DIR + 'surveys/{}/{}/clean/{}_band/'.format(self.ref_survey_name, self.obj, self.band)}
         ref_survey_grouped = data_io.reader('grouped.csv', kwargs)
         colors = pd.read_csv(cfg.USER.D_DIR + 'computed/{}/colors_sdss.csv'.format(self.obj)).set_index(self.ID)
-        ref_survey_grouped = ref_survey_grouped.join(colors, how='inner')
+        ref_survey_grouped = ref_survey_grouped.join(colors, how='left')
 
         key = 'mag_med' # can change this to mag_mean etc
         self.df = df.join(ref_survey_grouped[[key]+['g-r','r-i','i-z']], how='inner')
         
-    def color_transform(self, color_name, poly_deg=None, p=None):
+    def color_transform(self, color_name, poly_deg=None, p=None, p_dict=None, transf_name=None):
         """
         If p is None, poly_deg (degree of polynomial fit) should be specified
         Otherwise, polydeg will be taken from the length of p
@@ -75,6 +83,12 @@ class ssa_transform():
         self.offset = mag_ssa - mag_ref
         self.mask = ((self.qso_color_range[color_name][0] < color) & (color < self.qso_color_range[color_name][1]))
         
+        if p_dict is not None:
+            assert p_dict[self.band_ssa][0] == color_name, f"Should be using color {p_dict[self.band_ssa][0]} instead of {color_name}"
+            p = p_dict[self.band_ssa][1]
+            assert transf_name is not None, "provide a name for the transformation"
+            self.transf_name = transf_name
+
         if p is None:
             p, res, _, _, _ = np.polyfit(color[mask].flatten(), offset[mask].flatten(), deg=poly_deg, full=True)
         else:
@@ -84,6 +98,7 @@ class ssa_transform():
         self.offset_transf = self.mag_ssa_transf - mag_ref
         self.p = p
         self.poly_deg = poly_deg
+        self.df['mag'] = self.mag_ssa_transf
     #     # Snippet below uses scipy so we can quantify the error of the linear fit.
     #     m, c, r, p, std_err = linregress(color, offset)
     #     print('slope = {:.6f}, intercept = {:.6f}, r^2 = {:.4f}, err = {:.6f}'.format(m,c,r**2,std_err))
@@ -92,11 +107,11 @@ class ssa_transform():
     def hist_1d(self):
         fig, ax = plt.subplots(1,1, figsize=(16,5))
         n, bins, _ = ax.hist(self.offset, bins=201, range=(-3,3), alpha=0.4, label='untransformed');
-        n, bins, _ = ax.hist(self.offset_transf, bins=201, range=(-3,3), alpha=0.4, label='own');
+        n, bins, _ = ax.hist(self.offset_transf, bins=201, range=(-3,3), alpha=0.4, label=f'transformed ({self.transf_name})');
         mode = (bins[n.argmax()]+bins[n.argmax()+1])/2
 
         ax.text(0.02,0.8, 'Post transformation:\nMean = {:.4f}\nStd = {:.4f}\nPeak = {:.4f}'.format(self.offset_transf[self.mask].mean(), self.offset_transf[self.mask].std(), mode), transform=ax.transAxes)
-        ax.set(xlabel='{} - {}_{}'.format(self.band_ssa, self.band, self.ref_survey_name))
+        ax.set(xlabel='{} - {}_{}'.format(self.band_ssa, self.band, self.ref_survey_name), title=self.obj)
         ax.axvline(x=0, color='k', ls='--', lw=0.8)
         ax.legend()
         return ax
@@ -106,23 +121,58 @@ class ssa_transform():
         Plot 2d histogram using color_name as x axis, comparing against previously calculated transformations
         """
         fig, axes = plt.subplots(1,2, figsize=(16,7))
-        axes[0].hist2d(self.df[color_name], self.offset,        range=[self.qso_color_range[color_name],[-2,2]], bins=100, cmap=cmap.get_cmap('jet'));
-        axes[1].hist2d(self.df[color_name], self.offset_transf, range=[self.qso_color_range[color_name],[-2,2]], bins=100, cmap=cmap.get_cmap('jet'));
         x = np.linspace(0,2,30)
+
+        # Plot polynomial fit
         axes[0].plot(x, sum([self.p[self.poly_deg - i]*x**i for i in range(self.poly_deg+1)]), lw=3, ls='--', color='r', label='Linear fit')
+        
+        # Plot untransformed data
+        axes[0].hist2d(self.df[color_name], 
+                       self.offset,
+                       range=[self.qso_color_range[color_name],[-2,2]],
+                       bins=100,
+                       cmap=cmap.get_cmap('jet'));
+
+        axes[0].set(ylabel=r'$r_\mathrm{PS}-r_\mathrm{SSS}$', xlabel=r'${}$'.format(color_name), title='untransformed')
         axes[0].axhline(y=0, lw=2, ls='--', color='k')
+
+        # Plot transformed data
+        axes[1].hist2d(self.df[color_name], 
+                       self.offset_transf,
+                       range=[self.qso_color_range[color_name],[-2,2]],
+                       bins=100,
+                       cmap=cmap.get_cmap('jet'));
+
+        axes[1].set(ylabel=r'$r_\mathrm{PS}-r_\mathrm{SSS}^\prime$', xlabel=r'${}$'.format(color_name), title=f'transformed ({self.transf_name})')
         axes[1].axhline(y=0, lw=2, ls='--', color='k')
-        axes[0].set(ylabel=r'$r_\mathrm{PS}-r_\mathrm{SSS}$', xlabel=r'${}$'.format(color_name))
-        axes[1].set(ylabel=r'$r_\mathrm{PS}-r_\mathrm{SSS}^\prime$', xlabel=r'${}$'.format(color_name))
+        
         fig.subplots_adjust(wspace=0.3)
+        fig.suptitle(self.obj, y=0.92)
+        
         return axes
     
     def mag_correlation(self):
         fig, ax = plt.subplots(1,2, figsize=(17,8))
-        ax[0].hist2d(self.mag_ssa, self.df['mag_med'], bins=[100,100], range=[[16,22],[16,22]], cmap=cmap.get_cmap('jet'));
-        ax[1].hist2d(self.mag_ssa_transf, self.df['mag_med'], bins=[100,100], range=[[16,22],[16,22]], cmap=cmap.get_cmap('jet'));
         x = np.linspace(15,22,10)
+        
         ax[0].plot(x,x)
+        ax[0].hist2d(self.mag_ssa, self.df['mag_med'], bins=[100,100], range=[[16,23],[16,23]], cmap=cmap.get_cmap('jet'));
         ax[0].set(xlabel=self.band_ssa, ylabel='r mag (ps)')
+        
         ax[1].plot(x,x)
+        ax[1].hist2d(self.mag_ssa_transf, self.df['mag_med'], bins=[100,100], range=[[16,23],[16,23]], cmap=cmap.get_cmap('jet'));
         ax[1].set(xlabel=self.band_ssa + ' transformed', ylabel='r mag (ps)')
+
+    def evaluate_transformation(self, obj, ssa_survey, transf, transf_name, plot=False):
+        print('band:',ssa_survey,' - ','object:',obj)
+        color_name = transf[ssa_survey][0]
+        if self.df.empty:
+            print('No observations!')
+        else:
+            self.color_transform(color_name=color_name, p_dict=transf, transf_name=transf_name)
+            if plot:
+                self.hist_1d()
+                self.hist_2d(color_name=color_name)
+                self.mag_correlation()
+            else:
+                return self.df

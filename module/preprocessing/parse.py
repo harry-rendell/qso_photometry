@@ -69,7 +69,7 @@ def split_into_non_overlapping_chunks(df, n_chunks, bin_size=None, return_bin_ed
         overlap between chunks. Returns a list of DataFrames.
     bin_size may be specified if we want chunks of a specific number of uids per chunk (15,000 used for merged data)
     """
-    if not df.index.is_monotonic:
+    if not df.index.is_monotonic_increasing:
     	raise Exception('Index must be sorted to split into chunks')
     if bin_size is not None:
     	idxs = np.arange(0, bin_size*(n_chunks+1), bin_size)
