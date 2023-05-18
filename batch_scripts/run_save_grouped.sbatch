@@ -9,12 +9,10 @@
 
 # Note, we can run this as a normal batch script using bash <filename>
 
-# The work directory
-cd /home/hrb/project/qso_photometry
+# Load anaconda. Omit this if not running on cuillin
+# source ~/.bashrc_old
 
-# Load anaconda. Omit this if not running on cuillinmodule load anaconda
-module load anaconda
-source activate astroconda
-
-n_cores=16
-python scripts/save_grouped.py --object='qsos' --band='gri' --survey='sdss ps ztf'  --n_cores=$n_cores --cleaned > batch_scripts/logs/log_save_grouped.txt
+# use same number of cores as cpus-per-task above
+n_cores=4
+python scripts/save_grouped.py --object='qsos'       --band='gri' --survey='supercosmos' --n_cores=$n_cores > batch_scripts/logs/log_save_grouped_qsos.txt
+python scripts/save_grouped.py --object='calibStars' --band='gri' --survey='supercosmos' --n_cores=$n_cores > batch_scripts/logs/log_save_grouped_calibStars.txt

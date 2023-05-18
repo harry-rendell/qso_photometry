@@ -9,10 +9,8 @@
 
 # Note, we can run this as a normal batch script using bash <filename>
 
-# The work directory
-cd /home/hrb/project/qso_photometry
+# Load anaconda. Omit this if not running on cuillin
+# source ~/.bashrc_old
 
-# Load anaconda. Omit this if not running on cuillinmodule load anaconda
-source activate astroconda
-
-python scripts/ztf_lc_query.py --object='qsos' --n_cores=4 --n_requests=1500  > batch_scripts/logs/log_ztf_lc_query.txt
+python scripts/ztf_lc_query.py --object='qsos'       --n_workers=16 > batch_scripts/logs/log_ztf_lc_query.txt
+python scripts/ztf_lc_query.py --object='calibStars' --n_workers=16 > batch_scripts/logs/log_ztf_lc_query.txt
