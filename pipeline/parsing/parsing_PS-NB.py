@@ -7,7 +7,7 @@
 #       format_version: '1.5'
 #       jupytext_version: 1.14.5
 #   kernelspec:
-#     display_name: Python 3
+#     display_name: Python 3 (ipykernel)
 #     language: python
 #     name: python3
 # ---
@@ -24,28 +24,16 @@ OBJ    = 'calibStars'
 ID     = 'uid_s'
 BAND   = 'r'
 wdir = cfg.USER.W_DIR
+ddir = cfg.USER.D_DIR
 
-# The query used to obtain this located in /queries/PS_nearby_search.txt and shown below. It finds all objects up to 2.4" around the dr14qso catalogue coordinate pairs. If a neighbour was found in SDSS within 2.4" then this is used as the upper bound of the search to prevent mismatching. 
-
-# + active=""
-# select
-# q.uid as uid, o.objID as objID, 
-# o.rra as ra_ps, o.rdec as dec_ps, 
-# q.ra_ref, q.dec_ref,
-# nb.distance as sep,
-# q.sep as sep_upper
-#
-# into mydb.PS_dr14q
-# from mydb.dr14q_coords_unique q
-#
-# cross apply dbo.fGetNearbyObjEq(q.ra_ref, q.dec_ref, q.sep) as nb
-# join StackObjectThin o on o.objid = nb.objid where o.primaryDetection = 1
-# -
-
-cols = [ID, 'filter', 'obsTime', 'psfFlux', 'psfFluxErr']
+cols = [ID, 'objID', 'filter', 'obsTime', 'psfFlux', 'psfFluxErr']
 ps_secondary = pd.read_csv(cfg.USER.D_DIR + 'surveys/ps/{}/ps_secondary.csv'.format(OBJ), dtype=cfg.COLLECTION.PS.dtypes, nrows=None, usecols=cols).set_index(ID).rename({'filter':'filtercode'})
 ps_neighbours = pd.read_csv(cfg.USER.D_DIR + 'surveys/ps/{}/ps_neighbours.csv'.format(OBJ), dtype=cfg.COLLECTION.PS.dtypes).set_index(ID)
 ps_neighbours['sep'] *= 60
+
+valid_uids = pd.read_csv(ddir+'catalogues/{}/{}_subsample_coords.csv'.format(OBJ,OBJ), usecols=[ID], index_col=ID, comment='#')
+ps_secondary = parse.filter_data(ps_secondary, valid_uids=valid_uids)
+ps_neighbours = parse.filter_data(ps_neighbours, valid_uids=valid_uids)
 
 # We are querying StackObjectThin thus we expect a one to one match, however, sometimes additional IDs are returned. We filter these out. There are about 421 of these duplicates.
 
@@ -53,7 +41,7 @@ CHECK_MAX_SEP = True
 if CHECK_MAX_SEP:
     # Note, we queried PanSTARRS for objects within 1". To check this, we can join the coord query table from mastweb and sort by separation to show sep<1"
     ps_secondary_merged = ps_secondary.join(ps_neighbours, on=ID, lsuffix='_ps')
-    ps_secondary_merged.sort_values('sep', ascending=False)
+    display(ps_secondary_merged.sort_values('sep', ascending=False))
 
 CHECK_FOR_NON_UNIQUE_MATCHES = True
 if CHECK_FOR_NON_UNIQUE_MATCHES:
@@ -67,8 +55,8 @@ if CHECK_FOR_NON_UNIQUE_MATCHES:
     # Display cases where one uid matches to multiple PS objIDs, or vice versa
     print('-'*50)
     print('Non 1-to1 matches:')
-    mask1 = ps_neighbours_no_duplicates.index.duplicated(keep=False)
-    mask2 = ps_neighbours_no_duplicates.duplicated('objID_ps', keep=False)
+    mask1 = ps_neighbours_no_duplicates.index.duplicated(keep=False).values
+    mask2 = ps_neighbours_no_duplicates.duplicated('objID_ps', keep=False).values
     display(ps_neighbours_no_duplicates[(mask1 ^ mask2)])
 
 # Given we have duplicates/non unique matches above, remove them here by selecting the closest objID for each uid.
@@ -95,15 +83,15 @@ df_ps = df_ps.rename(columns = {'obsTime': 'mjd', 'filter': 'filtercode'})
 df_ps['mag'] = -2.5*np.log10(df_ps['psfFlux']) + 8.90
 df_ps['magerr'] = 1.086*df_ps['psfFluxErr']/df_ps['psfFlux']
 df_ps = df_ps.drop(['psfFlux','psfFluxErr','objID'], axis = 1)
-df_ps = df_ps.set_index('filtercode', append=True)
+df_ps = df_ps.set_index('filtercode', append=True)#.astype(np.float32)
 
 # # Save data
 # ---
 
 # +
 # Add comment to start of csv file
-comment = """# CSV of photometry with no other preprocessing or cleaning.
-# mag : transformed photometry in native PanSTARRS photometric system\n"""
+comment =  ("# CSV of photometry with no other preprocessing or cleaning.\n"
+            "# mag : photometry in native PanSTARRS photometric system")
 
 for band in 'griz':
     chunks = parse.split_into_non_overlapping_chunks(df_ps.loc[pd.IndexSlice[:, band],:].droplevel('filtercode'), 4)
@@ -124,10 +112,3 @@ for band in 'griz':
 # -
 
 # There are about 30 objects (ones with sep_diff < ~0.3 arcsec) which did not stack properly - these have duplicate object IDs, however it is much smaller than our entire sample so we will just use a single objID, whichever has a closer ra,dec to the reference coords. Run the code above to see this.
-
-#loop this over all objID_ps in batches of ~20, with error exception 
-dcolumns = dcolumns = ("""objID,filterID,obsTime,psfFlux,psfFluxErr""").split(',')
-retrieve_lightcurve_ps(primary['objID_ps'][:20])
-
-# #TODO
-# primary.to_csv - merge with SDSS ids. Get all SDSS observations in one table
