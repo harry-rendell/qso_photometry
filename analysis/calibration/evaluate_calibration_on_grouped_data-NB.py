@@ -1,13 +1,14 @@
 # ---
 # jupyter:
 #   jupytext:
+#     formats: ipynb,py:light
 #     text_representation:
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
 #       jupytext_version: 1.14.5
 #   kernelspec:
-#     display_name: Python 3
+#     display_name: Python 3 (ipykernel)
 #     language: python
 #     name: python3
 # ---
@@ -16,20 +17,40 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-path = cfg.USER.W_DIR
+import os
+import sys
+sys.path.insert(0, os.path.join(os.getcwd(), "..", ".."))
+from module.config import cfg
+from module.preprocessing import colour_transform, parse, data_io, lightcurve_statistics
+
+for obj in ['qsos','calibStars']:
+    print('-'*20)
+    for band in 'gri':
+        grouped_sdss = pd.read_csv(cfg.USER.D_DIR + 'surveys/sdss/{}/unclean/{}_band/grouped.csv'.format(obj,band), index_col=0)
+        grouped_ztf  = pd.read_csv(cfg.USER.D_DIR + 'surveys/ztf/{}/unclean/{}_band/grouped.csv'.format(obj,band), index_col=0)
+        grouped_ps   = pd.read_csv(cfg.USER.D_DIR + 'surveys/ps/{}/unclean/{}_band/grouped.csv'.format(obj,band), index_col=0)
+        print(obj,band)
+        print('ps vs sdss')
+        print((grouped_ps['mag_mean']-grouped_sdss['mag_mean_native']).mean())
+        print((grouped_ps['mag_mean']-grouped_sdss['mag_mean']).mean())
+        print('ps vs ztf')
+        print((grouped_ps['mag_mean']-grouped_ztf['mag_mean_native']).mean())
+        print((grouped_ps['mag_mean']-grouped_ztf['mag_mean']).mean())
+        print('')
 
 
 class calib():
-    def __init__(self, obj, ID, band):
+    def __init__(self, obj, band):
         self.obj = obj
         self.band = band
-        self.ID = ID
+        self.ID = 'uid' if obj == 'qsos' else 'uid_s'
         
     def read(self):
-        self.sdss = pd.read_csv(cfg.USER.D_DIR + 'merged/{}/{}_band/grouped_stats_{}_sdss.csv'.format(self.obj, self.band, self.band), index_col=self.ID)
-        self.ps   = pd.read_csv(cfg.USER.D_DIR + 'merged/{}/{}_band/grouped_stats_{}_ps.csv'  .format(self.obj, self.band, self.band), index_col=self.ID)
-        self.ztf  = pd.read_csv(cfg.USER.D_DIR + 'merged/{}/{}_band/grouped_stats_{}_ztf.csv' .format(self.obj, self.band, self.band), index_col=self.ID)
-        
+        self.sdss = pd.read_csv(cfg.USER.D_DIR + 'surveys/sdss/{}/unclean/{}_band/grouped.csv'.format(self.obj, self.band), index_col=self.ID)
+        self.ps   = pd.read_csv(cfg.USER.D_DIR + 'surveys/ps/{}/unclean/{}_band/grouped.csv'  .format(self.obj, self.band), index_col=self.ID)
+        self.ztf  = pd.read_csv(cfg.USER.D_DIR + 'surveys/ztf/{}/unclean/{}_band/grouped.csv' .format(self.obj, self.band), index_col=self.ID)
+        # T
+        # self.ps['mag_med_native'] = self.ps['mag_med']
     def join_colors(self):
         self.colors = pd.read_csv(cfg.USER.D_DIR + 'computed/{}/colors_sdss.csv'.format(self.obj), index_col=self.ID)
         self.sdss = self.sdss.join(self.colors, on=self.ID, how='left')
@@ -38,9 +59,9 @@ class calib():
         
     def calculate_offsets(self):
         offsets = self.colors
-        offsets['ps-sdss_nat'] = self.ps ['mag_med_native'] - self.sdss['mag_med_native']
+        offsets['ps-sdss_nat'] = self.ps ['mag_med'] - self.sdss['mag_med_native']
 #         offsets['sdss-ztf_nat']= self.sdss['mag_med_native']-self.ztf['mag_med_native']
-        offsets['ps-ztf_nat']  = self.ps  ['mag_med_native']-self.ztf['mag_med_native']
+        offsets['ps-ztf_nat']  = self.ps  ['mag_med']-self.ztf['mag_med_native']
         
         offsets['ps-sdss'] = self.ps ['mag_med'] - self.sdss['mag_med']
 #         offsets['sdss-ztf']= self.sdss['mag_med']-self.ztf['mag_med']
@@ -125,21 +146,27 @@ class calib():
 
         # Save
         if save:
-            g.savefig(path+'analysis/plots/{}_{}_vs_{}.pdf'.format(self.obj,xname,yname), bbox_inches='tight')
+            g.savefig(cfg.USER.W_DIR+'analysis/plots/{}_{}_vs_{}.pdf'.format(self.obj,xname,yname), bbox_inches='tight')
 
         # Return axis handle
         return g
 
 
-qsos_r = calib('qsos','uid','r')
+qsos_r = calib('calibStars','r')
 qsos_r.read()
 qsos_r.join_colors()
 qsos_r.calculate_offsets()
 
 fig, ax = plt.subplots(1,1, figsize=(15,6))
 ax.hist((qsos_r.ps['mag_med']-qsos_r.ztf['mag_med'])  , bins=200, alpha=0.5, range=(-0.5,0.5), label='transformed');
-ax.hist((qsos_r.ps['mag_med_native']-qsos_r.ztf['mag_med_native'])  , bins=200, alpha=0.5, range=(-0.5,0.5), label='untransformed');
-# ax.hist((qsos_r.sdss['mag_mean']-qsos_r.ps['mag_mean']), bins=200, alpha=0.5, range=(-2,2), label='mean');
+ax.hist((qsos_r.ps['mag_med']-qsos_r.ztf['mag_med_native'])  , bins=200, alpha=0.5, range=(-0.5,0.5), label='untransformed');
+ax.legend()
+ax.set(xlabel=r'$r_\mathrm{SDSS} - r_\mathrm{PS}$ (mag)', ylabel='Number')
+ax.axvline(x=0, lw=0.4, ls='--')
+
+fig, ax = plt.subplots(1,1, figsize=(15,6))
+ax.hist((qsos_r.ps['mag_med']-qsos_r.sdss['mag_med'])  , bins=200, alpha=0.5, range=(-0.5,0.5), label='transformed');
+ax.hist((qsos_r.ps['mag_med']-qsos_r.sdss['mag_med_native'])  , bins=200, alpha=0.5, range=(-0.5,0.5), label='untransformed');
 ax.legend()
 ax.set(xlabel=r'$r_\mathrm{SDSS} - r_\mathrm{PS}$ (mag)', ylabel='Number')
 ax.axvline(x=0, lw=0.4, ls='--')
@@ -147,7 +174,7 @@ ax.axvline(x=0, lw=0.4, ls='--')
 # # STARS
 # ---
 
-star_r = calib('calibStars','uid_s','r')
+star_r = calib('calibStars','r')
 star_r.read()
 star_r.join_colors()
 star_r.calculate_offsets()
@@ -160,19 +187,19 @@ star_r.offsets['ps-ztf_nat'].mean()
 
 star_r.offsets['ps-ztf'].mean()
 
-save = True
-for color in ['mean_ri','mean_gr']:
+save = False
+for color in ['r-i','g-r']:
     for survey1, survey2 in [('ps','sdss'),('ps','ztf')]:
 #     color = 'mean_ri'
 #     survey1 = 'ps'
 #     survey2 = 'ztf'
-        g = star_r.sns_correlate(color, survey1+'-'+survey2+'_nat', 1.5e1, 1e3, limits=[(0,2),(-0.2,0.4)], colorscale='log', xlabel=r'$'+color[-2]+'-'+color[-1]+'$', ylabel=r'$r_\mathrm{'+survey1.upper()+'}-r_\mathrm{'+survey2.upper()+'}$', save=save)
-        g = star_r.sns_correlate(color, survey1+'-'+survey2       , 1.5e1, 1e3, limits=[(0,2),(-0.2,0.4)], colorscale='log', xlabel=r'$'+color[-2]+'-'+color[-1]+'$', ylabel=r'$r_\mathrm{'+survey1.upper()+'}-r_\mathrm{'+survey2.upper()+'}^\prime$', save=save)
+        g = star_r.sns_correlate(color, survey1+'-'+survey2+'_nat', 1.5e1, 1e3, limits=[(0,2),(-0.2,0.4)], colorscale='log', xlabel=r'$'+color[0]+'-'+color[-1]+'$', ylabel=r'$r_\mathrm{'+survey1.upper()+'}-r_\mathrm{'+survey2.upper()+'}$', save=save)
+        g = star_r.sns_correlate(color, survey1+'-'+survey2       , 1.5e1, 1e3, limits=[(0,2),(-0.2,0.4)], colorscale='log', xlabel=r'$'+color[0]+'-'+color[-1]+'$', ylabel=r'$r_\mathrm{'+survey1.upper()+'}-r_\mathrm{'+survey2.upper()+'}^\prime$', save=save)
 
 # # QSOS
 # ---
 
-qsos_r = calib('qsos','uid','r')
+qsos_r = calib('qsos','r')
 qsos_r.read()
 qsos_r.join_colors()
 qsos_r.calculate_offsets()
@@ -185,17 +212,18 @@ qsos_r.offsets['ps-ztf_nat'].mean()
 
 qsos_r.offsets['ps-ztf'].mean()
 
-save = True
-for color in ['mean_ri','mean_gr']:
+save = False
+for color in ['r-i','g-r']:
     for survey1, survey2 in [('ps','sdss'),('ps','ztf')]:
 #     color = 'mean_ri'
 #     survey1 = 'ps'
 #     survey2 = 'ztf'
-        g = qsos_r.sns_correlate(color, survey1+'-'+survey2+'_nat', 1.5e1, 1e3, limits=[(-0.5,1),(-1.25,1.25)], colorscale='log', xlabel=r'$'+color[-2]+'-'+color[-1]+'$', ylabel=r'$r_\mathrm{'+survey1.upper()+'}-r_\mathrm{'+survey2.upper()+'}$', save=save)
-        g = qsos_r.sns_correlate(color, survey1+'-'+survey2       , 1.5e1, 1e3, limits=[(-0.5,1),(-1.25,1.25)], colorscale='log', xlabel=r'$'+color[-2]+'-'+color[-1]+'$', ylabel=r'$r_\mathrm{'+survey1.upper()+'}-r_\mathrm{'+survey2.upper()+'}^\prime$', save=save)
+        g = qsos_r.sns_correlate(color, survey1+'-'+survey2+'_nat', 1.5e1, 1e3, limits=[(-0.5,1),(-1.25,1.25)], colorscale='log', xlabel=r'$'+color[0]+'-'+color[-1]+'$', ylabel=r'$r_\mathrm{'+survey1.upper()+'}-r_\mathrm{'+survey2.upper()+'}$', save=save)
+        g = qsos_r.sns_correlate(color, survey1+'-'+survey2       , 1.5e1, 1e3, limits=[(-0.5,1),(-1.25,1.25)], colorscale='log', xlabel=r'$'+color[0]+'-'+color[-1]+'$', ylabel=r'$r_\mathrm{'+survey1.upper()+'}-r_\mathrm{'+survey2.upper()+'}^\prime$', save=save)
 
-color = 'mean_gr'
-survey1 = 'sdss'
-survey2 = 'ztf'
-g = qsos_r.sns_correlate(color, survey1+'-'+survey2+'_nat', 1.5e1, 1e3, limits=[(-0.5,1),(-1.25,1.25)], colorscale='log', xlabel=r'$'+color[-2]+'-'+color[-1]+'$', ylabel=r'$r_\mathrm{'+survey1.upper()+'}-r_\mathrm{'+survey2.upper()+'}$', save=True)
-g = qsos_r.sns_correlate(color, survey1+'-'+survey2       , 1.5e1, 1e3, limits=[(-0.5,1),(-1.25,1.25)], colorscale='log', xlabel=r'$'+color[-2]+'-'+color[-1]+'$', ylabel=r'$r_\mathrm{'+survey1.upper()+'}-r_\mathrm{'+survey2.upper()+'}^\prime$', save=True)
+# +
+# color = 'mean_gr'
+# survey1 = 'sdss'
+# survey2 = 'ztf'
+# g = qsos_r.sns_correlate(color, survey1+'-'+survey2+'_nat', 1.5e1, 1e3, limits=[(-0.5,1),(-1.25,1.25)], colorscale='log', xlabel=r'$'+color[-2]+'-'+color[-1]+'$', ylabel=r'$r_\mathrm{'+survey1.upper()+'}-r_\mathrm{'+survey2.upper()+'}$', save=True)
+# g = qsos_r.sns_correlate(color, survey1+'-'+survey2       , 1.5e1, 1e3, limits=[(-0.5,1),(-1.25,1.25)], colorscale='log', xlabel=r'$'+color[-2]+'-'+color[-1]+'$', ylabel=r'$r_\mathrm{'+survey1.upper()+'}-r_\mathrm{'+survey2.upper()+'}^\prime$', save=True)
