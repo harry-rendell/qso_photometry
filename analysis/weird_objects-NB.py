@@ -7,7 +7,7 @@
 #       format_version: '1.5'
 #       jupytext_version: 1.14.5
 #   kernelspec:
-#     display_name: Python 3
+#     display_name: Python 3 (ipykernel)
 #     language: python
 #     name: python3
 # ---
@@ -36,7 +36,24 @@ SURVEY = 'ztf'
 kwargs = {'dtypes': cfg.PREPROC.lc_dtypes,
           'nrows': nrows,
           'skiprows': skiprows,
-          'basepath': cfg.USER.D_DIR + 'surveys/{}/{}/unclean/{}_band/fixed_lim_mag/'.format(SURVEY, OBJ, BAND), # we should make this path more general so it is consistent between surveys
+          'basepath': cfg.USER.D_DIR + 'surveys/{}/{}/unclean/{}_band'.format(SURVEY, OBJ, BAND), # we should make this path more general so it is consistent between surveys
+          'ID':ID}
+
+df = data_io.dispatch_reader(kwargs, multiproc=True)
+
+# +
+OBJ    = 'calibStars'
+ID     = 'uid_s'
+BAND   = 'r'
+wdir   = cfg.USER.W_DIR
+nrows  = 100
+skiprows = None if nrows == None else nrows * 0
+SURVEY = 'ztf'
+
+kwargs = {'dtypes': cfg.PREPROC.lc_dtypes,
+          'nrows': nrows,
+          'skiprows': skiprows,
+          'basepath': cfg.USER.D_DIR + 'surveys/{}/{}/unclean/{}_band'.format(SURVEY, OBJ, BAND), # we should make this path more general so it is consistent between surveys
           'ID':ID}
 
 df = data_io.dispatch_reader(kwargs, multiproc=True)
