@@ -7,7 +7,7 @@
 #       format_version: '1.5'
 #       jupytext_version: 1.14.5
 #   kernelspec:
-#     display_name: Python 3
+#     display_name: Python 3 (ipykernel)
 #     language: python
 #     name: python3
 # ---
@@ -30,13 +30,20 @@ from module.preprocessing.colour_transform import ssa_transform
 # matplotlib.rc('font', **font)
 # -
 
-pd.set_option('max_colwidth', 100, 'max_columns',100)
+PLOT_AND_EVALUATE_TRANSFORMATIONS = True
+SAVE_TRANSFORMED_DATA = True
+
+# +
+pd.set_option('max_colwidth', 100)
 # Available cols:
 # ['surveyID', 'surveyName', 'systemID', 'fieldOfView', 'decMin', 'decMax', 'numFields', 'telescope', 'telAperture', 'telLong', 'telLat', 'telHeight', 'plateScale', 'colour', 'waveMin', 'waveMax', 'waveEff', 'magLimit', 'epochMin', 'epochMax', 'epTsys', 'equinox', 'eqTsys', 'surveyRef']
-pd.read_csv(cfg.USER.D_DIR + 'surveys/supercosmos/survey_table.csv', usecols= ['surveyID', 'surveyName', 'fieldOfView', 'decMin', 'decMax',
-                                                                               'numFields', 'telescope', 'telAperture',
-                                                                               'colour', 'waveMin', 'waveMax', 'waveEff',
-                                                                               'magLimit', 'epochMin', 'epochMax']).set_index('surveyID')
+display(pd.read_csv(cfg.USER.D_DIR + 'surveys/supercosmos/survey_table.csv', usecols= ['surveyID', 'surveyName', 'fieldOfView', 'decMin', 'decMax',
+                                                                                       'numFields', 'telescope', 'telAperture',
+                                                                                       'colour', 'waveMin', 'waveMax', 'waveEff',
+                                                                                       'magLimit', 'epochMin', 'epochMax']).set_index('surveyID'))
+
+ssa_secondary = {'calibStars':pd.read_csv(cfg.USER.D_DIR + 'surveys/supercosmos/{}/ssa_secondary.csv'.format('calibStars')).set_index('uid_s'),
+                 'qsos':      pd.read_csv(cfg.USER.D_DIR + 'surveys/supercosmos/{}/ssa_secondary.csv'.format('qsos'))      .set_index('uid')}
 
 # + active=""
 # Note: surveyID = 4 has only 1 datapoint for qsos and none for stars, so we leave it out.
@@ -61,8 +68,8 @@ pd.read_csv(cfg.USER.D_DIR + 'surveys/supercosmos/survey_table.csv', usecols= ['
 # # Cell below is for acquiring SSA data
 
 # +
-PARSE_SECONDARY = True
-SAVE_COORDS_IN_CHUNKS = True
+PARSE_SECONDARY = False
+SAVE_COORDS_IN_CHUNKS = False
 SAVE_SECONDARY = False
 
 # ID = 'uid_s'
@@ -114,35 +121,24 @@ if PARSE_SECONDARY:
         fig, ax = plt.subplots(1,1, figsize=(15,5))
         ax.hist(merged['distance'], bins=100);
 
-
         merged.astype({'smag':np.float32, 'surveyID':np.uint8, 'mjd':np.uint32}).to_csv(cfg.USER.D_DIR + 'surveys/supercosmos/{}/ssa_secondary.csv'.format(OBJ))
 # -
 
-# some pre-determined coefficients for transformations. 
-p_r1 = np.array([-0.09991162, -0.19239214])
-p_r2 = np.array([-0.21768903, -0.15050923])
-p_dict = {'r1':p_r1, 'r2':p_r2}
-p_r1_ivezic = np.array([-0.0107, +0.0050, -0.2689, -0.1540]) # Data from ivezic: https://arxiv.org/abs/astro-ph/0701508
-
-# # Plot transformations
+# # Plot and evaluate transformations
 # ---
 
 # + jupyter={"outputs_hidden": true}
-for obj in ['calibStars', 'qsos']:
-    for ssa_band in ['r1','r2']:
-        print('band:',ssa_band,' - ','object:',obj)
-        ssa = ssa_transform(obj, 'r', ssa_band, 'ps')
-        ssa.read()
-        # color_name = 'g-r'
-        color_name = 'r-i'
-        # color_name = 'i-z'
-        ssa.color_transform(p=p_dict[ssa_band], color_name=color_name)
-        ssa.hist_1d()
-        ssa.hist_2d(color_name=color_name)
-        # ssa.color_transform(p=p_r1_ivezic, color_name=color_name)
-        # ssa.hist_1d()
-        # ssa.hist_2d(color_name=color_name)
-        ssa.mag_correlation()
+if PLOT_AND_EVALUATE_TRANSFORMATIONS:
+    # Evaluating all the Ivezic transformations on qsos
+    obj = 'qsos'
+    transf_name = 'Ivezic'
+    # transf_name = 'Peacock'
+
+    transf = cfg.TRANSF.SSA[transf_name.upper()]
+    for ssa_survey in transf.keys():
+        ssa = ssa_transform(obj, ssa_survey, 'ps', ssa_secondary)
+        ssa.evaluate_transformation(obj, ssa_survey, transf, transf_name, plot=True)
+        del ssa
 # -
 
 # # Transform and save data
@@ -150,45 +146,47 @@ for obj in ['calibStars', 'qsos']:
 # May be run without the cells above
 
 # +
-# some pre-determined coefficients for transformations. 
-p_r1 = np.array([-0.09991162, -0.19239214])
-p_r2 = np.array([-0.21768903, -0.15050923])
-p_dict = {'r1':p_r1, 'r2':p_r2}
-p_r1_ivezic = np.array([-0.0107, +0.0050, -0.2689, -0.1540]) # Data from ivezic: https://arxiv.org/abs/astro-ph/0701508
+# OBJ = 'qsos'
+TRANSF_NAME = 'Ivezic'
 
-obj = 'calibStars'
-ID = 'uid' if obj == 'qsos' else 'uid_s'
-r1 = ssa_transform(obj, 'r', 'r1', 'ps')
-r1.read()
-color_name = 'r-i'
-r1.color_transform(p=p_dict['r1'], color_name=color_name)
+if SAVE_TRANSFORMED_DATA:
+    for OBJ in ['qsos','calibStars']:
+        for band in 'gri':
+            """
+            Apply colour transformations and add magnitude-dependent errors, then save the result.
+            """
 
-r2 = ssa_transform(obj, 'r', 'r2', 'ps')
-r2.read()
-color_name = 'r-i'
-r2.color_transform(p=p_dict['r2'], color_name=color_name)
+            ID = 'uid' if OBJ == 'qsos' else 'uid_s'
 
-r1.df['mag'] = r1.mag_ssa_transf
-r2.df['mag'] = r2.mag_ssa_transf
-dfr = pd.concat([r2.df, r1.df]).sort_values([ID,'mjd'])
-dfr['magerr'] = 0.06751*dfr['mag'] - 1.08
-dfr['magerr'][(dfr['mag']<18.5).values] = 0.168935
+            transf = {key:item for key,item in cfg.TRANSF.SSA[TRANSF_NAME.upper()].items() if key.startswith(band)}
+            df_list = []
+            for ssa_survey in transf.keys():
+                ssa = ssa_transform(OBJ, ssa_survey, 'ps', ssa_secondary)
+                df_list.append(ssa.evaluate_transformation(OBJ, ssa_survey, transf, TRANSF_NAME, plot=False))
+                del ssa
 
-# Add comment to start of csv file
-comment =  ("# CSV of photometry with no other preprocessing or cleaning.\n"
-            "# mag : photometry in native PanSTARRS photometric system")
+            df = pd.concat(df_list).sort_values([ID,'mjd'])
 
-band='r'
-chunks = parse.split_into_non_overlapping_chunks(dfr.astype({'mag': np.float32, 'mag_orig': np.float32, 'magerr': np.float32}), 4)
-# keyword arguments to pass to our writing function
-kwargs = {'comment':comment,
-          'basepath':cfg.USER.D_DIR + 'surveys/supercosmos/{}/unclean/{}_band/'.format(obj, band),
-          'savecols':['mjd','mag','mag_orig','magerr']}
+            df['magerr'] = 0.06751*df['mag'] - 1.08
+            df.loc[(df['mag']<18.5).values,'magerr'] = 0.168935
+            df = df.rename(columns={'surveyID':'ssa_sid'})
 
-# data_io.dispatch_writer(chunks, kwargs)
+            # Add comment to start of csv file
+            comment =  ("# CSV of photometry with no other preprocessing or cleaning.\n"
+                        "# mag : photometry in native PanSTARRS photometric system")
+
+            # Since surveys 5 and 9 overlap (POSS1 north and south) there are some duplicate rows. Remove them here.
+            mask = df.reset_index().duplicated([ID,'mag_orig','mjd','distance']).values
+            print(f'Removing {mask.sum()} duplicate rows')
+            df = df[~mask]
+
+            display(df)
+            chunks = parse.split_into_non_overlapping_chunks(df.astype({'mag': np.float32, 'mag_orig': np.float32, 'magerr': np.float32}), 4)
+            # keyword arguments to pass to our writing function
+            kwargs = {'comment':comment,
+                      'basepath':cfg.USER.D_DIR + 'surveys/supercosmos/{}/unclean/{}_band/'.format(OBJ, band),
+                      'savecols':['mjd','mag','mag_orig','magerr','ssa_sid']}
+
+            data_io.dispatch_writer(chunks, kwargs)
 # -
-r1.df
-
-r2.df
-
 
