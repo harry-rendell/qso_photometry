@@ -27,25 +27,30 @@ def average_nightly_obs(group):
     n = len(group)
     # bear in mind this will fail on PS data which does not have mag_orig
     mjd, mag, magerr, mag_median, mag_std = group[['mjd','mag','magerr','mag_med','mag_std']].values.T
+    if 'mag_orig' in group:
+        mag_native = group['mag_orig'].values
     
     if np.ptp(mag) > 0.5:
         mask = abs(mag-mag_median) < 5*mag_std
         if mask.sum()==0:
             mag_mean = np.nan
+            mag_mean_native = np.nan
             uid = group.index[0]
             err_uids = str(uid)+', '+str(int(mjd[0]))
             print(err_uids, flush=True)
                 
         else:
             mag = mag[mask] # remove points that are 1mag away from the median of the group
+            mag_native = mag_native[mask]
             magerr = magerr[mask]
             mjd = mjd[mask]
             
     mjd_mean  = np.mean(mjd)
     magerr_mean = ((magerr ** 2).sum()/n) ** 0.5 # sum errors in quadrature. Do not use 'error on optimal average' since it makes the errors unphysically small.
     mag_mean  = -2.5*np.log10(np.average(10**(-(mag-8.9)/2.5), weights = magerr**-2)) + 8.9
+    mag_mean_native  = -2.5*np.log10(np.average(10**(-(mag_native-8.9)/2.5), weights = magerr**-2)) + 8.9
     # we don't really care about mag_orig, and if we want to compare mag vs mag_orig we can look at the unclean data. Let's leave it out.
-    return {'mjd':mjd_mean, 'mag':mag_mean, 'magerr':magerr_mean}
+    return {'mjd':mjd_mean, 'mag':mag_mean, 'mag_orig':mag_mean_native, 'magerr':magerr_mean}
 
 def stats(group):
     # assign pandas columns to numpy arrays
