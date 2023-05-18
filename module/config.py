@@ -137,7 +137,7 @@ __C.PREPROC.pairwise_dtypes = {'uid': np.uint32,
 __C.PREPROC.LIMIT_MAG = edict()
 
 # https://www.sdss4.org/dr16/imaging/other_info/
-# 5 sigma limiting magnitudes
+# 5σ limiting magnitudes
 __C.PREPROC.LIMIT_MAG.SDSS = {
 							'u': 22.15,
 							'g': 23.13,
@@ -147,7 +147,7 @@ __C.PREPROC.LIMIT_MAG.SDSS = {
 							}
 
 # https://outerspace.stsci.edu/display/PANSTARRS/PS1+FAQ+-+Frequently+asked+questions
-# 5 sigma limiting magnitudes
+# 5σ limiting magnitudes
 __C.PREPROC.LIMIT_MAG.PS = {
 							'g': 23.3,
 							'r': 23.2,
@@ -159,17 +159,34 @@ __C.PREPROC.LIMIT_MAG.PS = {
 # limitingmag can be fetched on a per-observation basis but below is an average
 # Note, using limitmag to filter out observations may be biased as we are selectively removing
 # 	dimmer observations.
-# 5 sigma limiting magnitudes
+# 5σ limiting magnitudes
 __C.PREPROC.LIMIT_MAG.ZTF = {
 							'g': 20.8,
 							'r': 20.6,
 							'i': 19.9
 							}
 
-# TODO: find what this should actually be
+# https://arxiv.org/abs/1607.01189, peacock_ssa
+# 4σ limiting magnitudes, using the smaller of the two between UKST and POSS2.
 __C.PREPROC.LIMIT_MAG.SUPERCOSMOS = {
-									'r': 21,
+									# 4σ
+									'g': 21.17,
+									'r': 20.30,
+									'i': 18.90
 									}
+									# 5σ
+									# 'g': 20.26,
+									# 'r': 19.78,
+									# 'i': 18.38
+# Table from paper above.
+# Band    | 5σ    | 4σ    |
+# --------|-------|-------|
+# UKST  B | 20.79 | 21.19 |
+# UKST  R | 19.95 | 20.30 |
+# UKST  I | 18.56 | 19.94 |
+# POSS2 B | 20.26 | 21.17 |
+# POSS2 R | 19.78 | 20.35 |
+# POSS2 I | 18.38 | 18.90 |
 
 # Magnitude error threshold
 __C.PREPROC.MAG_ERR_THRESHOLD = 0.198
