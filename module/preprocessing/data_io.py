@@ -80,6 +80,7 @@ def writer(i, chunk, kwargs):
 			newline = '' if kwargs['comment'].endswith('\n') else '\n'
 			f.write(kwargs['comment']+newline)
 		chunk.to_csv(f, columns=savecols)
+		print('output saved to:',f.name)
 
 def dispatch_writer(chunks, kwargs, max_processes=64):
 	"""
