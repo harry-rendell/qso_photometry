@@ -17,6 +17,8 @@ if __name__ == "__main__":
     parser.add_argument("--n_rows", type=int, help="Number of rows to read in from the photometric data")
     parser.add_argument("--dry_run", action='store_true', help="Use this flag to print output instead of saving")
     args = parser.parse_args()
+    # Print the arguments for the log
+    print(time.strftime('%X %x'))
     print('args:',args)
     
     OBJ = args.object

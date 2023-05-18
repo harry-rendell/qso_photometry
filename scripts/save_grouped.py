@@ -20,6 +20,7 @@ if __name__ == "__main__":
     parser.add_argument("--cleaned", action='store_true', help="Use this flat to point to cleaned data")
     args = parser.parse_args()
     # Print the arguments for the log
+    print(time.strftime('%X %x'))
     print('args:',args)
     
     OBJ = args.object
@@ -60,9 +61,10 @@ if __name__ == "__main__":
             output_fpath = os.path.join(cfg.USER.D_DIR, 'surveys/{}/{}/{}/{}_band'.format(survey, OBJ, is_clean_str, band), 'grouped.csv')
             if args.dry_run:
                 print(grouped)
-                print('output file path:',output_fpath)
+                print('output will be saved to:',output_fpath)
             else:
                 grouped.to_csv(output_fpath)
+                print('output has been saved to:',output_fpath)
 
             print('Elapsed:',time.strftime("%Hh %Mm %Ss",time.gmtime(time.time()-start)))
     print('Finished')

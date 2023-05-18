@@ -18,6 +18,8 @@ if __name__ == "__main__":
     parser.add_argument("--n_skiprows", type=int, help="Number of chunks of n_rows to skip when reading in photometric data")
     parser.add_argument("--dry_run", action='store_true', help="Number of chunks of n_rows to skip when reading in photometric data")
     args = parser.parse_args()
+    # Print the arguments for the log
+    print(time.strftime('%X %x'))
     print('args:',args)
 
 
