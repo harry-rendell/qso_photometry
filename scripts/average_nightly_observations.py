@@ -17,9 +17,9 @@ if __name__ == "__main__":
     parser.add_argument("--n_rows", type=int, help="Number of rows to read in from the photometric data")
     parser.add_argument("--n_skiprows", type=int, help="Number of chunks of n_rows to skip when reading in photometric data")
     parser.add_argument("--dry_run", action='store_true', help="Number of chunks of n_rows to skip when reading in photometric data")
-    
     args = parser.parse_args()
-    # Print the arguments for the log
+    # Print the arguments and time for the log
+    print(time.strftime('%X %x'))
     print('args:',args)
     
     OBJ = args.object
@@ -35,7 +35,7 @@ if __name__ == "__main__":
 
     for survey in args.survey.lower().split(' '):
         for band in args.band.lower():
-            print('\nsurvey: {}, band: {}'.format(survey, band))
+            print('\n'+'='*34+f' {survey}, {band} '+'='*35)
             # keyword arguments to pass to our reading function
             kwargs = {'dtypes': cfg.PREPROC.lc_dtypes,
                       'nrows': nrows,
@@ -48,7 +48,9 @@ if __name__ == "__main__":
 
             # Read in grouped data
             grouped = pd.read_csv(cfg.USER.D_DIR + 'surveys/{}/{}/unclean/{}_band/grouped.csv'.format(survey, OBJ, band), usecols=[ID, 'mag_med','mag_std']).set_index(ID)
-            uids = grouped.index[grouped['mag_med']<cfg.PREPROC.LIMIT_MAG[survey.upper()][band]]
+            mask = (grouped['mag_med']<cfg.PREPROC.LIMIT_MAG[survey.upper()][band]).values
+            print(f'Removing {(~mask).sum():,} objects due to being fainter than limiting mag ({cfg.PREPROC.LIMIT_MAG[survey.upper()][band]}) of survey:')
+            uids = grouped.index[mask]
             df = df[df.index.isin(uids)]
 
             # Remove obviously bad data and uids that should not be present.
@@ -80,7 +82,7 @@ if __name__ == "__main__":
                 print('Elapsed:',time.strftime("%Hh %Mm %Ss",time.gmtime(end-start)))
 
                 # Add the data from nights with multiple observations back on
-                df = single_obs.append(averaged).sort_values([ID,'mjd'])
+                df = pd.concat([single_obs,averaged])
                 df.index = df.index.astype('uint32')
             else:
                 print('No observations on the same night to average.')
@@ -93,8 +95,10 @@ if __name__ == "__main__":
                             "# mag : photometry in PanSTARRS photometric system")
                 # keyword arguments to pass to our writing function
                 kwargs = {'comment':comment,
-                          'basepath':cfg.USER.D_DIR + 'surveys/{}/{}/clean/{}_band/'.format(survey, OBJ, band)}
-
+                          'basepath':cfg.USER.D_DIR + 'surveys/{}/{}/clean/{}_band/'.format(survey, OBJ, band),
+                          'savecols':['mjd','mag','mag_orig','magerr']}
+                
+                df = df.sort_values([ID,'mjd'])
                 chunks = parse.split_into_non_overlapping_chunks(df, 4)
                 data_io.dispatch_writer(chunks, kwargs)
     print('Finished')
