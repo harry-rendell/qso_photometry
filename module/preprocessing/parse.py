@@ -54,7 +54,6 @@ def filter_data(df, bounds={}, dropna=True, valid_uids=None):
 	
 	return df
 
-
 def compute_colors(survey):
     colors = pd.DataFrame()
     colors['mean_gi'] = survey.df_pivot['mean_g'] - survey.df_pivot['mean_i']
@@ -63,7 +62,7 @@ def compute_colors(survey):
     colors['mean_iz'] = survey.df_pivot['mean_i'] - survey.df_pivot['mean_z']
     return colors
 
-def split_into_non_overlapping_chunks(df, n_chunks, bin_size=None, return_bin_edges=False):
+def split_into_non_overlapping_chunks(df, n_chunks, bin_size=None, return_bin_edges=False, n_cores=1):
     """
     Split the dataframe into n roughly equally sized chunks in such a way that the index does not 
         overlap between chunks. Returns a list of DataFrames.
@@ -92,6 +91,8 @@ def split_into_non_overlapping_chunks(df, n_chunks, bin_size=None, return_bin_ed
     bin_edges = [(idxs[i],idxs[i+1]) if i == 0 else (int(idxs[i]+1),idxs[i+1]) for i in range(n_chunks)] # Make non-overlapping chunks
     uid_ranges = [f'{lower:06d}_{upper:06d}' for lower, upper in bin_edges]
 
+    # The line below can't really be parallelised as we would have to declare df as a global variable
+    #   to prevent it from being copied for every child process (which would exceed memory.)
     if df is not None:
         chunks = [df.loc[bin_edges[i][0]:bin_edges[i][1]] for i in range(n_chunks)]
         if not df.index.is_monotonic_increasing:
