@@ -44,7 +44,8 @@ if __name__ == "__main__":
             kwargs = {'dtypes': cfg.PREPROC.lc_dtypes,
                       'nrows': nrows,
                       'ID':ID,
-                      'basepath': cfg.USER.D_DIR + f'surveys/{survey}/{OBJ}/clean/{band}_band/'}
+                      'basepath': cfg.USER.D_DIR + f'surveys/{survey}/{OBJ}/clean/{band}_band/',
+					  'usecols':[ID,'mjd','mag','magerr']}
             
             df = data_io.dispatch_reader(kwargs, multiproc=True, max_processes=32)
             df['band'] = np.array(band, dtype=np.dtype(('U',1)))
@@ -54,7 +55,8 @@ if __name__ == "__main__":
             #   then pass to data_io.dispatch_writer with mode='a'
             uid_ranges, chunks = parse.split_into_non_overlapping_chunks(df, 106, bin_size=5000, return_bin_edges=True)
             kwargs = {'basepath':cfg.USER.D_DIR + f'merged/{OBJ}/clean/',
-                      'mode':'a'}
-            data_io.dispatch_writer(chunks, kwargs=kwargs, max_processes=32)
+                      'mode':'a',
+					  'savecols':SAVE_COLS[1:]}
+            data_io.dispatch_writer(chunks, kwargs=kwargs, max_processes=32, fname_suffixes=uid_ranges)
 
     print('Elapsed:',time.strftime("%Hh %Mm %Ss",time.gmtime(time.time()-start)))
