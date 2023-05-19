@@ -194,8 +194,7 @@ __C.PREPROC.MAG_ERR_THRESHOLD = 0.198
 # Bounds to use on parse.filter_data in average_nightly_observations.py when removing bad data.
 __C.PREPROC.FILTER_BOUNDS = {'mag':(15,25),'magerr':(0,2)}
 
-__C.PREPROC.SURVEY_IDS =   {'sss_r1': 1,
-							'sss_r2': 3,
+__C.PREPROC.SURVEY_IDS =   {'supercosmos':3,
 						 	'sdss': 5,
 							'ps': 7,
 						 	'ztf': 11}
