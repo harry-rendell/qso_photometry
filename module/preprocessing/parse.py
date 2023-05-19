@@ -68,17 +68,38 @@ def split_into_non_overlapping_chunks(df, n_chunks, bin_size=None, return_bin_ed
     Split the dataframe into n roughly equally sized chunks in such a way that the index does not 
         overlap between chunks. Returns a list of DataFrames.
     bin_size may be specified if we want chunks of a specific number of uids per chunk (15,000 used for merged data)
+
+    Use cases:
+        1. use to split up a dataframe into equal sized chunks. May set return_bin_edges to true to return bin edges
+            df=DataFrame
+            bin_size=None
+            return_bin_edges=True or False
+        2. use to generate uid ranges to create files with headers in merge_survey_data.py. Return bin edges only. df=None.
+            df=None
+            bin_size=list
+            return_bin_edges=True
+        3. use to generate chunks for saving for merge_survey_data. Return bin_edges and chunks
+            df=DataFrame
+            bin_size=list
+            return_bin_edges=True
+
     """
-    if not df.index.is_monotonic_increasing:
-    	raise Exception('Index must be sorted to split into chunks')
     if bin_size is not None:
-    	idxs = np.arange(0, bin_size*(n_chunks+1), bin_size)
+        idxs = np.arange(0, bin_size*(n_chunks+1), bin_size)
     else:
-    	idxs = np.percentile(df.index.values, q=np.linspace(0,100,n_chunks+1,dtype='int'), interpolation='nearest')
-    bin_edges = [(idxs[i],idxs[i+1]) if i == 0 else (int(idxs[i]+1),idxs[i+1]) for i in range(n_chunks)] # Make non-overlapping chunks
-    chunks = [df.loc[bin_edges[i][0]:bin_edges[i][1]] for i in range(n_chunks)]
+        idxs = np.percentile(df.index.values, q=np.linspace(0,100,n_chunks+1,dtype='int'), interpolation='nearest')
     
-    if return_bin_edges:
-    	return bin_edges, chunks
+    bin_edges = [(idxs[i],idxs[i+1]) if i == 0 else (int(idxs[i]+1),idxs[i+1]) for i in range(n_chunks)] # Make non-overlapping chunks
+    uid_ranges = [f'{lower:06d}_{upper:06d}' for lower, upper in bin_edges]
+
+    if df is not None:
+        chunks = [df.loc[bin_edges[i][0]:bin_edges[i][1]] for i in range(n_chunks)]
+        if not df.index.is_monotonic_increasing:
+            raise Exception('Index must be sorted to split into chunks')
     else:
-    	return chunks
+        chunks = None
+
+    if return_bin_edges:
+        return uid_ranges, chunks
+    else:
+        return chunks

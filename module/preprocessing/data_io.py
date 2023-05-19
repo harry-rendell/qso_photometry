@@ -66,6 +66,11 @@ def writer(i, chunk, kwargs):
 	"""
 	mode = kwargs['mode'] if 'mode' in kwargs else 'w'
 	savecols = kwargs['savecols'] if 'savecols' in kwargs else None
+	
+	if mode == 'a':
+		header = False
+	else:
+		header = True
 
 	if 'basepath' in kwargs:
 		basepath = kwargs['basepath']
@@ -79,21 +84,29 @@ def writer(i, chunk, kwargs):
 		if 'comment' in kwargs:
 			newline = '' if kwargs['comment'].endswith('\n') else '\n'
 			f.write(kwargs['comment']+newline)
-		chunk.to_csv(f, columns=savecols)
+		chunk.to_csv(f, columns=savecols, header=header)
 		print('output saved to:',f.name)
 
-def dispatch_writer(chunks, kwargs, max_processes=64):
+def dispatch_writer(chunks, kwargs, max_processes=64, fname_suffixes=None):
 	"""
 	Dispatching function for writer
+	if fnames is provided, use them to name each file for saving (list must be in the same order as chunks)
+		otherwise name each file lc_0, lc_1, ...#
+	NOTE fname is actually the middle part of lc_{}.csv
 	TODO: Is it bad that we sometimes spawn more processes than needed?
 	"""
 	# If we are passed a DataFrame rather than a list of DataFrames, wrap it in a list.
 	if isinstance(chunks, pd.DataFrame): chunks = [chunks]
 
+	if fname_suffixes is None:
+		iterable = enumerate(chunks)
+	else:
+		iterable = zip(fname_suffixes, chunks)
+
 	if __name__ == 'module.preprocessing.data_io':
 		n_tasks = min(len(chunks), max_processes)
 		with Pool(n_tasks) as pool:
-			pool.starmap(writer, [(i, chunk, kwargs) for i, chunk in enumerate(chunks)])
+			pool.starmap(writer, [(i, chunk, kwargs) for i, chunk in iterable])
 
 def process_input(function, df_or_fname, kwargs):
 	"""

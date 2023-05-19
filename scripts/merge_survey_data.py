@@ -21,13 +21,19 @@ if __name__ == "__main__":
     parser.add_argument("--dry_run", action='store_true', help="Use this flag to print output instead of saving")
     args = parser.parse_args()
     # Print the arguments for the log
-    print(time.strftime('%X %x'))
+    print(time.strftime('%H:%M:%S %d/%m/%y'))
     print('args:',args)
     
     OBJ = args.object
     ID = 'uid' if (OBJ == 'qsos') else 'uid_s'
 
     SAVE_COLS = [ID,'mjd','mag','magerr','band','sid']
+
+    uid_ranges, _ = parse.split_into_non_overlapping_chunks(None, 106, bin_size=5000, return_bin_edges=True)
+    for uid_range in uid_ranges:
+        output_name = cfg.USER.D_DIR + f'merged/{OBJ}/clean/lc_{uid_range}.csv'
+        with open(output_name, 'w') as file:
+            file.write(','.join(SAVE_COLS) + '\n')
 
     start = time.time()
     for survey in args.survey.lower().split(' '):
@@ -38,22 +44,17 @@ if __name__ == "__main__":
             kwargs = {'dtypes': cfg.PREPROC.lc_dtypes,
                       'nrows': nrows,
                       'ID':ID,
-                      'basepath': cfg.USER.D_DIR + 'surveys/{}/{}/clean/{}_band/'.format(survey, OBJ, band)}
+                      'basepath': cfg.USER.D_DIR + f'surveys/{survey}/{OBJ}/clean/{band}_band/'}
             
-            df = data_io.dispatch_reader(kwargs, multiproc=True, max_processes=8)
+            df = data_io.dispatch_reader(kwargs, multiproc=True, max_processes=32)
             df['band'] = np.array(band, dtype=np.dtype(('U',1)))
             df['sid'] = np.array(cfg.PREPROC.SURVEY_IDS[survey], dtype=np.uint8)
             
             # this can be parallelised - give each chunk to a core. Change output of split_into_non_overlapping_chunks to output {:06d}_{:06d}
             #   then pass to data_io.dispatch_writer with mode='a'
-            for uid, chunk in zip(*parse.split_into_non_overlapping_chunks(df, 106, bin_size=5000, return_bin_edges=True)):
-                print(uid)
-                if not chunk.empty:
-                    output_name = cfg.USER.D_DIR + 'merged/{}/clean/lc_{:06d}_{:06d}.csv'.format(OBJ,uid[0],uid[1])
-                    # move this to its own loop
-                    if not os.path.exists(output_name):
-                        with open(output_name, 'w') as file:
-                            file.write(','.join(SAVE_COLS) + '\n')
-                    chunk.to_csv(output_name, mode='a', header=False)
+            uid_ranges, chunks = parse.split_into_non_overlapping_chunks(df, 106, bin_size=5000, return_bin_edges=True)
+            kwargs = {'basepath':cfg.USER.D_DIR + f'merged/{OBJ}/clean/',
+                      'mode':'a'}
+            data_io.dispatch_writer(chunks, kwargs=kwargs, max_processes=32)
 
     print('Elapsed:',time.strftime("%Hh %Mm %Ss",time.gmtime(time.time()-start)))
