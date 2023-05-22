@@ -42,6 +42,7 @@ if __name__ == "__main__":
     start = time.time()
     
     for band in args.band:
+        print('band:',band)
         kwargs['band'] = band
         data_io.dispatch_function(pairwise.groupby_save_pairwise, chunks=None, max_processes=cfg.USER.N_CORES, **kwargs)
 
