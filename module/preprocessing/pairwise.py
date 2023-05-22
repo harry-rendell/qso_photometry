@@ -43,11 +43,9 @@ def calculate_dtdm_within_surveys(group):
     dmagerr = ( magerr**2 + magerr[:,np.newaxis]**2 )**0.5
     dmagerr = dmagerr[unique_pair_indicies]
     
-    dm2_de2 = dtdm[:,1]**2 - dmagerr**2
-
     uid = np.full(n*(n-1)//2,group.index[0],dtype='uint32')
     
-    return pd.DataFrame(data={'uid':uid,'dt':dtdm[:,0],'dm':dtdm[:,1], 'de':dmagerr, 'dm2_de2':dm2_de2})
+    return pd.DataFrame(data={'uid':uid,'dt':dtdm[:,0],'dm':dtdm[:,1], 'de':dmagerr})
 
 def groupby_save_pairwise(df, kwargs):
     if not (('basepath' in kwargs) and ('fname' in kwargs)):
@@ -55,12 +53,12 @@ def groupby_save_pairwise(df, kwargs):
     
     # splitting into 80 chunks and using 18 cores has a peak RAM of .. GB 
     # splitting into 80 chunks and using 36 cores has a peak RAM of .. GB 
-    for chunk in split_into_non_overlapping_chunks(df, 80):
-        print('chunksize:',len(chunk))
+    for chunk in split_into_non_overlapping_chunks(df, 10):
+	print(f'computing chunk: {i+1:}/10')
         if ('band' in kwargs) & ('band' in df.columns):
             for b in kwargs['band']:
                 
-                output_dir = os.path.join(kwargs['basepath'], 'dt_dm_'+b)
+                output_dir = os.path.join(kwargs['basepath'], 'dtdm_'+b)
                 os.makedirs(output_dir, exist_ok=True)
 
                 # If multiple bands are provided, iterate through them.
