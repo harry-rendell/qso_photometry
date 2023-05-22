@@ -53,8 +53,8 @@ def groupby_save_pairwise(df, kwargs):
     
     # splitting into 80 chunks and using 18 cores has a peak RAM of .. GB 
     # splitting into 80 chunks and using 36 cores has a peak RAM of .. GB 
-    for chunk in split_into_non_overlapping_chunks(df, 10):
-	print(f'computing chunk: {i+1:}/10')
+    for i, chunk in enumerate(split_into_non_overlapping_chunks(df, 10)):
+        print(f'computing chunk: {i+1:}/10')
         if ('band' in kwargs) & ('band' in df.columns):
             for b in kwargs['band']:
                 
