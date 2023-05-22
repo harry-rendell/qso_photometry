@@ -20,7 +20,7 @@ if __name__ == "__main__":
     parser.add_argument("--cleaned", action='store_true', help="Use this flat to point to cleaned data")
     args = parser.parse_args()
     # Print the arguments for the log
-    print(time.strftime('%X %x'))
+    print(time.strftime('%H:%M:%S %d/%m/%y'))
     print('args:',args)
     
     OBJ = args.object
