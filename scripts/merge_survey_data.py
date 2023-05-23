@@ -8,9 +8,6 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 from module.config import cfg
 from module.preprocessing import data_io, parse
 
-def multiproc_save():
-    pass
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--object", type=str, required=True, help ="qsos or calibStars")
@@ -29,7 +26,7 @@ if __name__ == "__main__":
 
     if OBJ == 'qsos':
         SAVE_COLS = [ID,'mjd','mjd_rf','mag','magerr','band','sid']
-        redshifts = pd.read_csv(cfg.USER.D_DIR + 'catalogues/qsos/dr14q/dr14q_redshift.csv').set_index(ID)
+        redshift = pd.read_csv(cfg.USER.D_DIR + 'catalogues/qsos/dr14q/dr14q_redshift.csv').set_index(ID)
     else:
         SAVE_COLS = [ID,'mjd','mag','magerr','band','sid']
     uid_ranges, _ = parse.split_into_non_overlapping_chunks(None, 106, bin_size=5000, return_bin_edges=True)
@@ -53,11 +50,11 @@ if __name__ == "__main__":
             df = data_io.dispatch_reader(kwargs, multiproc=True, max_processes=32)
             df['band'] = np.array(band, dtype=np.dtype(('U',1)))
             df['sid'] = np.array(cfg.PREPROC.SURVEY_IDS[survey], dtype=np.uint8)
+
             if OBJ == 'qsos':
                 df = df.join(redshift, on=ID)
                 df['mjd_rf'] = df['mjd']/(1+df['z'])
-            # this can be parallelised - give each chunk to a core. Change output of split_into_non_overlapping_chunks to output {:06d}_{:06d}
-            #   then pass to data_io.dispatch_writer with mode='a'
+
             uid_ranges, chunks = parse.split_into_non_overlapping_chunks(df, 106, bin_size=5000, return_bin_edges=True)
             kwargs = {'basepath':cfg.USER.D_DIR + f'merged/{OBJ}/clean/',
                       'mode':'a',

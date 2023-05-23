@@ -83,6 +83,10 @@ def split_into_non_overlapping_chunks(df, n_chunks, bin_size=None, return_bin_ed
             return_bin_edges=True
 
     """
+    if n_chunks == 1:
+        # In this case we assume we don't want to return bin edges
+        return [df]
+
     if bin_size is not None:
         idxs = np.arange(0, bin_size*(n_chunks+1), bin_size)
     else:
