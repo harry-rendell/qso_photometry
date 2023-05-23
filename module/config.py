@@ -240,5 +240,7 @@ __C.RES = edict()
 __C.FIG = edict()
 
 # Path to style files. Empty string at end ensures trailing slash
-__C.FIG.STYLE_DIR = os.path.join(__C.USER.W_DIR, 'res', 'styles', '')
+__C.FIG.STYLE_DIR = os.path.join(__C.USER.R_DIR, 'styles', '')
+# Path to thesis plots folder
+__C.FIG.THESIS_PLOT_DIR = os.path.join(__C.USER.R_DIR, 'thesis', '')
 
