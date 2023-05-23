@@ -13,32 +13,6 @@
 #     name: python3
 # ---
 
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
-import os
-import sys
-sys.path.insert(0, os.path.join(os.getcwd(), "..", ".."))
-from module.config import cfg
-from module.preprocessing import colour_transform, parse, data_io, lightcurve_statistics
-
-for obj in ['qsos','calibStars']:
-    print('-'*20)
-    for band in 'gri':
-        grouped_sdss = pd.read_csv(cfg.USER.D_DIR + 'surveys/sdss/{}/unclean/{}_band/grouped.csv'.format(obj,band), index_col=0)
-        grouped_ztf  = pd.read_csv(cfg.USER.D_DIR + 'surveys/ztf/{}/unclean/{}_band/grouped.csv'.format(obj,band), index_col=0)
-        grouped_ps   = pd.read_csv(cfg.USER.D_DIR + 'surveys/ps/{}/unclean/{}_band/grouped.csv'.format(obj,band), index_col=0)
-        print(obj,band)
-        print('ps vs sdss')
-        print((grouped_ps['mag_mean']-grouped_sdss['mag_mean_native']).mean())
-        print((grouped_ps['mag_mean']-grouped_sdss['mag_mean']).mean())
-        print('ps vs ztf')
-        print((grouped_ps['mag_mean']-grouped_ztf['mag_mean_native']).mean())
-        print((grouped_ps['mag_mean']-grouped_ztf['mag_mean']).mean())
-        print('')
-
-
 class calib():
     def __init__(self, obj, band):
         self.obj = obj

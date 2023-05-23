@@ -21,7 +21,7 @@ import sys
 sys.path.insert(0, os.path.join(os.getcwd(), ".."))
 from module.config import cfg
 from module.preprocessing import data_io, parse, lightcurve_statistics, pairwise
-from module.analysis.analysis import analysis
+# from module.analysis.analysis import analysis
 from module.analysis.plotting_common import plot_series
 
 # +
@@ -29,17 +29,26 @@ OBJ    = 'qsos'
 ID     = 'uid'
 BAND   = 'r'
 wdir   = cfg.USER.W_DIR
-nrows  = 100
+nrows  = None
 skiprows = None if nrows == None else nrows * 0
-SURVEY = 'ztf'
+SURVEY = 'sdss'
 
 kwargs = {'dtypes': cfg.PREPROC.lc_dtypes,
           'nrows': nrows,
           'skiprows': skiprows,
-          'basepath': cfg.USER.D_DIR + 'surveys/{}/{}/unclean/{}_band'.format(SURVEY, OBJ, BAND), # we should make this path more general so it is consistent between surveys
+          'basepath': cfg.USER.D_DIR + 'surveys/{}/{}/clean/{}_band'.format(SURVEY, OBJ, BAND), # we should make this path more general so it is consistent between surveys
           'ID':ID}
 
 df = data_io.dispatch_reader(kwargs, multiproc=True)
+# -
+
+redshifts = pd.read_csv(cfg.USER.D_DIR + 'catalogues/qsos/dr14q/dr14q_redshift.csv').set_index('uid')
+
+df=df.join(redshifts, on='uid')
+
+df['mjd_rf'] = df['mjd']/(1+df['z'])
+
+df
 
 # +
 OBJ    = 'calibStars'
@@ -64,29 +73,6 @@ df['mag'].hist(bins=200)
 df['mag'].hist(bins=200)
 
 
-
-dr = analysis(ID, OBJ, BAND)
-
-dr.read_in()
-
-dr.df.index
-
-test = pairwise.groupby_dtdm_within(df)
-
-test
-
-mjd_mag_1 = df_ztf.loc[6].head()[['mjd','mag']].values
-mjd_mag_2 = df_sdss.loc[6][['mjd','mag']].values
-
-mjd_mag_1
-
-mjd_mag_2
-
-mjd_mag_1 - mjd_mag_2[:, np.newaxis, :]
-
-
-
-df_sdss.loc[6]
 
 axes
 
