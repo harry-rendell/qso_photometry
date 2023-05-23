@@ -21,7 +21,12 @@ if __name__ == "__main__":
     print('args:',args)
     
     OBJ = args.object
-    ID = 'uid' if (OBJ == 'qsos') else 'uid_s'
+    if OBJ == 'qsos':
+        ID = 'uid'
+        mjd_key = 'mjd_rf'
+    else:
+        ID = 'uid_s'
+        mjd_key = 'mjd'
 
     nrows = args.n_rows
     skiprows = args.n_skiprows
@@ -35,15 +40,21 @@ if __name__ == "__main__":
     kwargs = {'dtypes': {**cfg.PREPROC.lc_dtypes, **cfg.PREPROC.dtdm_dtypes},
               'nrows': nrows,
               'skiprows': skiprows,
-              'basepath': cfg.USER.D_DIR + 'merged/{}/clean/'.format(OBJ),
-              'usecols': [ID,'mjd','mag','magerr','band','sid'],
-              'ID':ID}
+              'basepath': cfg.USER.D_DIR + f'merged/{OBJ}/clean/',
+              'usecols': [ID,mjd_key,'mag','magerr','band','sid'],
+              'ID':ID,
+              'mjd_key':mjd_key}
               
     start = time.time()
     
     for band in args.band:
-        print('band:',band)
+        bool_arr = pd.read_csv(cfg.USER.D_DIR + f'catalogues/{OBJ}/sets/clean_{band}.csv', index_col=ID, comment='#')
+        restricted_set = bool_arr.index[ bool_arr['vac'].values & np.any(bool_arr[['sdss','ps']].values, axis=1)]
+        del bool_arr
+
         kwargs['band'] = band
+        kwargs['subset'] = restricted_set
+
         data_io.dispatch_function(pairwise.groupby_save_pairwise, chunks=None, max_processes=cfg.USER.N_CORES, **kwargs)
 
     print('Elapsed:',time.strftime("%Hh %Mm %Ss",time.gmtime(time.time()-start)))

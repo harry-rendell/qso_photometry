@@ -51,35 +51,35 @@ def groupby_save_pairwise(df, kwargs):
     if not (('basepath' in kwargs) and ('fname' in kwargs)):
         raise Exception('Both basepath and fname must be provided')
     
-    # splitting into 80 chunks and using 18 cores has a peak RAM of .. GB 
-    # splitting into 80 chunks and using 36 cores has a peak RAM of .. GB 
-    for i, chunk in enumerate(split_into_non_overlapping_chunks(df, 10)):
-        print(f'computing chunk: {i+1:}/10')
-        if ('band' in kwargs) & ('band' in df.columns):
-            for b in kwargs['band']:
-                
-                output_dir = os.path.join(kwargs['basepath'], 'dtdm_'+b)
-                os.makedirs(output_dir, exist_ok=True)
+    # Use appropriate time (rest frame or observer frame)
+    mjd_key = kwargs['mjd_key'] if ('mjd_key' in kwargs) else 'mjd'
 
-                # If multiple bands are provided, iterate through them.
-                print(b,'band - processing:',kwargs['fname'])
-                s = chunk[chunk['band'] == b].groupby(chunk.index.name).apply(calculate_dtdm)
-                s = pd.DataFrame(s.values.tolist(), columns=s.columns, dtype='float32').astype({k:v for k,v in kwargs['dtypes'].items() if k in s.columns})
-                output_fpath = os.path.join(output_dir, kwargs['fname'].replace('lc','dtdm'))
-                
-                if not os.path.exists(output_fpath):
-                    with open(output_fpath, 'w') as file:
-                        file.write(','.join(s.columns) + '\n')
+    # If a subset of objects has been provided, restrict our DataFrame to that subset.
+    if 'subset' in kwargs:
+        df = df[df.index.isin(kwargs['subset'])]
 
-                print(b,'band - saving:    ',kwargs['fname'].replace('lc','dtdm'))
-                s.to_csv(output_fpath, index=False, header=False, mode='a')
-                del s
+    # Remove observations that are not in the specified band
+    df = df[df['band']==kwargs['band']]
 
-    else:
-        raise Exception('error!!!')
+    output_dir = os.path.join(kwargs['basepath'], 'dtdm_'+kwargs['band'])
+    os.makedirs(output_dir, exist_ok=True)
+    output_fpath = os.path.join(output_dir, kwargs['fname'].replace('lc','dtdm'))
+    
+    if not os.path.exists(output_fpath):
+        with open(output_fpath, 'w') as file:
+            file.write(','.join([kwargs['ID'],'dt','dm','de','dsid']) + '\n')
+    
+    n_chunks = len(df)//40000 + 1 # May need to reduce this down to, say, 30,000 if the memory usage is too large.
+    for i, chunk in enumerate(split_into_non_overlapping_chunks(df, n_chunks)):
+        # If multiple bands are provided, iterate through them.
+        s = chunk.groupby(kwargs['ID']).apply(calculate_dtdm, mjd_key)
+        s = pd.DataFrame(s.values.tolist(), columns=s.columns, dtype='float32').astype({k:v for k,v in kwargs['dtypes'].items() if k in s.columns})
+        s.to_csv(output_fpath, index=False, header=False, mode='a')
+        del s
+    print('finished processing file:',kwargs['fname'], flush=True)
 
-def calculate_dtdm(group):
-    mjd_mag = group[['mjd','mag']].values
+def calculate_dtdm(group, mjd_key):
+    mjd_mag = group[[mjd_key,'mag']].values
     magerr = group['magerr'].values
     sid = group['sid'].values
     n = len(mjd_mag)
@@ -96,10 +96,6 @@ def calculate_dtdm(group):
     dmagerr = ( magerr**2 + magerr[:,np.newaxis]**2 )**0.5
     dmagerr = dmagerr[unique_pair_indicies]
     
-    dm2_de2 = dtdm[:,1]**2 - dmagerr**2
-
     uid = np.full(n*(n-1)//2,group.index[0],dtype='uint32')
     
-    return pd.DataFrame(data={group.index.name:uid,'dt':dtdm[:,0],'dm':dtdm[:,1], 'de':dmagerr, 'dm2_de2':dm2_de2, 'dsid':dsid})
-
-
+    return pd.DataFrame(data={group.index.name:uid, 'dt':dtdm[:,0], 'dm':dtdm[:,1], 'de':dmagerr, 'dsid':dsid})
