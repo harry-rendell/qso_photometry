@@ -51,7 +51,13 @@ def savefigs(fig, imgname, dirname, dpi=100, noaxis=False, **kwargs):
     imgname = imgname.split('.')[0]
 
     if not os.path.exists(dirname):
-        dirname = os.path.join(cfg.FIG.THESIS_PLOT_DIR, dirname)
+        # If we provide a relative path, assume that we're plotting straight to our overleaf project
+        dirname = os.path.join(cfg.THESIS_DIR, dirname)
+        pdf_path = os.path.join(dirname, 'graphics')
+        png_path = os.path.join(dirname, 'draft_graphics')
+    else:
+        pdf_path = dirname
+        png_path = dirname
     os.makedirs(dirname, exist_ok=True)
 
     if noaxis:
@@ -62,8 +68,8 @@ def savefigs(fig, imgname, dirname, dpi=100, noaxis=False, **kwargs):
         kwargs['pad_inches'] = 0
 
     kwargs['bbox_inches'] = 'tight'
-    fig.savefig(os.path.join(dirname,imgname)+'.png',dpi=100, **kwargs)
-    fig.savefig(os.path.join(dirname,imgname)+'.pdf', **kwargs)
+    fig.savefig(os.path.join(png_path,imgname)+'.png',dpi=100, **kwargs)
+    fig.savefig(os.path.join(pdf_path,imgname)+'.pdf', **kwargs)
 
 # from  matplotlib import rcParams
 # rcParams['pdf.fonttype'] = 42
