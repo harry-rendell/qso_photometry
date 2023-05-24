@@ -26,10 +26,10 @@ import celerite
 from celerite import terms
 # %matplotlib inline
 
-wdir = cfg.USER.W_DIR
+wdir = cfg.W_DIR
 
 def reader(n_subarray):
-    return pd.read_csv(cfg.USER.D_DIR + 'merged/{}/r_band/with_ssa/lc_{}.csv'.format(obj,n_subarray), nrows=None, comment='#', index_col = ID, dtype = {'catalogue': np.uint8, 'mag': np.float32, 'magerr': np.float32, 'mjd': np.float64, ID: np.uint32})
+    return pd.read_csv(cfg.D_DIR + 'merged/{}/r_band/with_ssa/lc_{}.csv'.format(obj,n_subarray), nrows=None, comment='#', index_col = ID, dtype = {'catalogue': np.uint8, 'mag': np.float32, 'magerr': np.float32, 'mjd': np.float64, ID: np.uint32})
 
 def neg_log_like(params, y, gp):
     gp.set_parameter_vector(params)

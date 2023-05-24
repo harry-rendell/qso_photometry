@@ -28,7 +28,7 @@ from module.analysis.plotting_common import plot_series
 OBJ    = 'qsos'
 ID     = 'uid'
 BAND   = 'r'
-wdir   = cfg.USER.W_DIR
+wdir   = cfg.W_DIR
 nrows  = None
 skiprows = None if nrows == None else nrows * 0
 SURVEY = 'sdss'
@@ -36,13 +36,13 @@ SURVEY = 'sdss'
 kwargs = {'dtypes': cfg.PREPROC.lc_dtypes,
           'nrows': nrows,
           'skiprows': skiprows,
-          'basepath': cfg.USER.D_DIR + 'surveys/{}/{}/clean/{}_band'.format(SURVEY, OBJ, BAND), # we should make this path more general so it is consistent between surveys
+          'basepath': cfg.D_DIR + 'surveys/{}/{}/clean/{}_band'.format(SURVEY, OBJ, BAND), # we should make this path more general so it is consistent between surveys
           'ID':ID}
 
 df = data_io.dispatch_reader(kwargs, multiproc=True)
 # -
 
-redshifts = pd.read_csv(cfg.USER.D_DIR + 'catalogues/qsos/dr14q/dr14q_redshift.csv').set_index('uid')
+redshifts = pd.read_csv(cfg.D_DIR + 'catalogues/qsos/dr14q/dr14q_redshift.csv').set_index('uid')
 
 df=df.join(redshifts, on='uid')
 
@@ -54,7 +54,7 @@ df
 OBJ    = 'calibStars'
 ID     = 'uid_s'
 BAND   = 'r'
-wdir   = cfg.USER.W_DIR
+wdir   = cfg.W_DIR
 nrows  = 100
 skiprows = None if nrows == None else nrows * 0
 SURVEY = 'ztf'
@@ -62,7 +62,7 @@ SURVEY = 'ztf'
 kwargs = {'dtypes': cfg.PREPROC.lc_dtypes,
           'nrows': nrows,
           'skiprows': skiprows,
-          'basepath': cfg.USER.D_DIR + 'surveys/{}/{}/unclean/{}_band'.format(SURVEY, OBJ, BAND), # we should make this path more general so it is consistent between surveys
+          'basepath': cfg.D_DIR + 'surveys/{}/{}/unclean/{}_band'.format(SURVEY, OBJ, BAND), # we should make this path more general so it is consistent between surveys
           'ID':ID}
 
 df = data_io.dispatch_reader(kwargs, multiproc=True)

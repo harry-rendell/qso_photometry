@@ -40,7 +40,7 @@ if __name__ == "__main__":
     kwargs = {'dtypes': {**cfg.PREPROC.lc_dtypes, **cfg.PREPROC.dtdm_dtypes},
               'nrows': nrows,
               'skiprows': skiprows,
-              'basepath': cfg.USER.D_DIR + f'merged/{OBJ}/clean/',
+              'basepath': cfg.D_DIR + f'merged/{OBJ}/clean/',
               'usecols': [ID,mjd_key,'mag','magerr','band','sid'],
               'ID':ID,
               'mjd_key':mjd_key}
@@ -48,7 +48,7 @@ if __name__ == "__main__":
     start = time.time()
     
     for band in args.band:
-        bool_arr = pd.read_csv(cfg.USER.D_DIR + f'catalogues/{OBJ}/sets/clean_{band}.csv', index_col=ID, comment='#')
+        bool_arr = pd.read_csv(cfg.D_DIR + f'catalogues/{OBJ}/sets/clean_{band}.csv', index_col=ID, comment='#')
         restricted_set = bool_arr.index[ bool_arr['vac'].values & np.any(bool_arr[['sdss','ps']].values, axis=1)]
         del bool_arr
 

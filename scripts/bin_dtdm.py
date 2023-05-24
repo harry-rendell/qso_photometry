@@ -8,7 +8,7 @@ import os
 import time
 from binning import bin_data
 
-wdir = cfg.USER.W_DIR
+wdir = cfg.W_DIR
 band = 'r'
 
 config = {'obj':'qsos','ID':'uid'  ,'t_max':6751,'n_bins_t':200,'n_bins_m':200, 'n_bins_m2':248, 'n_t_chunk':19, 'width':2, 'steepness':0.005, 'leftmost_bin':-0.244}
@@ -24,7 +24,7 @@ n_bins_m = config['n_bins_m']
 n_bins_m2 = config['n_bins_m2']
 leftmost_bin = config['leftmost_bin']
 
-data_path = cfg.USER.D_DIR + 'computed/{}/dtdm/raw/{}/'.format(obj,band)
+data_path = cfg.D_DIR + 'computed/{}/dtdm/raw/{}/'.format(obj,band)
 
 # sort based on filesize, then do ordered shuffle so that each core recieves the same number of large files
 fnames = [a for a in listdir(data_path) if (len(a)>27)]
@@ -37,7 +37,7 @@ fnames = [name for i in [0,1,2,3] for sizename, name in sorted(zip(size, fnames)
 ###################################
 
 dr = analysis(ID, obj)
-dr.properties = pd.read_csv(cfg.USER.D_DIR + 'catalogues/qsos/dr12q/SDSS_DR12Q_BH_matched.csv', index_col=dr.ID)
+dr.properties = pd.read_csv(cfg.D_DIR + 'catalogues/qsos/dr12q/SDSS_DR12Q_BH_matched.csv', index_col=dr.ID)
 key = 'Lbol'
 prop_range_all = {'Mi':(-30,-20),'mag_mean':(15,23.5),'mag_std':(0,1),'redshift':(0,5),'Lbol':(44,48),'nEdd':(-3,0.5), 'MBH_CIV':(6,12)}
 prop_range_any = {key:prop_range_all[key]}

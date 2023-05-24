@@ -31,7 +31,7 @@ import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
 # +
-wdir = cfg.USER.W_DIR
+wdir = cfg.W_DIR
 band = 'r'
 
 # t_max w/o SSA = 6751 for qsos
@@ -48,7 +48,7 @@ n_bins_t = config['n_bins_t']
 n_bins_m = config['n_bins_m']
 n_t_chunk = config['n_t_chunk']
 
-data_path = cfg.USER.D_DIR + 'computed/{}/dtdm/raw/{}/'.format(obj,band)
+data_path = cfg.D_DIR + 'computed/{}/dtdm/raw/{}/'.format(obj,band)
 
 # sort based on filesize, then do ordered shuffle so that each core recieves the same number of large files
 fnames = [a for a in listdir(data_path) if (len(a)>27)]

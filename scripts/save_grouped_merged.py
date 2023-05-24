@@ -36,7 +36,7 @@ if __name__ == "__main__":
     kwargs = {'dtypes': {**cfg.PREPROC.lc_dtypes, **cfg.PREPROC.stats_dtypes},
               'nrows': nrows,
               'skiprows': skiprows,
-              'basepath': cfg.USER.D_DIR + 'merged/{}/clean/'.format(OBJ),
+              'basepath': cfg.D_DIR + 'merged/{}/clean/'.format(OBJ),
               'usecols': [ID,'mjd','mag','magerr','band'],
               'ID':ID}
 
@@ -45,7 +45,7 @@ if __name__ == "__main__":
     for band in args.band:
         kwargs['band'] = band
         grouped = data_io.dispatch_function(lightcurve_statistics.groupby_apply_stats, chunks=None, max_processes=cfg.USER.N_CORES, **kwargs)
-        output_fpath = cfg.USER.D_DIR + 'merged/{}/clean/'.format(OBJ) + 'grouped_{}.csv'.format(band)
+        output_fpath = cfg.D_DIR + 'merged/{}/clean/'.format(OBJ) + 'grouped_{}.csv'.format(band)
         
         if args.dry_run:
             print(grouped)

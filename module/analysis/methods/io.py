@@ -18,11 +18,11 @@ def read_in(self, catalogue_of_properties = None, redshift=True, cleaned=True, n
     
     # Default to 4 cores
     # Use the path below for SSA
-    # basepath = cfg.USER.D_DIR + 'merged/{}/{}_band/with_ssa/'
+    # basepath = cfg.D_DIR + 'merged/{}/{}_band/with_ssa/'
     if cleaned:
-        basepath = cfg.USER.D_DIR + 'merged/{}/{}_band/'.format(self.obj, self.band)
+        basepath = cfg.D_DIR + 'merged/{}/{}_band/'.format(self.obj, self.band)
     else:
-        basepath = cfg.USER.D_DIR + 'merged/{}/{}_band/unclean/'.format(self.obj, self.band)
+        basepath = cfg.D_DIR + 'merged/{}/{}_band/unclean/'.format(self.obj, self.band)
 
     kwargs = {'dtypes': cfg.PREPROC.lc_dtypes,
               'nrows': nrows,
@@ -36,7 +36,7 @@ def read_in(self, catalogue_of_properties = None, redshift=True, cleaned=True, n
     
     if redshift:
         # add on column for redshift. Use squeeze = True when reading in a single column.
-        self.redshifts = pd.read_csv(cfg.USER.D_DIR + 'catalogues/qsos/dr14q/dr14q_uid_desig_z.csv', index_col=self.ID, usecols=[self.ID,'z'], squeeze=True).rename('redshift')
+        self.redshifts = pd.read_csv(cfg.D_DIR + 'catalogues/qsos/dr14q/dr14q_uid_desig_z.csv', index_col=self.ID, usecols=[self.ID,'z'], squeeze=True).rename('redshift')
         self.df = self.df.join(self.redshifts, how = 'left', on=self.ID)
         self.df['mjd_rf'] = self.df['mjd']/(1+self.df['redshift'])
 

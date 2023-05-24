@@ -24,7 +24,7 @@ from module.preprocessing import colour_transform, parse, data_io
 
 OBJ    = 'calibStars'
 ID     = 'uid_s'
-wdir = cfg.USER.W_DIR
+wdir = cfg.W_DIR
 
 # Query used to obtain data (context = DR16):
 
@@ -55,7 +55,7 @@ wdir = cfg.USER.W_DIR
 #             'dec': np.float128, 'dec_ref': np.float128,
 #             'get_nearby_distance': np.float64}
 #
-# sdss_data = pd.read_csv(cfg.USER.D_DIR + 'retrieved_data/dr14q_nearby_3arcsec_class.csv', dtype = datatype, float_precision = 'round trip')
+# sdss_data = pd.read_csv(cfg.D_DIR + 'retrieved_data/dr14q_nearby_3arcsec_class.csv', dtype = datatype, float_precision = 'round trip')
 #
 # print('shape:',sdss_data.shape)
 # display(sdss_data.head())
@@ -85,7 +85,7 @@ wdir = cfg.USER.W_DIR
 # # Total  | 525525 | 1
 #
 # #Merge sdss qsos with our original dr14q list
-# dr14q_coords = pd.read_csv(cfg.USER.D_DIR + 'catalogues/qsos/dr14q/dr14q_uid_coords.csv', dtype = {'ra': np.float32, 'dec': np.float32, 'uid': np.uint64})
+# dr14q_coords = pd.read_csv(cfg.D_DIR + 'catalogues/qsos/dr14q/dr14q_uid_coords.csv', dtype = {'ra': np.float32, 'dec': np.float32, 'uid': np.uint64})
 # merged.sort_values('uid',inplace = True)
 #
 # new_search = merged[['uid','class','get_nearby_distance_nb']]
@@ -109,7 +109,7 @@ wdir = cfg.USER.W_DIR
 # #remove 4 qsos because they don't match up
 #
 # if SAVE:
-#     sdss_dr14q_filtered.to_csv(cfg.USER.D_DIR + 'catalogues/qsos/dr14q/sdss_secondary_search_coords.csv', index = False)
+#     sdss_dr14q_filtered.to_csv(cfg.D_DIR + 'catalogues/qsos/dr14q/sdss_secondary_search_coords.csv', index = False)
 # sdss_dr14q_filtered
 # -
 
@@ -117,12 +117,12 @@ wdir = cfg.USER.W_DIR
 
 # +
 cols = [ID, 'objID'] + [x for y in zip(['mag_'+b for b in 'griz'], ['magerr_'+b for b in 'griz']) for x in y] + ['mjd','get_nearby_distance']
-sdss_unmelted = pd.read_csv(cfg.USER.D_DIR + 'surveys/sdss/{}/sdss_secondary.csv'.format(OBJ), usecols=cols, dtype = cfg.COLLECTION.SDSS.dtypes)
+sdss_unmelted = pd.read_csv(cfg.D_DIR + 'surveys/sdss/{}/sdss_secondary.csv'.format(OBJ), usecols=cols, dtype = cfg.COLLECTION.SDSS.dtypes)
 
 sdss_unmelted = sdss_unmelted.drop_duplicates(subset=[ID,'objID','mjd']).set_index(ID)
 sdss_unmelted['get_nearby_distance'] *= 60
 
-valid_uids = pd.read_csv(cfg.USER.D_DIR + 'catalogues/{}/{}_subsample_coords.csv'.format(OBJ,OBJ), usecols=[ID], index_col=ID, comment='#')
+valid_uids = pd.read_csv(cfg.D_DIR + 'catalogues/{}/{}_subsample_coords.csv'.format(OBJ,OBJ), usecols=[ID], index_col=ID, comment='#')
 sdss_unmelted = parse.filter_data(sdss_unmelted, valid_uids=valid_uids)
 
 # Add columns for colors
@@ -132,7 +132,7 @@ for b1, b2 in zip('gri','riz'):
 SAVE_COLORS = True
 if SAVE_COLORS:
     colors = sdss_unmelted[['g-r','r-i','i-z']].groupby(ID).agg('mean')
-    colors.to_csv(cfg.USER.D_DIR + 'computed/{}/colors_sdss.csv'.format(OBJ))
+    colors.to_csv(cfg.D_DIR + 'computed/{}/colors_sdss.csv'.format(OBJ))
 
 df_sdss_unpivot1 = pd.melt(sdss_unmelted, id_vars = 'objID', value_vars = ['mag_'   +b for b in 'griz'], var_name = 'filtercode', value_name = 'mag')
 df_sdss_unpivot2 = pd.melt(sdss_unmelted, id_vars = 'objID', value_vars = ['magerr_'+b for b in 'griz'], var_name = 'filtercode', value_name = 'magerr')
@@ -165,7 +165,7 @@ for band in 'griz':
     chunks = parse.split_into_non_overlapping_chunks(sdss_transformed.loc[pd.IndexSlice[:, band],:].droplevel('filtercode'), 4)
     # keyword arguments to pass to our writing function
     kwargs = {'comment':comment,
-              'basepath':cfg.USER.D_DIR + 'surveys/sdss/{}/unclean/{}_band/'.format(OBJ, band)}
+              'basepath':cfg.D_DIR + 'surveys/sdss/{}/unclean/{}_band/'.format(OBJ, band)}
 
     data_io.dispatch_writer(chunks, kwargs)
 # -

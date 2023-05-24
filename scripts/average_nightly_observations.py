@@ -41,20 +41,20 @@ if __name__ == "__main__":
                       'nrows': nrows,
                       'skiprows': skiprows,
                       'usecols': [ID,'mjd','mag','mag_orig','magerr'],
-                      'basepath': cfg.USER.D_DIR + 'surveys/{}/{}/unclean/{}_band/'.format(survey, OBJ, band),
+                      'basepath': cfg.D_DIR + 'surveys/{}/{}/unclean/{}_band/'.format(survey, OBJ, band),
                       'ID':ID}
 
             df = data_io.dispatch_reader(kwargs, multiproc=True)
 
             # Read in grouped data
-            grouped = pd.read_csv(cfg.USER.D_DIR + 'surveys/{}/{}/unclean/{}_band/grouped.csv'.format(survey, OBJ, band), usecols=[ID, 'mag_med','mag_std']).set_index(ID)
+            grouped = pd.read_csv(cfg.D_DIR + 'surveys/{}/{}/unclean/{}_band/grouped.csv'.format(survey, OBJ, band), usecols=[ID, 'mag_med','mag_std']).set_index(ID)
             mask = (grouped['mag_med']<cfg.PREPROC.LIMIT_MAG[survey.upper()][band]).values
             print(f'Removing {(~mask).sum():,} objects due to being fainter than limiting mag ({cfg.PREPROC.LIMIT_MAG[survey.upper()][band]}) of survey:')
             uids = grouped.index[mask]
             df = df[df.index.isin(uids)]
 
             # Remove obviously bad data and uids that should not be present.
-            valid_uids = pd.read_csv(cfg.USER.D_DIR + 'catalogues/{}/{}_subsample_coords.csv'.format(OBJ, OBJ), usecols=[ID], index_col=ID, comment='#')
+            valid_uids = pd.read_csv(cfg.D_DIR + 'catalogues/{}/{}_subsample_coords.csv'.format(OBJ, OBJ), usecols=[ID], index_col=ID, comment='#')
             df = parse.filter_data(df, bounds=cfg.PREPROC.FILTER_BOUNDS, dropna=True, valid_uids=valid_uids)
 
             # Discretise mjd
@@ -95,7 +95,7 @@ if __name__ == "__main__":
                             "# mag : photometry in PanSTARRS photometric system")
                 # keyword arguments to pass to our writing function
                 kwargs = {'comment':comment,
-                          'basepath':cfg.USER.D_DIR + 'surveys/{}/{}/clean/{}_band/'.format(survey, OBJ, band),
+                          'basepath':cfg.D_DIR + 'surveys/{}/{}/clean/{}_band/'.format(survey, OBJ, band),
                           'savecols':['mjd','mag','mag_orig','magerr']}
                 
                 df = df.sort_values([ID,'mjd'])

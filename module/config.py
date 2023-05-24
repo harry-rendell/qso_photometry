@@ -11,25 +11,28 @@ cfg = __C
 import numpy as np
 import os
 
+#------------------------------------------------------------------------------
+# Path variables
+#------------------------------------------------------------------------------
 # Root directory of project
 __C.ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+
+# Working directory
+__C.W_DIR = os.path.join(__C.ROOT_DIR, 'qso_photometry', '')
+
+# Data directory
+__C.D_DIR = os.path.join(__C.ROOT_DIR, 'data', '')
+
+# Results directory.
+__C.RES_DIR = os.path.join(__C.W_DIR, 'res', '')
+
+# Path to thesis folder
+__C.THESIS_DIR = os.path.join(__C.ROOT_DIR, 'thesis_hrb', '')
 
 #------------------------------------------------------------------------------
 # User settings
 #------------------------------------------------------------------------------
 __C.USER = edict()
-
-# Working directory
-__C.USER.W_DIR = os.path.join(__C.ROOT_DIR, 'qso_photometry', '')
-
-# Data directory
-__C.USER.D_DIR = os.path.join(__C.ROOT_DIR, 'data', '')
-
-# Results directory.
-__C.USER.RES_DIR = os.path.join(__C.USER.W_DIR, 'res', '')
-
-# Path to thesis folder
-__C.THESIS_DIR = os.path.join(__C.ROOT_DIR, 'thesis_hrb', '')
 
 # Set below to True to use multiple cores during computationally intensive tasks.
 # Single core is not currently well supported, may cause errors when setting this to False.
@@ -243,6 +246,6 @@ __C.RES = edict()
 __C.FIG = edict()
 
 # Path to style files. Empty string at end ensures trailing slash
-__C.FIG.STYLE_DIR = os.path.join(__C.USER.RES_DIR, 'styles', '')
+__C.FIG.STYLE_DIR = os.path.join(__C.RES_DIR, 'styles', '')
 
 

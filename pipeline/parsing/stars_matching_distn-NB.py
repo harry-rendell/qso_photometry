@@ -25,8 +25,8 @@ from module.config import cfg
 from module.preprocessing import colour_transform, parse, data_io, lightcurve_statistics
 
 rdir = cfg.USER.R_DIR
-ddir = cfg.USER.D_DIR
-wdir = cfg.USER.W_DIR
+ddir = cfg.D_DIR
+wdir = cfg.W_DIR
 OBJ = 'calibStars'
 ID = 'uid_s'
 
@@ -46,7 +46,7 @@ ID = 'uid_s'
 # cols [1,2,5,9,10,15,16,21,22,27,28,33,34]
 # are ra, dec, n_epochs, mag_mean_{ugriz}, mag_mean_err_{ugriz}
 # below, we only select {gri}
-raw_star_data = pd.read_csv(cfg.USER.D_DIR + 'catalogues/calibStars/stripe82calibStars_v4.2.dat', 
+raw_star_data = pd.read_csv(cfg.D_DIR + 'catalogues/calibStars/stripe82calibStars_v4.2.dat', 
                        sep='\s+',
                        comment='#',
                        usecols=[0,1,2,5,13,15,16,19,21,22,25,27,28,31,33,34],
@@ -60,7 +60,7 @@ raw_star_data = raw_star_data.set_index('uid_s')
 # Save result immediately so we can crossmatch itself in TOPCAT
 #    to find pairs of objects that are within 2" of eachother.
 #------------------------------------------------------------------------------
-# raw_star_data.to_csv(cfg.USER.D_DIR + 'catalogues/calibStars/stripe82calibStars_v4.2.csv')
+# raw_star_data.to_csv(cfg.D_DIR + 'catalogues/calibStars/stripe82calibStars_v4.2.csv')
 for b in 'gri':
     raw_star_data['phot_err_'+b] = raw_star_data['mag_mean_err_'+b] * np.sqrt(raw_star_data['n_obs_'+b])
     

@@ -26,12 +26,12 @@ if __name__ == "__main__":
 
     if OBJ == 'qsos':
         SAVE_COLS = [ID,'mjd','mjd_rf','mag','magerr','band','sid']
-        redshift = pd.read_csv(cfg.USER.D_DIR + 'catalogues/qsos/dr14q/dr14q_redshift.csv').set_index(ID)
+        redshift = pd.read_csv(cfg.D_DIR + 'catalogues/qsos/dr14q/dr14q_redshift.csv').set_index(ID)
     else:
         SAVE_COLS = [ID,'mjd','mag','magerr','band','sid']
     uid_ranges, _ = parse.split_into_non_overlapping_chunks(None, 106, bin_size=5000, return_bin_edges=True)
     for uid_range in uid_ranges:
-        output_name = cfg.USER.D_DIR + f'merged/{OBJ}/clean/lc_{uid_range}.csv'
+        output_name = cfg.D_DIR + f'merged/{OBJ}/clean/lc_{uid_range}.csv'
         with open(output_name, 'w') as file:
             file.write(','.join(SAVE_COLS) + '\n')
 
@@ -44,7 +44,7 @@ if __name__ == "__main__":
             kwargs = {'dtypes': cfg.PREPROC.lc_dtypes,
                       'nrows': nrows,
                       'ID':ID,
-                      'basepath': cfg.USER.D_DIR + f'surveys/{survey}/{OBJ}/clean/{band}_band/',
+                      'basepath': cfg.D_DIR + f'surveys/{survey}/{OBJ}/clean/{band}_band/',
 					  'usecols':[ID,'mjd','mag','magerr']}
             
             df = data_io.dispatch_reader(kwargs, multiproc=True, max_processes=32)
@@ -56,7 +56,7 @@ if __name__ == "__main__":
                 df['mjd_rf'] = df['mjd']/(1+df['z'])
 
             uid_ranges, chunks = parse.split_into_non_overlapping_chunks(df, 106, bin_size=5000, return_bin_edges=True)
-            kwargs = {'basepath':cfg.USER.D_DIR + f'merged/{OBJ}/clean/',
+            kwargs = {'basepath':cfg.D_DIR + f'merged/{OBJ}/clean/',
                       'mode':'a',
 					  'savecols':SAVE_COLS[1:]}
             data_io.dispatch_writer(chunks, kwargs=kwargs, max_processes=32, fname_suffixes=uid_ranges)

@@ -25,7 +25,7 @@ import seaborn as sns
 # import matplotlib
 # font = {'size' : 18}
 # matplotlib.rc('font', **font)
-path = cfg.USER.W_DIR
+path = cfg.W_DIR
 def reader(n_subarray):
     return pd.read_csv('../data/merged/{}/r_band/with_ssa/lc_{}.csv'.format(obj,n_subarray), comment='#', index_col = ID, dtype = {'catalogue': np.uint8, 'mag': np.float32, 'magerr': np.float32, 'mjd': np.float64, ID: np.uint32})
 
@@ -66,8 +66,8 @@ dr_star.group(keys = [ID],read_in=True, redshift=redshift_bool, colors=True, sur
 dr_qsos.df_grouped.columns
 
 # +
-colors_stars = pd.read_csv(cfg.USER.D_DIR + 'computed/calibStars/colors_sdss.csv', index_col=0)
-colors_qsos  = pd.read_csv(cfg.USER.D_DIR + 'computed/qsos/colors_sdss.csv', index_col=0)
+colors_stars = pd.read_csv(cfg.D_DIR + 'computed/calibStars/colors_sdss.csv', index_col=0)
+colors_qsos  = pd.read_csv(cfg.D_DIR + 'computed/qsos/colors_sdss.csv', index_col=0)
 
 fig, axes = plt.subplots(2,2, figsize=(15,15))
 colors_stars.hist(ax=axes, bins=200, alpha = 0.7, density=True, range=(-2,4), label='stars')

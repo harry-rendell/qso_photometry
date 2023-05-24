@@ -60,8 +60,8 @@ if __name__ == "__main__":
 	n_workers  = args.n_workers
 	n_requests = total_requests // n_workers
 
-	ztf_oids_fname  = os.path.join(cfg.USER.D_DIR, 'surveys/ztf/{}/ztf_oids.csv'.format(OBJ))
-	output_dir      = os.path.join(cfg.USER.D_DIR, 'surveys/ztf/{}/dr6'.format(OBJ), '')
+	ztf_oids_fname  = os.path.join(cfg.D_DIR, 'surveys/ztf/{}/ztf_oids.csv'.format(OBJ))
+	output_dir      = os.path.join(cfg.D_DIR, 'surveys/ztf/{}/dr6'.format(OBJ), '')
 
 	# clear previous saved lightcurves and write header
 	for band in 'gri':

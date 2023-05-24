@@ -10,7 +10,7 @@ import matplotlib.cm as cmap
 from scipy.optimize import curve_fit
 from scipy.stats import linregress, chisquare
 
-wdir = cfg.USER.W_DIR
+wdir = cfg.W_DIR
 
 class dtdm():
 	"""
@@ -59,11 +59,11 @@ class dtdm():
 		"""
 		Read in binned data
 		"""
-		self.dts_binned = np.loadtxt(cfg.USER.D_DIR + 'computed/{}/binned/{}/dt/dts_binned_{}_{}.csv'.format(self.obj, self.subset, self.obj, self.name),  delimiter=',', dtype='uint64')
-		self.dms_binned = np.loadtxt(cfg.USER.D_DIR + 'computed/{}/binned/{}/dm/dms_binned_{}_{}.csv'.format(self.obj, self.subset, self.obj, self.name),  delimiter=',', dtype='uint64')
-		self.des_binned = np.loadtxt(cfg.USER.D_DIR + 'computed/{}/binned/{}/de/des_binned_{}_{}.csv'.format(self.obj, self.subset, self.obj, self.name),  delimiter=',', dtype='uint64') # could get away with uint32, as the largest number we expect is ~2^29
-		self.dcs_binned = np.loadtxt(cfg.USER.D_DIR + 'computed/{}/binned/{}/dc/dcs_binned_{}_{}.csv'.format(self.obj, self.subset, self.obj, self.name),  delimiter=',', dtype='uint16')
-		self.dm2_de2_binned = np.loadtxt(cfg.USER.D_DIR + 'computed/{}/binned/{}/dm2_de2/dm2_de2_binned_{}_{}.csv'.format(self.obj, self.subset, self.obj, self.name),  delimiter=',', dtype='uint16')	
+		self.dts_binned = np.loadtxt(cfg.D_DIR + 'computed/{}/binned/{}/dt/dts_binned_{}_{}.csv'.format(self.obj, self.subset, self.obj, self.name),  delimiter=',', dtype='uint64')
+		self.dms_binned = np.loadtxt(cfg.D_DIR + 'computed/{}/binned/{}/dm/dms_binned_{}_{}.csv'.format(self.obj, self.subset, self.obj, self.name),  delimiter=',', dtype='uint64')
+		self.des_binned = np.loadtxt(cfg.D_DIR + 'computed/{}/binned/{}/de/des_binned_{}_{}.csv'.format(self.obj, self.subset, self.obj, self.name),  delimiter=',', dtype='uint64') # could get away with uint32, as the largest number we expect is ~2^29
+		self.dcs_binned = np.loadtxt(cfg.D_DIR + 'computed/{}/binned/{}/dc/dcs_binned_{}_{}.csv'.format(self.obj, self.subset, self.obj, self.name),  delimiter=',', dtype='uint16')
+		self.dm2_de2_binned = np.loadtxt(cfg.D_DIR + 'computed/{}/binned/{}/dm2_de2/dm2_de2_binned_{}_{}.csv'.format(self.obj, self.subset, self.obj, self.name),  delimiter=',', dtype='uint16')	
 
 	def stats(self, verbose=False):
 		if verbose:
@@ -254,7 +254,7 @@ class dtdm():
 			plt.subplots_adjust(hspace=0.5)
 
 		if save:
-			fig.savefig(cfg.USER.W_DIR + 'analysis/plots/{}_{}_dm_hist.pdf'.format(self.obj, self.name), bbox_inches='tight')
+			fig.savefig(cfg.W_DIR + 'analysis/plots/{}_{}_dm_hist.pdf'.format(self.obj, self.name), bbox_inches='tight')
 			plt.close()
 
 		return fig, ax, np.array(r2s_tot).T
@@ -272,7 +272,7 @@ class dtdm():
 			ax.legend()
 
 		if save:
-			fig.savefig(cfg.USER.W_DIR + 'analysis/{}/plots/{}_{}_de_hist.pdf'.format(self.obj, self.obj, self.name), bbox_inches='tight')
+			fig.savefig(cfg.W_DIR + 'analysis/{}/plots/{}_{}_de_hist.pdf'.format(self.obj, self.obj, self.name), bbox_inches='tight')
 			plt.close()
 
 		return fig, ax
@@ -290,7 +290,7 @@ class dtdm():
 			ax.legend()
 
 		if save:
-			fig.savefig(cfg.USER.W_DIR + 'analysis/{}/plots/{}_{}_dt_hist.pdf'.format(self.obj, self.obj, self.name), bbox_inches='tight')
+			fig.savefig(cfg.W_DIR + 'analysis/{}/plots/{}_{}_dt_hist.pdf'.format(self.obj, self.obj, self.name), bbox_inches='tight')
 			plt.close()
 
 		return fig, ax
@@ -307,7 +307,7 @@ class dtdm():
 		# ax.legend()
 
 		if save:
-			fig.savefig(cfg.USER.W_DIR + 'analysis/{}/plots/{}_{}_dt_hist.pdf'.format(self.obj, self.obj, self.name), bbox_inches='tight')
+			fig.savefig(cfg.W_DIR + 'analysis/{}/plots/{}_{}_dt_hist.pdf'.format(self.obj, self.obj, self.name), bbox_inches='tight')
 			plt.close()
 
 		return fig, ax
@@ -328,14 +328,14 @@ class dtdm_key():
 
 		self.width = width
 
-		self.bounds_values = np.loadtxt(cfg.USER.D_DIR + 'computed/{}/binned/{}/bounds_values.txt'.format(self.obj, self.key))
+		self.bounds_values = np.loadtxt(cfg.D_DIR + 'computed/{}/binned/{}/bounds_values.txt'.format(self.obj, self.key))
 		self.label_range_val = {i:'{:.1f} < {} < {:.1f}'.format(self.bounds_values[i],self.key,self.bounds_values[i+1]) for i in range(len(self.bounds_values)-1)}
 
 		self.read()
 		# self.stats(verbose)
 
 	def read(self):
-		n = len([file for file in listdir(cfg.USER.D_DIR + 'computed/{}/binned/{}/dm/'.format(self.obj,self.key)) if file.startswith('dms')])
+		n = len([file for file in listdir(cfg.D_DIR + 'computed/{}/binned/{}/dm/'.format(self.obj,self.key)) if file.startswith('dms')])
 		self.n = n
 		self.dts_binned = np.zeros((n, self.n_t_chunk, self.n_bins_t), dtype = 'int64')
 		self.dms_binned = np.zeros((n, self.n_t_chunk, self.n_bins_m), dtype = 'int64')
@@ -345,11 +345,11 @@ class dtdm_key():
 
 		for i in range(n):
 
-			self.dts_binned[i] = np.loadtxt(cfg.USER.D_DIR + 'computed/{}/binned/{}/dt/dts_binned_{}_{}_{}_{}.csv'.format(self.obj, self.key, self.obj, self.name, self.key, i),  delimiter=',', dtype='uint64')
-			self.dms_binned[i] = np.loadtxt(cfg.USER.D_DIR + 'computed/{}/binned/{}/dm/dms_binned_{}_{}_{}_{}.csv'.format(self.obj, self.key, self.obj, self.name, self.key, i),  delimiter=',', dtype='uint64')
-			self.dm2_de2_binned[i] = np.loadtxt(cfg.USER.D_DIR + 'computed/{}/binned/{}/dm2_de2/dm2_de2_binned_{}_{}_{}_{}.csv'.format(self.obj, self.key, self.obj, self.name, self.key, i),  delimiter=',', dtype='uint64')
-			self.des_binned[i] = np.loadtxt(cfg.USER.D_DIR + 'computed/{}/binned/{}/de/des_binned_{}_{}_{}_{}.csv'.format(self.obj, self.key, self.obj, self.name, self.key, i),  delimiter=',', dtype='uint16')
-			self.dcs_binned[i] = np.loadtxt(cfg.USER.D_DIR + 'computed/{}/binned/{}/dc/dcs_binned_{}_{}_{}_{}.csv'.format(self.obj, self.key, self.obj, self.name, self.key, i),  delimiter=',', dtype='uint16')
+			self.dts_binned[i] = np.loadtxt(cfg.D_DIR + 'computed/{}/binned/{}/dt/dts_binned_{}_{}_{}_{}.csv'.format(self.obj, self.key, self.obj, self.name, self.key, i),  delimiter=',', dtype='uint64')
+			self.dms_binned[i] = np.loadtxt(cfg.D_DIR + 'computed/{}/binned/{}/dm/dms_binned_{}_{}_{}_{}.csv'.format(self.obj, self.key, self.obj, self.name, self.key, i),  delimiter=',', dtype='uint64')
+			self.dm2_de2_binned[i] = np.loadtxt(cfg.D_DIR + 'computed/{}/binned/{}/dm2_de2/dm2_de2_binned_{}_{}_{}_{}.csv'.format(self.obj, self.key, self.obj, self.name, self.key, i),  delimiter=',', dtype='uint64')
+			self.des_binned[i] = np.loadtxt(cfg.D_DIR + 'computed/{}/binned/{}/de/des_binned_{}_{}_{}_{}.csv'.format(self.obj, self.key, self.obj, self.name, self.key, i),  delimiter=',', dtype='uint16')
+			self.dcs_binned[i] = np.loadtxt(cfg.D_DIR + 'computed/{}/binned/{}/dc/dcs_binned_{}_{}_{}_{}.csv'.format(self.obj, self.key, self.obj, self.name, self.key, i),  delimiter=',', dtype='uint16')
 
 	def stats(self, verbose=False):
 		if verbose:
@@ -487,7 +487,7 @@ class dtdm_key():
 			ax.legend()
 
 		if save:
-			fig.savefig(cfg.USER.W_DIR + 'analysis/{}/plots/{}_{}_dm_hist.pdf'.format(self.obj, self.obj, self.name), bbox_inches='tight')
+			fig.savefig(cfg.W_DIR + 'analysis/{}/plots/{}_{}_dm_hist.pdf'.format(self.obj, self.obj, self.name), bbox_inches='tight')
 			plt.close()
 
 		return fig, ax
@@ -500,7 +500,7 @@ class dtdm_raw_analysis():
 		self.obj = obj
 		self.ID = ID
 		self.band = band
-		self.data_path = cfg.USER.D_DIR + 'computed/{}/dtdm/raw/{}/'.format(obj,band)
+		self.data_path = cfg.D_DIR + 'computed/{}/dtdm/raw/{}/'.format(obj,band)
 		self.name = name
 		# sort based on filesize, then do ordered shuffle so that each core recieves the same number of large files
 		fnames = [a for a in listdir(self.data_path) if (a.startswith('dtdm_raw_{}_'.format(band)))]
@@ -541,11 +541,11 @@ class dtdm_raw_analysis():
 		Read in the groups of uids for qsos binned into given key.
 		"""
 		self.key = key
-		path = cfg.USER.D_DIR + 'computed/{}/binned/{}/uids/'.format(self.obj, self.key)
+		path = cfg.D_DIR + 'computed/{}/binned/{}/uids/'.format(self.obj, self.key)
 		fnames = sorted([fname for fname in listdir(path) if fname.startswith('group')])
 		self.groups = [pd.read_csv(path + fname, index_col=self.ID) for fname in fnames]
 		self.n_groups = len(self.groups)
-		self.bounds_values = np.loadtxt(cfg.USER.D_DIR + 'computed/{}/binned/{}/bounds_values.txt'.format(self.obj, self.key))
+		self.bounds_values = np.loadtxt(cfg.D_DIR + 'computed/{}/binned/{}/bounds_values.txt'.format(self.obj, self.key))
 		self.label_range_val = {i:'{:.1f} < {} < {:.1f}'.format(self.bounds_values[i],self.key,self.bounds_values[i+1]) for i in range(len(self.bounds_values)-1)}
 
 
@@ -789,8 +789,8 @@ class dtdm_raw_analysis():
 		self.pooled_stats = pooled_results
 		if save:
 			for key in pooled_results.keys():
-				np.savetxt(cfg.USER.D_DIR + 'computed/{}/dtdm_stats/{}/pooled_{}.csv'.format(self.obj, self.log_or_lin, key.replace(' ','_')), pooled_results[key])
-			np.savetxt(cfg.USER.D_DIR + 'computed/{}/dtdm_stats/{}/mjd_edges.csv'.format(self.obj, self.log_or_lin), self.mjd_edges)
+				np.savetxt(cfg.D_DIR + 'computed/{}/dtdm_stats/{}/pooled_{}.csv'.format(self.obj, self.log_or_lin, key.replace(' ','_')), pooled_results[key])
+			np.savetxt(cfg.D_DIR + 'computed/{}/dtdm_stats/{}/mjd_edges.csv'.format(self.obj, self.log_or_lin), self.mjd_edges)
 		print('time elapsed: {:.2f} minutes'.format((time()-start)/60.0))
 
 	def calculate_stats_looped_key(self, n_chunks, log_or_lin, prop='Lbol', save=False):
@@ -881,19 +881,19 @@ class dtdm_raw_analysis():
 		if save:
 			for key in pooled_results.keys():
 				for group_idx in range(self.n_groups):
-					np.savetxt(cfg.USER.D_DIR + 'computed/{}/dtdm_stats/{}/{}/pooled_{}_{}.csv'.format(self.obj, prop, self.log_or_lin, key.replace(' ','_'), group_idx), pooled_results[key][:, group_idx])
-			np.savetxt(cfg.USER.D_DIR + 'computed/{}/dtdm_stats/{}/{}/mjd_edges.csv'.format(self.obj, prop, self.log_or_lin), self.mjd_edges)
+					np.savetxt(cfg.D_DIR + 'computed/{}/dtdm_stats/{}/{}/pooled_{}_{}.csv'.format(self.obj, prop, self.log_or_lin, key.replace(' ','_'), group_idx), pooled_results[key][:, group_idx])
+			np.savetxt(cfg.D_DIR + 'computed/{}/dtdm_stats/{}/{}/mjd_edges.csv'.format(self.obj, prop, self.log_or_lin), self.mjd_edges)
 		print('time elapsed: {:.2f} minutes'.format((time()-start)/60.0))
 
 	def read_pooled_stats(self, log_or_lin, key=None):
 		self.log_or_lin = log_or_lin
 		if key is None:
-			fpath = cfg.USER.D_DIR + 'computed/{}/dtdm_stats/{}/'.format(self.obj, self.log_or_lin)
+			fpath = cfg.D_DIR + 'computed/{}/dtdm_stats/{}/'.format(self.obj, self.log_or_lin)
 			names = listdir(fpath)
 			self.pooled_stats = {name[7:-4].replace('_',' '):np.loadtxt(fpath+name) for name in names if name.startswith('pooled')}
 		else:
 			self.read_key(key)
-			fpath = cfg.USER.D_DIR + 'computed/{}/dtdm_stats/{}/{}/'.format(self.obj, key, self.log_or_lin)
+			fpath = cfg.D_DIR + 'computed/{}/dtdm_stats/{}/{}/'.format(self.obj, key, self.log_or_lin)
 			names = listdir(fpath)
 			self.pooled_stats = {name[7:-6].replace('_',' '):np.array([np.loadtxt('{}{}_{}.csv'.format(fpath,name[:-6],i)) for i in range(self.n_groups)]) for name in names if name.startswith('pooled')}
 		self.mjd_edges = np.loadtxt(fpath+'mjd_edges.csv')
@@ -917,7 +917,7 @@ class dtdm_raw_analysis():
 		if macleod:
 			# f = lambda x: 0.01*(x**0.443)
 			# ax.plot(self.mjd_centres, f(self.mjd_centres), lw=0.5, ls='--', color='b', label='MacLeod 2012')
-			x,y = np.loadtxt(cfg.USER.D_DIR + 'Macleod2012/SF/macleod2012.csv', delimiter=',').T
+			x,y = np.loadtxt(cfg.D_DIR + 'Macleod2012/SF/macleod2012.csv', delimiter=',').T
 			ax.scatter(x, y, color='k')
 			ax.plot(x, y, label = 'Macleod 2012', lw=2, ls='--', color='k')
 
@@ -954,7 +954,7 @@ class dtdm_raw_analysis():
 		if macleod:
 			f = lambda x: 0.01*(x**0.443)
 			ax.plot(self.mjd_centres, f(self.mjd_centres), lw=0.5, ls='--', color='b', label='MacLeod 2012')
-			x,y = np.loadtxt(cfg.USER.D_DIR + 'Macleod2012/SF/macleod2012.csv', delimiter=',').T
+			x,y = np.loadtxt(cfg.D_DIR + 'Macleod2012/SF/macleod2012.csv', delimiter=',').T
 			ax.scatter(x, y, label = 'macleod 2012')
 
 		ax.legend()

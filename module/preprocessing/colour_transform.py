@@ -10,7 +10,7 @@ def transform_ztf_to_ps(df, obj, band):
     Add a column onto df with magnitudes transformed to the PS system
     """
     ID = df.index.name
-    colors = pd.read_csv(cfg.USER.D_DIR + 'computed/{}/colors_sdss.csv'.format(obj), usecols=[ID,'g-r','r-i']).set_index(ID)
+    colors = pd.read_csv(cfg.D_DIR + 'computed/{}/colors_sdss.csv'.format(obj), usecols=[ID,'g-r','r-i']).set_index(ID)
     df = df.join(colors, how='inner', on=ID).rename({'mag':'mag_orig'}, axis=1) #merge colors onto ztf df
     if (band == 'r') | (band == 'g'):
         df['mag'] = (df['mag_orig'] + df['clrcoeff']*df['g-r']).astype(cfg.COLLECTION.ZTF.dtypes.mag)
@@ -26,7 +26,7 @@ def transform_sdss_to_ps(df, color='g-r', system='tonry'):
     There are few options of published transformations available. Here we use ones from Tonry 2012.
     TODO: Move transformations to data/assets (unversioned).
     """
-    color_transf = pd.read_csv(cfg.USER.W_DIR+'pipeline/transformations/transf_to_ps_{}.txt'.format(system), sep='\s+', index_col=0)
+    color_transf = pd.read_csv(cfg.W_DIR+'pipeline/transformations/transf_to_ps_{}.txt'.format(system), sep='\s+', index_col=0)
     df = df.rename({'mag':'mag_orig'}, axis=1)
     df['mag'] = 0
     for band in 'griz':
@@ -54,7 +54,7 @@ class ssa_transform():
 
     def parse(self, df=None):
         if df is None:
-            df = pd.read_csv(cfg.USER.D_DIR + 'surveys/supercosmos/{}/ssa_secondary.csv'.format(self.obj)).set_index(self.ID)
+            df = pd.read_csv(cfg.D_DIR + 'surveys/supercosmos/{}/ssa_secondary.csv'.format(self.obj)).set_index(self.ID)
         else:
             assert df.index.name == self.ID, "Not using the right DataFrame"
         surveyID_dict = {'r1':(5,9), 'r2_north': (7,), 'r2_south': (2,),
@@ -66,9 +66,9 @@ class ssa_transform():
         
         kwargs = {'dtypes': cfg.PREPROC.stats_dtypes,
                   'ID':self.ID,
-                  'basepath': cfg.USER.D_DIR + 'surveys/{}/{}/clean/{}_band/'.format(self.ref_survey_name, self.obj, self.band)}
+                  'basepath': cfg.D_DIR + 'surveys/{}/{}/clean/{}_band/'.format(self.ref_survey_name, self.obj, self.band)}
         ref_survey_grouped = data_io.reader('grouped.csv', kwargs)
-        colors = pd.read_csv(cfg.USER.D_DIR + 'computed/{}/colors_sdss.csv'.format(self.obj)).set_index(self.ID)
+        colors = pd.read_csv(cfg.D_DIR + 'computed/{}/colors_sdss.csv'.format(self.obj)).set_index(self.ID)
         ref_survey_grouped = ref_survey_grouped.join(colors, how='left')
 
         key = 'mag_med' # can change this to mag_mean etc

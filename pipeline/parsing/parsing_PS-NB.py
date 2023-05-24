@@ -23,12 +23,12 @@ from module.preprocessing import parse, data_io
 OBJ    = 'calibStars'
 ID     = 'uid_s'
 BAND   = 'r'
-wdir = cfg.USER.W_DIR
-ddir = cfg.USER.D_DIR
+wdir = cfg.W_DIR
+ddir = cfg.D_DIR
 
 cols = [ID, 'objID', 'filter', 'obsTime', 'psfFlux', 'psfFluxErr']
-ps_secondary = pd.read_csv(cfg.USER.D_DIR + 'surveys/ps/{}/ps_secondary.csv'.format(OBJ), dtype=cfg.COLLECTION.PS.dtypes, nrows=None, usecols=cols).set_index(ID).rename({'filter':'filtercode'})
-ps_neighbours = pd.read_csv(cfg.USER.D_DIR + 'surveys/ps/{}/ps_neighbours.csv'.format(OBJ), dtype=cfg.COLLECTION.PS.dtypes).set_index(ID)
+ps_secondary = pd.read_csv(cfg.D_DIR + 'surveys/ps/{}/ps_secondary.csv'.format(OBJ), dtype=cfg.COLLECTION.PS.dtypes, nrows=None, usecols=cols).set_index(ID).rename({'filter':'filtercode'})
+ps_neighbours = pd.read_csv(cfg.D_DIR + 'surveys/ps/{}/ps_neighbours.csv'.format(OBJ), dtype=cfg.COLLECTION.PS.dtypes).set_index(ID)
 ps_neighbours['sep'] *= 60
 
 valid_uids = pd.read_csv(ddir+'catalogues/{}/{}_subsample_coords.csv'.format(OBJ,OBJ), usecols=[ID], index_col=ID, comment='#')
@@ -97,7 +97,7 @@ for band in 'griz':
     chunks = parse.split_into_non_overlapping_chunks(df_ps.loc[pd.IndexSlice[:, band],:].droplevel('filtercode'), 4)
     # keyword arguments to pass to our writing function
     kwargs = {'comment':comment,
-              'basepath':cfg.USER.D_DIR + 'surveys/ps/{}/unclean/{}_band/'.format(OBJ, band)}
+              'basepath':cfg.D_DIR + 'surveys/ps/{}/unclean/{}_band/'.format(OBJ, band)}
 
     data_io.dispatch_writer(chunks, kwargs)
 

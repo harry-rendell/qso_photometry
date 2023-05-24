@@ -37,13 +37,13 @@ SAVE_TRANSFORMED_DATA = True
 pd.set_option('max_colwidth', 100)
 # Available cols:
 # ['surveyID', 'surveyName', 'systemID', 'fieldOfView', 'decMin', 'decMax', 'numFields', 'telescope', 'telAperture', 'telLong', 'telLat', 'telHeight', 'plateScale', 'colour', 'waveMin', 'waveMax', 'waveEff', 'magLimit', 'epochMin', 'epochMax', 'epTsys', 'equinox', 'eqTsys', 'surveyRef']
-display(pd.read_csv(cfg.USER.D_DIR + 'surveys/supercosmos/survey_table.csv', usecols= ['surveyID', 'surveyName', 'fieldOfView', 'decMin', 'decMax',
+display(pd.read_csv(cfg.D_DIR + 'surveys/supercosmos/survey_table.csv', usecols= ['surveyID', 'surveyName', 'fieldOfView', 'decMin', 'decMax',
                                                                                        'numFields', 'telescope', 'telAperture',
                                                                                        'colour', 'waveMin', 'waveMax', 'waveEff',
                                                                                        'magLimit', 'epochMin', 'epochMax']).set_index('surveyID'))
 
-ssa_secondary = {'calibStars':pd.read_csv(cfg.USER.D_DIR + 'surveys/supercosmos/{}/ssa_secondary.csv'.format('calibStars')).set_index('uid_s'),
-                 'qsos':      pd.read_csv(cfg.USER.D_DIR + 'surveys/supercosmos/{}/ssa_secondary.csv'.format('qsos'))      .set_index('uid')}
+ssa_secondary = {'calibStars':pd.read_csv(cfg.D_DIR + 'surveys/supercosmos/{}/ssa_secondary.csv'.format('calibStars')).set_index('uid_s'),
+                 'qsos':      pd.read_csv(cfg.D_DIR + 'surveys/supercosmos/{}/ssa_secondary.csv'.format('qsos'))      .set_index('uid')}
 
 # + active=""
 # Note: surveyID = 4 has only 1 datapoint for qsos and none for stars, so we leave it out.
@@ -87,18 +87,18 @@ if PARSE_SECONDARY:
         """
         Run this block to save our coordinates in a size and format that ssa.roe.ac.uk/xmatch.html can handle
         """
-        coords = pd.read_csv(cfg.USER.D_DIR + 'catalogues/{}/{}_subsample_coords.csv'.format(OBJ, OBJ), comment='#', dtype={'ra':np.float32, 'dec':np.float32})
+        coords = pd.read_csv(cfg.D_DIR + 'catalogues/{}/{}_subsample_coords.csv'.format(OBJ, OBJ), comment='#', dtype={'ra':np.float32, 'dec':np.float32})
         for i, chunk in enumerate(np.array_split(coords,5)):
-            chunk.to_csv(cfg.USER.D_DIR + 'surveys/supercosmos/{}/coord_chunks/chunk_{}.csv'.format(OBJ, i+1), index=False, header=False, columns=[ID, 'ra', 'dec'], sep=' ')
+            chunk.to_csv(cfg.D_DIR + 'surveys/supercosmos/{}/coord_chunks/chunk_{}.csv'.format(OBJ, i+1), index=False, header=False, columns=[ID, 'ra', 'dec'], sep=' ')
     
     if SAVE_SECONDARY:
         # Note that surveyID in detection and plate match up completely
-        results_path = cfg.USER.D_DIR + 'surveys/supercosmos/{}/results/'.format(OBJ)
+        results_path = cfg.D_DIR + 'surveys/supercosmos/{}/results/'.format(OBJ)
         n_files = len([f for f in os.listdir(results_path) if f.endswith('_results.csv')])
         detection = pd.concat([pd.read_csv(results_path + 'chunk_{}_results.csv'.format(i+1)) for i in range(n_files)])
 
         # The query to generate the table below is in queries/ssa.sql
-        plate = pd.read_csv(cfg.USER.D_DIR + 'surveys/supercosmos/plate_table.csv', usecols = ['plateID','fieldID','filterID','utDateObs'])
+        plate = pd.read_csv(cfg.D_DIR + 'surveys/supercosmos/plate_table.csv', usecols = ['plateID','fieldID','filterID','utDateObs'])
         merged = detection.merge(plate, on='plateID').sort_values('up_name')
 
         # Convert arcmin to arcsec
@@ -121,7 +121,7 @@ if PARSE_SECONDARY:
         fig, ax = plt.subplots(1,1, figsize=(15,5))
         ax.hist(merged['distance'], bins=100);
 
-        merged.astype({'smag':np.float32, 'surveyID':np.uint8, 'mjd':np.uint32}).to_csv(cfg.USER.D_DIR + 'surveys/supercosmos/{}/ssa_secondary.csv'.format(OBJ))
+        merged.astype({'smag':np.float32, 'surveyID':np.uint8, 'mjd':np.uint32}).to_csv(cfg.D_DIR + 'surveys/supercosmos/{}/ssa_secondary.csv'.format(OBJ))
 # -
 
 # # Plot and evaluate transformations
@@ -184,7 +184,7 @@ if SAVE_TRANSFORMED_DATA:
             chunks = parse.split_into_non_overlapping_chunks(df.astype({'mag': np.float32, 'mag_orig': np.float32, 'magerr': np.float32}), 4)
             # keyword arguments to pass to our writing function
             kwargs = {'comment':comment,
-                      'basepath':cfg.USER.D_DIR + 'surveys/supercosmos/{}/unclean/{}_band/'.format(OBJ, band),
+                      'basepath':cfg.D_DIR + 'surveys/supercosmos/{}/unclean/{}_band/'.format(OBJ, band),
                       'savecols':['mjd','mag','mag_orig','magerr','ssa_sid']}
 
             data_io.dispatch_writer(chunks, kwargs)

@@ -35,7 +35,7 @@ import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
 # +
-wdir = cfg.USER.W_DIR
+wdir = cfg.W_DIR
 band = 'r'
 
 # t_max w/o SSA = 6751 for qsos
@@ -54,7 +54,7 @@ n_bins_m2 = config['n_bins_m2']
 n_t_chunk = config['n_t_chunk']
 leftmost_bin = config['leftmost_bin']
 
-data_path = cfg.USER.D_DIR + 'computed/{}/dtdm/raw/{}/'.format(obj,band)
+data_path = cfg.D_DIR + 'computed/{}/dtdm/raw/{}/'.format(obj,band)
 
 # sort based on filesize, then do ordered shuffle so that each core recieves the same number of large files
 fnames = [a for a in listdir(data_path) if (len(a)>27)]
@@ -143,7 +143,7 @@ for fname in fnames:
 
 # +
 dr = analysis(ID, obj)
-dr.properties = pd.read_csv(cfg.USER.D_DIR + 'catalogues/qsos/dr12q/SDSS_DR12Q_BH_matched.csv', index_col=dr.ID)
+dr.properties = pd.read_csv(cfg.D_DIR + 'catalogues/qsos/dr12q/SDSS_DR12Q_BH_matched.csv', index_col=dr.ID)
 key = 'MBH_CIV'
 prop_range_all = {'Mi':(-30,-20),'mag_mean':(15,23.5),'mag_std':(0,1),'redshift':(0,5),'Lbol':(44,48),'nEdd':(-3,0.5), 'MBH_CIV':(6,12)}
 prop_range_any = {key:prop_range_all[key]}
@@ -156,16 +156,16 @@ bounds_z = np.array([-2,-1,-0.5,0,0.5,1,2])
 bounds_tuple, z_score_val, bounds_values, mean, std, ax = dr.bounds(key, bounds = bounds_z)
 z_score = z_score_val['z_score']
 
-np.savetxt(cfg.USER.D_DIR + 'computed/qsos/binned/{}/bounds_z.txt'.format(key), bounds_z, fmt='%.2f')
-np.savetxt(cfg.USER.D_DIR + 'computed/qsos/binned/{}/bounds_values.txt'.format(key), bounds_values)
+np.savetxt(cfg.D_DIR + 'computed/qsos/binned/{}/bounds_z.txt'.format(key), bounds_z, fmt='%.2f')
+np.savetxt(cfg.D_DIR + 'computed/qsos/binned/{}/bounds_values.txt'.format(key), bounds_values)
 
 groups = [z_score_val[(lower < z_score) & (z_score < upper)] for lower, upper in bounds_tuple]
 for i, group in enumerate(groups):
-    group.to_csv(cfg.USER.D_DIR + 'computed/{}/binned/{}/uids/group_{}.csv'.format(obj, key, i))
+    group.to_csv(cfg.D_DIR + 'computed/{}/binned/{}/uids/group_{}.csv'.format(obj, key, i))
 
 # +
 dr = analysis(ID, obj)
-dr.properties = pd.read_csv(cfg.USER.D_DIR + 'catalogues/qsos/dr14q/dr14q_spec_prop_matched.csv', index_col=dr.ID)
+dr.properties = pd.read_csv(cfg.D_DIR + 'catalogues/qsos/dr14q/dr14q_spec_prop_matched.csv', index_col=dr.ID)
 key = 'MBH_CIV'
 prop_range_all = {'Mi':(-30,-20),'mag_mean':(15,23.5),'mag_std':(0,1),'redshift':(0,5),'Lbol':(44,48),'nEdd':(-3,0.5), 'MBH_CIV':(6,12)}
 prop_range_any = {key:prop_range_all[key]}
@@ -178,12 +178,12 @@ bounds_z = np.array([-2,-1,-0.5,0,0.5,1,2])
 bounds_tuple, z_score_val, bounds_values, mean, std, ax = dr.bounds(key, bounds = bounds_z)
 z_score = z_score_val['z_score']
 
-np.savetxt(cfg.USER.D_DIR + 'computed/qsos/binned/{}/bounds_z.txt'.format(key), bounds_z, fmt='%.2f')
-np.savetxt(cfg.USER.D_DIR + 'computed/qsos/binned/{}/bounds_values.txt'.format(key), bounds_values)
+np.savetxt(cfg.D_DIR + 'computed/qsos/binned/{}/bounds_z.txt'.format(key), bounds_z, fmt='%.2f')
+np.savetxt(cfg.D_DIR + 'computed/qsos/binned/{}/bounds_values.txt'.format(key), bounds_values)
 
 groups = [z_score_val[(lower < z_score) & (z_score < upper)] for lower, upper in bounds_tuple]
 for i, group in enumerate(groups):
-    group.to_csv(cfg.USER.D_DIR + 'computed/{}/binned/{}/uids/group_{}.csv'.format(obj, key, i))
+    group.to_csv(cfg.D_DIR + 'computed/{}/binned/{}/uids/group_{}.csv'.format(obj, key, i))
 # -
 
 dr.properties.columns

@@ -271,7 +271,7 @@ s.mock_lc_mags(p, p_edges)
 s.calculate_dtdm()
 fig, ax = s.plot_dm(0.3)
 ax.set(xlabel=r'$\Delta$m (mag)')
-fig.savefig(cfg.USER.W_DIR + 'analysis/plots/dm_simulated_sdss.pdf', bbox_inches='tight')
+fig.savefig(cfg.W_DIR + 'analysis/plots/dm_simulated_sdss.pdf', bbox_inches='tight')
 
 # +
 dr.group(keys = ['uid'],read_in=True, redshift=redshift_bool, survey = 'ps')

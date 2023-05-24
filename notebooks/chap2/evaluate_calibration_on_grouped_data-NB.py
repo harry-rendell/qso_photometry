@@ -20,13 +20,13 @@ class calib():
         self.ID = 'uid' if obj == 'qsos' else 'uid_s'
         
     def read(self):
-        self.sdss = pd.read_csv(cfg.USER.D_DIR + 'surveys/sdss/{}/unclean/{}_band/grouped.csv'.format(self.obj, self.band), index_col=self.ID)
-        self.ps   = pd.read_csv(cfg.USER.D_DIR + 'surveys/ps/{}/unclean/{}_band/grouped.csv'  .format(self.obj, self.band), index_col=self.ID)
-        self.ztf  = pd.read_csv(cfg.USER.D_DIR + 'surveys/ztf/{}/unclean/{}_band/grouped.csv' .format(self.obj, self.band), index_col=self.ID)
+        self.sdss = pd.read_csv(cfg.D_DIR + 'surveys/sdss/{}/unclean/{}_band/grouped.csv'.format(self.obj, self.band), index_col=self.ID)
+        self.ps   = pd.read_csv(cfg.D_DIR + 'surveys/ps/{}/unclean/{}_band/grouped.csv'  .format(self.obj, self.band), index_col=self.ID)
+        self.ztf  = pd.read_csv(cfg.D_DIR + 'surveys/ztf/{}/unclean/{}_band/grouped.csv' .format(self.obj, self.band), index_col=self.ID)
         # T
         # self.ps['mag_med_native'] = self.ps['mag_med']
     def join_colors(self):
-        self.colors = pd.read_csv(cfg.USER.D_DIR + 'computed/{}/colors_sdss.csv'.format(self.obj), index_col=self.ID)
+        self.colors = pd.read_csv(cfg.D_DIR + 'computed/{}/colors_sdss.csv'.format(self.obj), index_col=self.ID)
         self.sdss = self.sdss.join(self.colors, on=self.ID, how='left')
         self.ps   = self.ps  .join(self.colors, on=self.ID, how='left')
         self.ztf  = self.ztf .join(self.colors, on=self.ID, how='left')
@@ -120,7 +120,7 @@ class calib():
 
         # Save
         if save:
-            g.savefig(cfg.USER.W_DIR+'analysis/plots/{}_{}_vs_{}.pdf'.format(self.obj,xname,yname), bbox_inches='tight')
+            g.savefig(cfg.W_DIR+'analysis/plots/{}_{}_vs_{}.pdf'.format(self.obj,xname,yname), bbox_inches='tight')
 
         # Return axis handle
         return g

@@ -24,8 +24,8 @@ from module.preprocessing import parse, data_io
 
 OBJ    = 'calibStars'
 ID     = 'uid_s'
-wdir = cfg.USER.W_DIR
-ddir = cfg.USER.D_DIR
+wdir = cfg.W_DIR
+ddir = cfg.D_DIR
 SAVE_OIDS = True
 
 read_cols = [ID+'_01','dist_x','ra_01','dec_01','ra','dec','oid','filtercode','ngoodobsrel','medianmag','medianmagerr','minmag','maxmag']
@@ -83,7 +83,7 @@ from module.preprocessing import parse, data_io, colour_transform
 OBJ    = 'calibStars'
 ID     = 'uid_s'
 BAND   = 'r'
-wdir = cfg.USER.W_DIR
+wdir = cfg.W_DIR
 
 # +
 # may not be needed as merge now already happens during ztf_lc_query
@@ -93,7 +93,7 @@ for band in 'gri':
     # keyword arguments to pass to our reading function
     kwargs = {'dtypes': cfg.COLLECTION.ZTF.dtypes,
               'nrows': None,
-              'basepath': cfg.USER.D_DIR + 'surveys/ztf/{}/dr6/{}_band/'.format(OBJ, band),
+              'basepath': cfg.D_DIR + 'surveys/ztf/{}/dr6/{}_band/'.format(OBJ, band),
               'ID':ID,
               'usecols': [ID,'oid','mjd','mag','magerr','limitmag','clrcoeff']}
     raw_data = []
@@ -116,7 +116,7 @@ for band in 'gri':
 
     # keyword arguments to pass to our writing function
     kwargs = {'comment':comment,
-              'basepath':cfg.USER.D_DIR + 'surveys/ztf/{}/unclean/{}_band/'.format(OBJ, band)}
+              'basepath':cfg.D_DIR + 'surveys/ztf/{}/unclean/{}_band/'.format(OBJ, band)}
 
     chunks = parse.split_into_non_overlapping_chunks(raw_data, 4)
     data_io.dispatch_writer(chunks, kwargs)

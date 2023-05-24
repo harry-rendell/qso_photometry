@@ -16,9 +16,9 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
-path = cfg.USER.W_DIR
+path = cfg.W_DIR
 
-df = pd.read_csv(cfg.USER.D_DIR + 'catalogues/qsos/dr14q/dr14q_uid_mi_coords.csv', index_col='uid')
+df = pd.read_csv(cfg.D_DIR + 'catalogues/qsos/dr14q/dr14q_uid_mi_coords.csv', index_col='uid')
 
 df = df[df['mi']!=9999]
 df

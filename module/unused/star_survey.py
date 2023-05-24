@@ -6,7 +6,7 @@ import seaborn as sns
 
 def reader(args):
 	n_subarray, nrows = args
-	return pd.read_csv(cfg.USER.D_DIR + 'surveys/ztf/calibStars/lc_{}.csv'.format(n_subarray), nrows = nrows, usecols=[0,2,3,4,5,7], index_col=['uid_s','filtercode'])
+	return pd.read_csv(cfg.D_DIR + 'surveys/ztf/calibStars/lc_{}.csv'.format(n_subarray), nrows = nrows, usecols=[0,2,3,4,5,7], index_col=['uid_s','filtercode'])
 
 class star_survey():
 	def __init__(self, survey):
@@ -15,7 +15,7 @@ class star_survey():
 
 	def read_in_raw(self, nrows=None):
 		if self.name == 'sdss':
-			self.df = pd.read_csv(cfg.USER.D_DIR + 'surveys/sdss/calibStars/calibStarsSecondary.csv', sep=',', nrows = nrows, index_col='uid_s', usecols=[0,2,3,4,5,6,7,8,9,10,11,12])
+			self.df = pd.read_csv(cfg.D_DIR + 'surveys/sdss/calibStars/calibStarsSecondary.csv', sep=',', nrows = nrows, index_col='uid_s', usecols=[0,2,3,4,5,6,7,8,9,10,11,12])
 			# Add columns for colors
 			for b1, b2 in zip('gri','riz'):
 				self.df[b1+'-'+b2] = self.df['mag_'+b1] - self.df['mag_'+b2]
@@ -25,7 +25,7 @@ class star_survey():
 					'psfFlux', 'psfFluxErr']
 			dtype1 = {'uid_s': np.uint32, 'objID': np.uint64, 'obsTime': np.float64,'psfFlux': np.float32, 'psfFluxErr': np.float32}
 
-			self.df = pd.read_csv(cfg.USER.D_DIR + 'surveys/ps/calibStars/PS_secondary_calibStars.csv', nrows = nrows, usecols = cols, dtype = dtype1)
+			self.df = pd.read_csv(cfg.D_DIR + 'surveys/ps/calibStars/PS_secondary_calibStars.csv', nrows = nrows, usecols = cols, dtype = dtype1)
 
 			# Drop bad values
 			self.df = self.df[self.df['psfFlux']!=0]
@@ -53,7 +53,7 @@ class star_survey():
 	def pivot(self, read_in=True):
 		if self.name == 'sdss':
 			if read_in:
-				self.df_pivot = pd.read_csv(cfg.USER.D_DIR + 'surveys/{}/calibStars/gb.csv'.format(self.name), index_col='uid_s', dtype={'count':np.uint16}) 
+				self.df_pivot = pd.read_csv(cfg.D_DIR + 'surveys/{}/calibStars/gb.csv'.format(self.name), index_col='uid_s', dtype={'count':np.uint16}) 
 			if not read_in:
 				def stats(group):
 					"""
@@ -86,7 +86,7 @@ class star_survey():
 				self.df_pivot = self.df.groupby('uid_s').apply(stats).apply(pd.Series)
 		else:
 			if read_in:
-				grouped = pd.read_csv(cfg.USER.D_DIR + 'surveys/{}/calibStars/gb.csv'.format(self.name), index_col=['uid_s','filtercode'], dtype={'count':np.uint16}) 
+				grouped = pd.read_csv(cfg.D_DIR + 'surveys/{}/calibStars/gb.csv'.format(self.name), index_col=['uid_s','filtercode'], dtype={'count':np.uint16}) 
 				
 			elif not read_in:
 				print('creating uid chunks to assign to each core')
