@@ -53,12 +53,13 @@ def savefigs(fig, imgname, dirname, dpi=100, noaxis=False, **kwargs):
     if not os.path.exists(dirname):
         # If we provide a relative path, assume that we're plotting straight to our overleaf project
         dirname = os.path.join(cfg.THESIS_DIR, dirname)
+        assert os.path.exists(dirname), "Relative path does not exist"
         pdf_path = os.path.join(dirname, 'graphics')
         png_path = os.path.join(dirname, 'draft_graphics')
     else:
         pdf_path = dirname
         png_path = dirname
-    os.makedirs(dirname, exist_ok=True)
+        os.makedirs(dirname, exist_ok=True)
 
     if noaxis:
         #https://stackoverflow.com/questions/11837979/removing-white-space-around-a-saved-image - Richard Yu Liu
