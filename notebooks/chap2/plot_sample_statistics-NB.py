@@ -88,7 +88,7 @@ rc('text', usetex=False)
 from multiprocessing import Pool
 # from profilestats import profile
 from scipy.stats import binned_statistic
-from module.analysis.analysis import *
+from module.classes.analysis import *
 
 # obj = 'calibStars'
 # ID  = 'uid_s'

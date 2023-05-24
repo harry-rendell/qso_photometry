@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from multiprocessing import Pool
-from module.analysis import analysis
+from module.classes import analysis
 from os import listdir
 import os
 import time

@@ -15,7 +15,7 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-from module.analysis.analysis import *
+from module.classes.analysis import *
 # %matplotlib inline
 
 band = 'r'

@@ -26,7 +26,7 @@ rc('font', **{'size':18})
 from multiprocessing import Pool
 # from profilestats import profile
 from scipy.stats import binned_statistic
-from module.analysis.analysis import analysis
+from module.classes.analysis import analysis
 from os import listdir
 import os
 import time

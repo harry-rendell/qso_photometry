@@ -22,7 +22,7 @@ rc('font', **{'size':18})
 from multiprocessing import Pool
 # from profilestats import profile
 from scipy.stats import binned_statistic
-from module.analysis.analysis import *
+from module.classes.analysis import *
 from os import listdir
 import os
 import time
@@ -69,7 +69,7 @@ import matplotlib
 from multiprocessing import Pool
 # from profilestats import profile
 from scipy.stats import binned_statistic
-from module.analysis.analysis import *
+from module.classes.analysis import *
 # %matplotlib inline
 
 def reader(n_subarray):

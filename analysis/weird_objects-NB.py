@@ -21,8 +21,8 @@ import sys
 sys.path.insert(0, os.path.join(os.getcwd(), ".."))
 from module.config import cfg
 from module.preprocessing import data_io, parse, lightcurve_statistics, pairwise
-# from module.analysis.analysis import analysis
-from module.analysis.plotting_common import plot_series
+# from module.classes.analysis import analysis
+from module.classes.plotting_common import plot_series
 
 # +
 OBJ    = 'qsos'

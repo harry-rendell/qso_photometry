@@ -26,7 +26,7 @@ from multiprocessing import Pool
 # from profilestats import profile
 from scipy.stats import binned_statistic, skew, iqr
 from scipy.optimize import curve_fit
-from module.analysis.analysis import *
+from module.classes.analysis import *
 from module.preprocessing.binning import bin_data
 from os import listdir
 import os
