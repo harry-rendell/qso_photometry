@@ -26,7 +26,10 @@ __C.USER.W_DIR = os.path.join(__C.ROOT_DIR, 'qso_photometry', '')
 __C.USER.D_DIR = os.path.join(__C.ROOT_DIR, 'data', '')
 
 # Results directory.
-__C.USER.R_DIR = os.path.join(__C.USER.W_DIR, 'res', '')
+__C.USER.RES_DIR = os.path.join(__C.USER.W_DIR, 'res', '')
+
+# Path to thesis folder
+__C.THESIS_DIR = os.path.join(__C.ROOT_DIR, 'thesis_hrb', '')
 
 # Set below to True to use multiple cores during computationally intensive tasks.
 # Single core is not currently well supported, may cause errors when setting this to False.
@@ -240,7 +243,6 @@ __C.RES = edict()
 __C.FIG = edict()
 
 # Path to style files. Empty string at end ensures trailing slash
-__C.FIG.STYLE_DIR = os.path.join(__C.USER.R_DIR, 'styles', '')
-# Path to thesis plots folder
-__C.FIG.THESIS_PLOT_DIR = os.path.join(__C.USER.R_DIR, 'thesis', '')
+__C.FIG.STYLE_DIR = os.path.join(__C.USER.RES_DIR, 'styles', '')
+
 
