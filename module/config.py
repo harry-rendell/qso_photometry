@@ -154,13 +154,24 @@ __C.PREPROC.LIMIT_MAG.SDSS = {
 
 # https://outerspace.stsci.edu/display/PANSTARRS/PS1+FAQ+-+Frequently+asked+questions
 # 5σ limiting magnitudes
+# Note, these are actually the 3pi stacked 5σ depths... Should really be using single epoch 5σ depths
 __C.PREPROC.LIMIT_MAG.PS = {
 							'g': 23.3,
 							'r': 23.2,
 							'i': 23.1,
 							'z': 22.3,
 							'y': 21.4
+
+							# Below are the single epoch 5σ depths
+							# 'g': 22.0,
+							# 'r': 21.8,
+							# 'i': 21.5,
+							# 'z': 20.9,
+							# 'y': 19.7
+
 							}
+
+
 
 # limitingmag can be fetched on a per-observation basis but below is an average
 # Note, using limitmag to filter out observations may be biased as we are selectively removing
