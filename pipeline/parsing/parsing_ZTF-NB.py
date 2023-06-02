@@ -45,7 +45,7 @@ ax[1].set(ylabel='Number of sources at given magnitude', xlabel='median magnitud
 # ### Remove sources that do not satisfy following constraints
 # 1. At least 2 observations
 # 2. Within 1" of coordinates
-# 3. Fainter than 21.2 (limiting mags in gri are 20.8, 20.6 and 19.9 respectively but allow some buffer)
+# 3. Brighter than 21.2 (limiting mags in gri are 20.8, 20.6 and 19.9 respectively but allow some buffer)
 
 valid_uids = pd.read_csv(ddir+'catalogues/{}/valid_uids_superset.csv'.format(OBJ), usecols=[ID], index_col=ID, comment='#')
 meta_data_restricted = parse.filter_data(meta_data, bounds = {'ngoodobsrel':(2,np.inf), 'dist_x':(0,1), 'medianmag':(14,21.2)}, valid_uids=valid_uids)
