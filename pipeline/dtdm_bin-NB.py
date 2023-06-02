@@ -13,26 +13,26 @@
 # ---
 
 import pandas as pd
-import sys
-sys.path.append('../')
-pd.options.mode.chained_assignment = None
 import numpy as np
-from astropy.table import Table
+import os
+import sys
+sys.path.insert(0, os.path.join(os.getcwd(), ".."))
+from module.config import cfg
+from module.preprocessing import parse, data_io
+
+# +
 import matplotlib.pyplot as plt
 from matplotlib import rc
 import matplotlib.cm as cmap
 rc('font', **{'size':18})
-# %matplotlib inline
+
 from multiprocessing import Pool
 # from profilestats import profile
 from scipy.stats import binned_statistic
 from module.classes.analysis import analysis
-from os import listdir
-import os
 import time
+import re
 from module.preprocessing.binning import bin_data
-import warnings
-warnings.simplefilter(action='ignore', category=FutureWarning)
 
 # +
 wdir = cfg.W_DIR
@@ -40,8 +40,8 @@ band = 'r'
 
 # t_max w/o SSA = 6751 for qsos
 # t_max w/o SSA = 7772 for stars
-# config = {'obj':'qsos','ID':'uid'  ,'t_max':23576,'n_bins_t':200,'n_bins_m':200, 'n_bins_m2':248, 'n_t_chunk':20, 'width':2, 'steepness':0.005, 'leftmost_bin':-0.244}
-config = {'obj':'calibStars','ID':'uid_s','t_max':25200,'n_bins_t':200,'n_bins_m':200, 'n_bins_m2':235,'n_t_chunk':20, 'width':1, 'steepness':0.005, 'leftmost_bin':-0.21}
+config = {'obj':'qsos','ID':'uid'  ,'t_max':23576,'n_bins_t':200,'n_bins_m':200, 'n_bins_m2':248, 'n_t_chunk':20, 'width':2, 'steepness':0.005, 'leftmost_bin':-0.244}
+# config = {'obj':'calibStars','ID':'uid_s','t_max':25200,'n_bins_t':200,'n_bins_m':200, 'n_bins_m2':235,'n_t_chunk':20, 'width':1, 'steepness':0.005, 'leftmost_bin':-0.21}
 
 width   = config['width']
 steepness = config['steepness']
@@ -54,10 +54,10 @@ n_bins_m2 = config['n_bins_m2']
 n_t_chunk = config['n_t_chunk']
 leftmost_bin = config['leftmost_bin']
 
-data_path = cfg.D_DIR + 'computed/{}/dtdm/raw/{}/'.format(obj,band)
+data_path = cfg.D_DIR + 'merged/{}/clean/dtdm_{}/'.format(obj,band)
 
 # sort based on filesize, then do ordered shuffle so that each core recieves the same number of large files
-fnames = [a for a in listdir(data_path) if (len(a)>27)]
+fnames = [a for a in os.listdir(data_path) if re.match('dtdm_[0-9]{5,7}_[0-9]{5,7}.csv',os.listdir(data_path)[0])]
 size=[]
 for file in fnames:
     size.append(os.path.getsize(data_path+file))

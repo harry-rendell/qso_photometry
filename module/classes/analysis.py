@@ -3,8 +3,8 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.stats import binned_statistic
-from bokeh.plotting import figure, output_notebook, show
-from bokeh.layouts import column
+# from bokeh.plotting import figure, output_notebook, show
+# from bokeh.layouts import column
 import os
 import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
