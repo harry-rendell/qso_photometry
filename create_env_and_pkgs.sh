@@ -8,4 +8,7 @@ yes | conda install -c conda-forge jupytext
 yes | conda install -c conda-forge easydict
 yes | conda install -c conda-forge astropy
 yes | conda install -c conda-forge celerite
+yes | conda install -c conda-forge jupyterlab-git
+yes | conda install -c conda-forge jupyter_nbextensions_configurator
 yes | conda update -n base -c defaults conda
+
