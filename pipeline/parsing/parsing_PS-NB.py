@@ -20,13 +20,13 @@ sys.path.insert(0, os.path.join(os.getcwd(), "..", ".."))
 from module.config import cfg
 from module.preprocessing import parse, data_io
 
-OBJ    = 'calibStars'
-ID     = 'uid_s'
+OBJ    = 'qsos'
+ID     = 'uid' if OBJ == 'qsos' else 'uid_s'
 BAND   = 'r'
 wdir = cfg.W_DIR
 ddir = cfg.D_DIR
 
-cols = [ID, 'objID', 'filter', 'obsTime', 'psfFlux', 'psfFluxErr']
+cols = [ID, 'objID_ps', 'filter', 'obsTime', 'psfFlux', 'psfFluxErr']
 ps_secondary = pd.read_csv(cfg.D_DIR + 'surveys/ps/{}/ps_secondary.csv'.format(OBJ), dtype=cfg.COLLECTION.PS.dtypes, nrows=None, usecols=cols).set_index(ID).rename({'filter':'filtercode'})
 ps_neighbours = pd.read_csv(cfg.D_DIR + 'surveys/ps/{}/ps_neighbours.csv'.format(OBJ), dtype=cfg.COLLECTION.PS.dtypes).set_index(ID)
 ps_neighbours['sep'] *= 60
@@ -55,8 +55,8 @@ if CHECK_FOR_NON_UNIQUE_MATCHES:
     # Display cases where one uid matches to multiple PS objIDs, or vice versa
     print('-'*50)
     print('Non 1-to1 matches:')
-    mask1 = ps_neighbours_no_duplicates.index.duplicated(keep=False).values
-    mask2 = ps_neighbours_no_duplicates.duplicated('objID_ps', keep=False).values
+    mask1 = ps_neighbours_no_duplicates.index.duplicated(keep=False)
+    mask2 = ps_neighbours_no_duplicates.duplicated('objID_ps', keep=False)
     display(ps_neighbours_no_duplicates[(mask1 ^ mask2)])
 
 # Given we have duplicates/non unique matches above, remove them here by selecting the closest objID for each uid.
@@ -70,11 +70,11 @@ assert ps_primary_matches['objID_ps'].is_unique
 
 objIDs_ps_to_keep = ps_primary_matches['objID_ps'].values
 
-mask = ps_secondary['objID'].isin(objIDs_ps_to_keep)
+mask = ps_secondary['objID_ps'].isin(objIDs_ps_to_keep)
 print('Number of non-primary objID observations: {:,}'.format((~mask).sum()))
 df_ps = ps_secondary[mask]
 
-print('Number of unique matches for which we have photometry: {:,}'.format(len(df_ps['objID'].unique())))
+print('Number of unique matches for which we have photometry: {:,}'.format(len(df_ps['objID_ps'].unique())))
 
 # ### Convert fluxes to mags
 
@@ -82,7 +82,7 @@ df_ps = df_ps[df_ps['psfFlux']!=0]
 df_ps = df_ps.rename(columns = {'obsTime': 'mjd', 'filter': 'filtercode'})
 df_ps['mag'] = -2.5*np.log10(df_ps['psfFlux']) + 8.90
 df_ps['magerr'] = 1.086*df_ps['psfFluxErr']/df_ps['psfFlux']
-df_ps = df_ps.drop(['psfFlux','psfFluxErr','objID'], axis = 1)
+df_ps = df_ps.drop(['psfFlux','psfFluxErr','objID_ps'], axis = 1)
 df_ps = df_ps.set_index('filtercode', append=True)#.astype(np.float32)
 
 # # Save data
