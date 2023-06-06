@@ -11,8 +11,6 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 from module.config import cfg
 from module.preprocessing import data_io, parse, lightcurve_statistics
 
-wdir = cfg.W_DIR
-
 def calc_moments(bins,weights):
 	"""
 	Calculate mean and kurtosis
@@ -31,22 +29,11 @@ class analysis():
 		self.marker_dict = {1:'^', 3:'v', 5:'D', 7:'s', 11:'o'}
 		self.marker_dict_bokeh = {1:'triangle', 3:'inverted_triangle', 5:'diamond', 7:'square', 11:'circle'}
 		self.survey_dict = {1:'SSS_r1', 3: 'SSS_r2', 5:'SDSS', 7:'PS1', 11:'ZTF'}
-		self.coords = pd.read_csv(cfg.D_DIR + 'catalogues/qsos/dr14q/dr14q_uid_coords.csv', index_col='uid')
+		self.coords = pd.read_csv(cfg.D_DIR + f'catalogues/{obj}/{obj}_subsample_coords.csv', index_col=ID, comment='#')
 
 	# Imported methods
 	from .methods.plotting import plot_sf_moments_pm
-	from .methods.io import read_in
-
-	def residual(self, corrections):
-		"""
-		Apply residual corrections, defined such that the corrected star photometry has a
-			non-zero offset
-		"""
-		self.df = self.df.reset_index().set_index([self.ID,'catalogue'])
-		for cat in corrections.keys():
-			self.df.loc[pd.IndexSlice[:, cat], 'mag'] += corrections[cat]
-		self.df = self.df.reset_index('catalogue')
-		assert self.df.index.is_monotonic, 'Index is not sorted'
+	from .methods.io import read_merged_photometry, read_grouped, read_vac, read_redshifts
 
 	def summary(self):
 		"""
@@ -61,12 +48,12 @@ class analysis():
 				list of surveys which contribute to observations (sdss=1, ps=2, ztf=3)
 		"""
 		# Check which qsos we are missing and which we have, given a list
-		uids_complete	 = pd.Index(np.arange(1,526356+1), dtype = np.uint32)
+		uids_complete	 = self.coords.index
 		
 		self.idx_uid	  = self.df.index.unique()
 		self.uids_missing = uids_complete[~np.isin(uids_complete,self.idx_uid)]
 		self.n_qsos		   = len(self.idx_uid)
-		self.idx_cat	  = self.df['catalogue'].unique()
+		# self.idx_cat	  = self.df['catalogue'].unique()
 
 		print('Number of qsos with lightcurve: {:,}'.format(self.n_qsos))
 		print('Number of datapoints in:\nSDSS: {:,}\nPS: {:,}\nZTF: {:,}'.format((self.df['catalogue']==5).sum(),(self.df['catalogue']==7).sum(),(self.df['catalogue']==11).sum()))
@@ -77,52 +64,39 @@ class analysis():
 		for ra, dec in coords:
 			print("https://skyserver.sdss.org/dr18/VisualTools/quickobj?ra={}&dec={}".format(ra, dec))
 
-	def group(self, keys = ['uid'], read_in = True, redshift=True, colors=True, survey=None, restrict=False):
-		"""
-		Group self.df by keys and apply {'mag':['mean','std','count'], 'magerr':'mean', 'mjd': ['min', 'max', np.ptp]}
+	# def read_grouped(self, keys = ['uid'], read_in = True, redshift=True, colors=True, survey=None, restrict=False):
+	# 	"""
+	# 	Group self.df by keys and apply {'mag':['mean','std','count'], 'magerr':'mean', 'mjd': ['min', 'max', np.ptp]}
 
-		Add columns to self.df_grouped:
-				redshift   : by joining vac['redshift'] along uid)
-				mjd_ptp_rf : max ∆t in rest frame for given object (same as self.properties)
+	# 	Add columns to self.df_grouped:
+	# 			redshift   : by joining vac['redshift'] along uid)
+	# 			mjd_ptp_rf : max ∆t in rest frame for given object (same as self.properties)
 
-		Parameters
-		----------
-		keys : list of str
-		read_in : boolean
-		survey : str
-		Default is None. If 'ZTF' then read in grouped_stats computed from ZTF data only. If 'SSS' then read in grouped_stats with plate data included.
-		TODO: Remove 'keys' given that we can specify survey anyway.
-		"""
-		if read_in == True:
-			if len(keys) == 1:
-				self.df_grouped = pd.read_csv(cfg.D_DIR + 'merged/{}/{}_band/grouped_stats_{}_{}.csv'.format(self.obj, self.band, self.band, survey), index_col=0, comment='#')
+	# 	Parameters
+	# 	----------
+	# 	keys : list of str
+	# 	read_in : boolean
+	# 	survey : str
+	# 	Default is None. If 'ZTF' then read in grouped_stats computed from ZTF data only. If 'SSS' then read in grouped_stats with plate data included.
+	# 	TODO: Remove 'keys' given that we can specify survey anyway.
+	# 	"""
 
-			elif len(keys) == 2:
-				self.df_grouped = pd.read_csv(cfg.D_DIR + 'merged/{}/{}_band/grouped_stats_cat_{}.csv'.format(self.obj, self.band, self.band),index_col = [0,1])
-		elif read_in == False:
-			# median_mag_fn/mean_mag_fn calculate mean/median magnitude by fluxes rather than mags themselves
-			mean_mag_fn   = ('mean'  , lambda mag: -2.5*np.log10(np.mean  (10**(-(mag-8.9)/2.5))) + 8.9)
-			median_mag_fn = ('median', lambda mag: -2.5*np.log10(np.median(10**(-(mag-8.9)/2.5))) + 8.9)
-
-			self.df_grouped = self.df.groupby(keys).agg({'mag':[mean_mag_fn, median_mag_fn,'std','count'], 'magerr':'mean', 'mjd': ['min', 'max', np.ptp]})
-			self.df_grouped.columns = ["_".join(x) for x in self.df_grouped.columns.ravel()]
-
-		if redshift:
-			if ~hasattr(self, 'redshifts'):
-				# add on column for redshift. Use squeeze = True when reading in a single column.
-				self.redshifts = pd.read_csv(cfg.D_DIR + 'catalogues/qsos/dr14q/dr14q_uid_desig_z.csv', index_col=self.ID, usecols=[self.ID,'z'], squeeze=True).rename('redshift')
-			self.df_grouped = self.df_grouped.merge(self.redshifts, on=self.ID)
-			self.df_grouped['mjd_ptp_rf'] = self.df_grouped['mjd_ptp']/(1+self.df_grouped['redshift'])
+	# 	if redshift:
+	# 		if not hasattr(self, 'redshifts'):
+	# 			# add on column for redshift. Use squeeze = True when reading in a single column.
+	# 			self.redshifts = pd.read_csv(cfg.D_DIR + 'catalogues/qsos/dr14q/dr14q_uid_desig_z.csv', index_col=self.ID, usecols=[self.ID,'z'], squeeze=True).rename('redshift')
+	# 		self.df_grouped = self.df_grouped.merge(self.redshifts, on=self.ID)
+	# 		self.df_grouped['mjd_ptp_rf'] = self.df_grouped['mjd_ptp']/(1+self.df_grouped['redshift'])
 		
-		if colors:
-			df_colors = pd.read_csv(cfg.D_DIR + 'computed/{}/colors_sdss.csv'.format(self.obj), index_col=0)
-			self.df_grouped = self.df_grouped.join(df_colors, on=self.ID, how='left')
+	# 	if colors:
+	# 		df_colors = pd.read_csv(cfg.D_DIR + 'computed/{}/colors_sdss.csv'.format(self.obj), index_col=0)
+	# 		self.df_grouped = self.df_grouped.join(df_colors, on=self.ID, how='left')
 
-		if restrict:
-			# Take the subset for which we have observations in self.df
-			self.df_grouped = self.df_grouped[self.df_grouped.index.isin(self.df.index)]
+	# 	if restrict:
+	# 		# Take the subset for which we have observations in self.df
+	# 		self.df_grouped = self.df_grouped[self.df_grouped.index.isin(self.df.index)]
 
-	def merge_with_catalogue(self,catalogue='dr12_vac', remove_outliers=True, prop_range_any = {'MBH_MgII':(6,12), 'MBH_CIV':(6,12)}):
+	def merge_with_catalogue(self, catalogue='dr12_vac', remove_outliers=True, prop_range_any = {'MBH_MgII':(6,12), 'MBH_CIV':(6,12)}):
 		"""
 		Reduce self.df to intersection of self.df and catalogue.
 		Compute summary() to reupdate idx_uid, uids_missing, n_qsos and idx_cat
@@ -180,47 +154,6 @@ class analysis():
 		slopes = pd.concat([pd.read_csv(cfg.D_DIR + 'catalogues{}/slopes_{}.csv'.format(self.obj, name), index_col=self.ID, usecols=[self.ID,'m_optimal']) for name in names], axis=1)
 		slopes.columns = []
 		self.properties = self.properties.join(slopes, how='left', on=self.ID)
-
-		
-	def bounds(self, key, bounds = np.array([-6,-1.5,-1,-0.5,0,0.5,1,1.5,6]), save=False):
-		"""
-		Compute z score of key for each object
-
-		Parameters
-		----------
-		key : string
-				property from VAC
-
-		Returns
-		-------
-		bounds : array_like
-				array of bounds to be used
-		z_score : pandas.DataFrame
-				z value of property column (value-mean / std) and original value
-		self.bounds_values : values of property for each value in bounds
-		mean : float 
-			mean of the property of the total population
-		std : float
-			std  of the property of the total population
-		ax : axes handle
-		"""
-		fig, ax = plt.subplots(1,1,figsize = (6,3))
-		mean = self.properties[key].mean()
-		std  = self.properties[key].std()
-		z_score = (self.properties[key]-mean)/std
-		self.properties['z_score'] = z_score
-		z_score.hist(bins = 200, ax=ax)
-		self.bounds_values = bounds * std + mean
-		for i in range(len(bounds)-1):
-			# print('{:+.2f} < z < {:+.2f}: {:,}'.format(bounds[i],bounds[i+1],((bounds[i]<z_score)&(z_score<bounds[i+1])&(self.properties['mag_count']>2)).sum()))
-			print('{:+.2f} < z < {:+.2f}: {:,}'.format(bounds[i],bounds[i+1],((bounds[i]<z_score)&(z_score<bounds[i+1])).sum()))
-		for bound in bounds:
-			ax.axvline(x=bound, color = 'k')
-		ax.set(xlabel=key)
-		if save == True:
-			fig.savefig('bins_{}.pdf'.format(key),bbox_inches='tight')
-		bounds_tuple = list(zip(bounds[:-1],bounds[1:]))
-		return bounds_tuple, self.properties[[key,'z_score']], self.bounds_values, mean, std, ax
 
 	def save_dtdm_rf(self, uids, time_key):
 		"""
