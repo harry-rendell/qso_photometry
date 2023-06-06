@@ -22,12 +22,13 @@ class dtdm_raw_analysis():
 		self.data_path = cfg.D_DIR + 'merged/{}/clean/dtdm_{}/'.format(obj,band)
 		self.name = name
 		# sort based on filesize, then do ordered shuffle so that each core recieves the same number of large files
-		fnames = [a for a in os.listdir(self.data_path) if re.match('dtdm_[0-9]{5,7}_[0-9]{5,7}.csv',os.listdir(self.data_path)[0])]
-		size=[]
-		for file in fnames:
-			size.append(os.path.getsize(self.data_path+file))
-		self.fnames = [name for i in [0,1,2,3] for sizename, name in sorted(zip(size, fnames))[i::4]]
-		self.fpaths = [self.data_path + fname for fname in self.fnames]
+		if os.path.exists(self.data_path):
+			fnames = [a for a in os.listdir(self.data_path) if re.match('dtdm_[0-9]{5,7}_[0-9]{5,7}.csv',os.listdir(self.data_path)[0])]
+			size=[]
+			for file in fnames:
+				size.append(os.path.getsize(self.data_path+file))
+			self.fnames = [name for i in [0,1,2,3] for sizename, name in sorted(zip(size, fnames))[i::4]]
+			self.fpaths = [self.data_path + fname for fname in self.fnames]
 
 	def read(self, i=0):
 		"""
@@ -405,12 +406,12 @@ class dtdm_raw_analysis():
 		self.log_or_lin = log_or_lin
 		if key is None:
 			fpath = cfg.D_DIR + 'computed/archive/{}/dtdm_stats/{}/'.format(self.obj, self.log_or_lin)
-			names = listdir(fpath)
+			names = os.listdir(fpath)
 			self.pooled_stats = {name[7:-4].replace('_',' '):np.loadtxt(fpath+name) for name in names if name.startswith('pooled')}
 		else:
 			self.read_key(key)
 			fpath = cfg.D_DIR + 'computed/archive/{}/dtdm_stats/{}/{}/'.format(self.obj, key, self.log_or_lin)
-			names = listdir(fpath)
+			names = os.listdir(fpath)
 			self.pooled_stats = {name[7:-6].replace('_',' '):np.array([np.loadtxt('{}{}_{}.csv'.format(fpath,name[:-6],i)) for i in range(self.n_groups)]) for name in names if name.startswith('pooled')}
 		self.mjd_edges = np.loadtxt(fpath+'mjd_edges.csv')
 		self.mjd_centres = (self.mjd_edges[:-1] + self.mjd_edges[1:])/2
@@ -433,7 +434,7 @@ class dtdm_raw_analysis():
 		if macleod:
 			# f = lambda x: 0.01*(x**0.443)
 			# ax.plot(self.mjd_centres, f(self.mjd_centres), lw=0.5, ls='--', color='b', label='MacLeod 2012')
-			x,y = np.loadtxt(cfg.D_DIR + 'Macleod2012/SF/macleod2012.csv', delimiter=',').T
+			x,y = np.loadtxt(cfg.D_DIR + 'archive/Macleod2012/SF/macleod2012.csv', delimiter=',').T
 			ax.scatter(x, y, color='k')
 			ax.plot(x, y, label = 'Macleod 2012', lw=2, ls='--', color='k')
 
@@ -821,7 +822,7 @@ class dtdm_key():
 		# self.stats(verbose)
 
 	def read(self):
-		n = len([file for file in listdir(cfg.D_DIR + 'computed/archive/{}/binned/{}/dm/'.format(self.obj,self.key)) if file.startswith('dms')])
+		n = len([file for file in os.listdir(cfg.D_DIR + 'computed/archive/{}/binned/{}/dm/'.format(self.obj,self.key)) if file.startswith('dms')])
 		self.n = n
 		self.dts_binned = np.zeros((n, self.n_t_chunk, self.n_bins_t), dtype = 'int64')
 		self.dms_binned = np.zeros((n, self.n_t_chunk, self.n_bins_m), dtype = 'int64')

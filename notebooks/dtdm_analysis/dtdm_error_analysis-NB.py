@@ -34,7 +34,6 @@ from module.plotting.common import savefigs
 # import matplotlib.cm as cmap
 # from multiprocessing import Pool
 # # from profilestats import profile
-# from os import listdir, path
 # from time import time
 # import warnings
 # warnings.simplefilter(action='ignore', category=FutureWarning)
@@ -236,13 +235,13 @@ fig, ax = dtdm_star.plot_stats(keys, (fig,ax), color='g')
 ax.axhline(y=0, color='k', ls='--')
 # fig.savefig('plots/sf_largeerrors_corrected_plate_errors.pdf', bbox_inches='tight')
 
-dtdm_star_log = dtdm_raw_analysis('calibStars', 'uid_s', 'r', 'name')
+dtdm_star_log = dtdm_raw_analysis('calibStars', 'uid_s', 'r', 'name1')
 dtdm_star_log.read_pooled_stats(log_or_lin='log')
-dtdm_star_log2 = dtdm_raw_analysis('calibStars', 'uid_s', 'r')
+dtdm_star_log2 = dtdm_raw_analysis('calibStars', 'uid_s', 'r', 'name2')
 dtdm_star_log2.read_pooled_stats(log_or_lin='log2')
-dtdm_star_log3 = dtdm_raw_analysis('calibStars', 'uid_s', 'r')
+dtdm_star_log3 = dtdm_raw_analysis('calibStars', 'uid_s', 'r', 'name3')
 dtdm_star_log3.read_pooled_stats(log_or_lin='log3')
-dtdm_qsos_log = dtdm_raw_analysis('qsos', 'uid', 'r')
+dtdm_qsos_log = dtdm_raw_analysis('qsos', 'uid', 'r', 'name4')
 dtdm_qsos_log.read_pooled_stats(log_or_lin='log')
 # dtdm_qsos_log2 = dtdm_raw_analysis('qsos', 'uid', 'r')
 # dtdm_qsos_log2.read_pooled_stats(log_or_lin='log2')
@@ -264,7 +263,7 @@ keys = ['SF corrected weighted fixed']
 fig, ax = dtdm_qsos_log.plot_stats(keys,None, xscale='log', yscale='log', ylim=(3e-4, 0.4), ylabel='Structure Function$^2$', macleod=True)
 fig, ax = dtdm_star_log.plot_stats(keys, (fig,ax))
 # dtdm_star_log3.plot_stats(keys, (fig,ax))
-fig.savefig('plots/QSOS_SF_corrected_fixed_comparison_3.pdf', bbox_inches='tight')
+# fig.savefig('plots/QSOS_SF_corrected_fixed_comparison_3.pdf', bbox_inches='tight')
 
 keys = ['SF corrected weighted fixed']
 fig, ax = dtdm_qsos_log.plot_stats(keys,None, xscale='log', yscale='log', ylim=(3e-4, 0.4), ylabel='Structure Function$^2$', macleod=True)
