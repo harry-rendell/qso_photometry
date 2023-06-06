@@ -29,42 +29,22 @@ class dtdm_raw_analysis():
 		self.fnames = [name for i in [0,1,2,3] for sizename, name in sorted(zip(size, fnames))[i::4]]
 		self.fpaths = [self.data_path + fname for fname in self.fnames]
 
-	def read_dtdm(self, i=0):
+	def read(self, i=0):
 		"""
-		Function for reading dtdm data. Passed to self.read()
+		Function for reading dtdm data
 		"""
-		df = pd.read_csv(self.fpaths[i], index_col = self.ID, dtype = {self.ID: np.uint32, 'dt': np.float32, 'dm': np.float32, 'de': np.float32, 'dm2_de2': np.float32, 'cat': np.uint8})
-		return df.dropna()
-
-	def read(self, n_chunk):
-		"""
-		Reading and concatenating dtdm data using multiprocessing
-
-		Parameters
-		----------
-		n_chunk : int
-			which chunk of data to read
-
-		"""
-		if hasattr(self, 'df'):
-			del self.df
-		if __name__ == 'module.preprocessing.dtdm':
-			n_cores = 4
-			p = Pool(n_cores)
-			self.df = pd.concat(p.map(self.read_dtdm, self.fnames[n_cores*n_chunk:(n_chunk+1)*n_cores]))
-		 # self.df = self.df[~self.df.isna().values.any(axis=1)] #drop na rows. This snippet is faster than self.df.dropna().
-		 # self.df.loc[(self.df['cat']<4),'de'] += 5 # increase the error on plate pair observations by 0.05
+		self.df = pd.read_csv(self.fpaths[i], index_col = self.ID, dtype = {self.ID: np.uint32, 'dt': np.float32, 'dm': np.float32, 'de': np.float32, 'sid': np.uint8}).dropna()
 
 	def read_key(self, key):
 		"""
 		Read in the groups of uids for qsos binned into given key.
 		"""
 		self.key = key
-		path = cfg.D_DIR + 'computed/{}/binned/{}/uids/'.format(self.obj, self.key)
+		path = cfg.D_DIR + 'computed/archive/{}/binned/{}/uids/'.format(self.obj, self.key)
 		fnames = sorted([fname for fname in os.listdir(path) if fname.startswith('group')])
 		self.groups = [pd.read_csv(path + fname, index_col=self.ID) for fname in fnames]
 		self.n_groups = len(self.groups)
-		self.bounds_values = np.loadtxt(cfg.D_DIR + 'computed/{}/binned/{}/bounds_values.txt'.format(self.obj, self.key))
+		self.bounds_values = np.loadtxt(cfg.D_DIR + 'computed/archive/{}/binned/{}/bounds_values.txt'.format(self.obj, self.key))
 		self.label_range_val = {i:'{:.1f} < {} < {:.1f}'.format(self.bounds_values[i],self.key,self.bounds_values[i+1]) for i in range(len(self.bounds_values)-1)}
 
 	def bin_de_2d(self, n_chunks, read=False):
@@ -196,7 +176,6 @@ class dtdm_raw_analysis():
 			ax[i].hist(slice_, bins=101, range=(-0.5,0.5), alpha=0.4)
 			ax[i].legend()
 
-
 	def calculate_stats_looped(self, n_chunks, log_or_lin,  max_t=23576, save=False, inner=False):
 		"""
 		Loop over dtdm files and calculate stats of each file. Append to dictionary.
@@ -234,7 +213,7 @@ class dtdm_raw_analysis():
 		pooled_results = {name:np.zeros(shape=(n_points, 2)) for name in names}
 		pooled_results['n'] = np.zeros(shape=(n_points), dtype='uint64')
 		start = time()
-		for i in range(n_chunks):
+		for i in range(n_chunks)[:4]:
 			self.read(i)
 			if inner:
 				self.df = self.df[np.sqrt(self.df['cat'])%1==0]
@@ -306,8 +285,8 @@ class dtdm_raw_analysis():
 		self.pooled_stats = pooled_results
 		if save:
 			for key in pooled_results.keys():
-				np.savetxt(cfg.D_DIR + 'computed/{}/dtdm_stats/{}/pooled_{}.csv'.format(self.obj, self.log_or_lin, key.replace(' ','_')), pooled_results[key])
-			np.savetxt(cfg.D_DIR + 'computed/{}/dtdm_stats/{}/mjd_edges.csv'.format(self.obj, self.log_or_lin), self.mjd_edges)
+				np.savetxt(cfg.D_DIR + 'computed/archive/{}/dtdm_stats/{}/pooled_{}.csv'.format(self.obj, self.log_or_lin, key.replace(' ','_')), pooled_results[key])
+			np.savetxt(cfg.D_DIR + 'computed/archive/{}/dtdm_stats/{}/mjd_edges.csv'.format(self.obj, self.log_or_lin), self.mjd_edges)
 		print('time elapsed: {:.2f} minutes'.format((time()-start)/60.0))
 
 	def calculate_stats_looped_key(self, n_chunks, log_or_lin, prop='Lbol', save=False):
@@ -398,19 +377,19 @@ class dtdm_raw_analysis():
 		if save:
 			for key in pooled_results.keys():
 				for group_idx in range(self.n_groups):
-					np.savetxt(cfg.D_DIR + 'computed/{}/dtdm_stats/{}/{}/pooled_{}_{}.csv'.format(self.obj, prop, self.log_or_lin, key.replace(' ','_'), group_idx), pooled_results[key][:, group_idx])
-			np.savetxt(cfg.D_DIR + 'computed/{}/dtdm_stats/{}/{}/mjd_edges.csv'.format(self.obj, prop, self.log_or_lin), self.mjd_edges)
+					np.savetxt(cfg.D_DIR + 'computed/archive/{}/dtdm_stats/{}/{}/pooled_{}_{}.csv'.format(self.obj, prop, self.log_or_lin, key.replace(' ','_'), group_idx), pooled_results[key][:, group_idx])
+			np.savetxt(cfg.D_DIR + 'computed/archive/{}/dtdm_stats/{}/{}/mjd_edges.csv'.format(self.obj, prop, self.log_or_lin), self.mjd_edges)
 		print('time elapsed: {:.2f} minutes'.format((time()-start)/60.0))
 
 	def read_pooled_stats(self, log_or_lin, key=None):
 		self.log_or_lin = log_or_lin
 		if key is None:
-			fpath = cfg.D_DIR + 'computed/{}/dtdm_stats/{}/'.format(self.obj, self.log_or_lin)
+			fpath = cfg.D_DIR + 'computed/archive/{}/dtdm_stats/{}/'.format(self.obj, self.log_or_lin)
 			names = listdir(fpath)
 			self.pooled_stats = {name[7:-4].replace('_',' '):np.loadtxt(fpath+name) for name in names if name.startswith('pooled')}
 		else:
 			self.read_key(key)
-			fpath = cfg.D_DIR + 'computed/{}/dtdm_stats/{}/{}/'.format(self.obj, key, self.log_or_lin)
+			fpath = cfg.D_DIR + 'computed/archive/{}/dtdm_stats/{}/{}/'.format(self.obj, key, self.log_or_lin)
 			names = listdir(fpath)
 			self.pooled_stats = {name[7:-6].replace('_',' '):np.array([np.loadtxt('{}{}_{}.csv'.format(fpath,name[:-6],i)) for i in range(self.n_groups)]) for name in names if name.startswith('pooled')}
 		self.mjd_edges = np.loadtxt(fpath+'mjd_edges.csv')
@@ -546,11 +525,11 @@ class dtdm():
 		"""
 		Read in binned data
 		"""
-		self.dts_binned = np.loadtxt(cfg.D_DIR + 'computed/{}/binned/{}/dt/dts_binned_{}_{}.csv'.format(self.obj, self.subset, self.obj, self.name),  delimiter=',', dtype='uint64')
-		self.dms_binned = np.loadtxt(cfg.D_DIR + 'computed/{}/binned/{}/dm/dms_binned_{}_{}.csv'.format(self.obj, self.subset, self.obj, self.name),  delimiter=',', dtype='uint64')
-		self.des_binned = np.loadtxt(cfg.D_DIR + 'computed/{}/binned/{}/de/des_binned_{}_{}.csv'.format(self.obj, self.subset, self.obj, self.name),  delimiter=',', dtype='uint64') # could get away with uint32, as the largest number we expect is ~2^29
-		self.dcs_binned = np.loadtxt(cfg.D_DIR + 'computed/{}/binned/{}/dc/dcs_binned_{}_{}.csv'.format(self.obj, self.subset, self.obj, self.name),  delimiter=',', dtype='uint16')
-		self.dm2_de2_binned = np.loadtxt(cfg.D_DIR + 'computed/{}/binned/{}/dm2_de2/dm2_de2_binned_{}_{}.csv'.format(self.obj, self.subset, self.obj, self.name),  delimiter=',', dtype='uint16')	
+		self.dts_binned = np.loadtxt(cfg.D_DIR + 'computed/archive/{}/binned/{}/dt/dts_binned_{}_{}.csv'.format(self.obj, self.subset, self.obj, self.name),  delimiter=',', dtype='uint64')
+		self.dms_binned = np.loadtxt(cfg.D_DIR + 'computed/archive/{}/binned/{}/dm/dms_binned_{}_{}.csv'.format(self.obj, self.subset, self.obj, self.name),  delimiter=',', dtype='uint64')
+		self.des_binned = np.loadtxt(cfg.D_DIR + 'computed/archive/{}/binned/{}/de/des_binned_{}_{}.csv'.format(self.obj, self.subset, self.obj, self.name),  delimiter=',', dtype='uint64') # could get away with uint32, as the largest number we expect is ~2^29
+		self.dcs_binned = np.loadtxt(cfg.D_DIR + 'computed/archive/{}/binned/{}/dc/dcs_binned_{}_{}.csv'.format(self.obj, self.subset, self.obj, self.name),  delimiter=',', dtype='uint16')
+		self.dm2_de2_binned = np.loadtxt(cfg.D_DIR + 'computed/archive/{}/binned/{}/dm2_de2/dm2_de2_binned_{}_{}.csv'.format(self.obj, self.subset, self.obj, self.name),  delimiter=',', dtype='uint16')	
 
 	def stats(self, verbose=False):
 		if verbose:
@@ -815,14 +794,14 @@ class dtdm_key():
 
 		self.width = width
 
-		self.bounds_values = np.loadtxt(cfg.D_DIR + 'computed/{}/binned/{}/bounds_values.txt'.format(self.obj, self.key))
+		self.bounds_values = np.loadtxt(cfg.D_DIR + 'computed/archive/{}/binned/{}/bounds_values.txt'.format(self.obj, self.key))
 		self.label_range_val = {i:'{:.1f} < {} < {:.1f}'.format(self.bounds_values[i],self.key,self.bounds_values[i+1]) for i in range(len(self.bounds_values)-1)}
 
 		self.read()
 		# self.stats(verbose)
 
 	def read(self):
-		n = len([file for file in listdir(cfg.D_DIR + 'computed/{}/binned/{}/dm/'.format(self.obj,self.key)) if file.startswith('dms')])
+		n = len([file for file in listdir(cfg.D_DIR + 'computed/archive/{}/binned/{}/dm/'.format(self.obj,self.key)) if file.startswith('dms')])
 		self.n = n
 		self.dts_binned = np.zeros((n, self.n_t_chunk, self.n_bins_t), dtype = 'int64')
 		self.dms_binned = np.zeros((n, self.n_t_chunk, self.n_bins_m), dtype = 'int64')
@@ -832,11 +811,11 @@ class dtdm_key():
 
 		for i in range(n):
 
-			self.dts_binned[i] = np.loadtxt(cfg.D_DIR + 'computed/{}/binned/{}/dt/dts_binned_{}_{}_{}_{}.csv'.format(self.obj, self.key, self.obj, self.name, self.key, i),  delimiter=',', dtype='uint64')
-			self.dms_binned[i] = np.loadtxt(cfg.D_DIR + 'computed/{}/binned/{}/dm/dms_binned_{}_{}_{}_{}.csv'.format(self.obj, self.key, self.obj, self.name, self.key, i),  delimiter=',', dtype='uint64')
-			self.dm2_de2_binned[i] = np.loadtxt(cfg.D_DIR + 'computed/{}/binned/{}/dm2_de2/dm2_de2_binned_{}_{}_{}_{}.csv'.format(self.obj, self.key, self.obj, self.name, self.key, i),  delimiter=',', dtype='uint64')
-			self.des_binned[i] = np.loadtxt(cfg.D_DIR + 'computed/{}/binned/{}/de/des_binned_{}_{}_{}_{}.csv'.format(self.obj, self.key, self.obj, self.name, self.key, i),  delimiter=',', dtype='uint16')
-			self.dcs_binned[i] = np.loadtxt(cfg.D_DIR + 'computed/{}/binned/{}/dc/dcs_binned_{}_{}_{}_{}.csv'.format(self.obj, self.key, self.obj, self.name, self.key, i),  delimiter=',', dtype='uint16')
+			self.dts_binned[i] = np.loadtxt(cfg.D_DIR + 'computed/archive/{}/binned/{}/dt/dts_binned_{}_{}_{}_{}.csv'.format(self.obj, self.key, self.obj, self.name, self.key, i),  delimiter=',', dtype='uint64')
+			self.dms_binned[i] = np.loadtxt(cfg.D_DIR + 'computed/archive/{}/binned/{}/dm/dms_binned_{}_{}_{}_{}.csv'.format(self.obj, self.key, self.obj, self.name, self.key, i),  delimiter=',', dtype='uint64')
+			self.dm2_de2_binned[i] = np.loadtxt(cfg.D_DIR + 'computed/archive/{}/binned/{}/dm2_de2/dm2_de2_binned_{}_{}_{}_{}.csv'.format(self.obj, self.key, self.obj, self.name, self.key, i),  delimiter=',', dtype='uint64')
+			self.des_binned[i] = np.loadtxt(cfg.D_DIR + 'computed/archive/{}/binned/{}/de/des_binned_{}_{}_{}_{}.csv'.format(self.obj, self.key, self.obj, self.name, self.key, i),  delimiter=',', dtype='uint16')
+			self.dcs_binned[i] = np.loadtxt(cfg.D_DIR + 'computed/archive/{}/binned/{}/dc/dcs_binned_{}_{}_{}_{}.csv'.format(self.obj, self.key, self.obj, self.name, self.key, i),  delimiter=',', dtype='uint16')
 
 	def stats(self, verbose=False):
 		if verbose:
