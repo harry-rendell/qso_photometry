@@ -113,7 +113,7 @@ def calculate_bins_and_z_scores(x, key, bounds = np.array([-6,-1.5,-1,-0.5,0,0.5
 			# ax.axvline(x=value, ymin=0.97, ymax=1, color = 'k', lw=0.5, ls='--') # If we prefer to have the numbers inside the plot, use two separate lines to make
 			# a gap between text
 			ax.text(x=value, y=1.01, s=r'${}\sigma$'.format(z), horizontalalignment='center', transform=ax.get_xaxis_transform(), fontsize='small')
-		ax.set(**ax_kwargs)
+		ax.set(xlim=[bounds_values[0],bounds_values[-1]], **ax_kwargs)
 
 
 		# ax2 = ax.twiny()
