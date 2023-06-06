@@ -19,18 +19,15 @@ import os
 import sys
 sys.path.insert(0, os.path.join(os.getcwd(), "..", ".."))
 from module.config import cfg
-from module.preprocessing import parse, data_io
+from module.preprocessing import parse, data_io, binning
 from module.classes.dtdm import dtdm_raw_analysis
+from module.classes.analysis import analysis
+from module.plotting.common import savefigs
 
-OBJ    = 'qsos'
-ID     = 'uid' if OBJ == 'qsos' else 'uid_s'
-BAND   = 'r'
+config = {'obj':'qsos','ID':'uid'  ,'t_max':6751,'n_bins_t':200,'n_bins_m':200, 'n_bins_m2':248, 'n_t_chunk':19, 'width':2, 'steepness':0.005, 'leftmost_bin':-0.244}
 
-q = dtdm_raw_analysis(OBJ, ID, BAND, 'qsos')
+
+q = dtdm_raw_analysis(config['obj'], config['ID'], 'r', 'qsos')
 # dtdm_qsos_lbol.calculate_stats_looped_key(26, 'log', 'Lbol', save=True)
 
-plt.hist(a['dm'].head(1000000), bins=1000);
-
-a
-
-
+q.calculate_stats_loops()
