@@ -35,6 +35,26 @@ class dtdm_raw_analysis():
 		"""
 		self.df = pd.read_csv(self.fpaths[i], index_col = self.ID, dtype = {self.ID: np.uint32, 'dt': np.float32, 'dm': np.float32, 'de': np.float32, 'sid': np.uint8}).dropna()
 
+	# #Old reading function:
+	# def read(self, n_chunk):
+	# 	"""
+	# 	Reading and concatenating dtdm data using multiprocessing
+
+	# 	Parameters
+	# 	----------
+	# 	n_chunk : int
+	# 		which chunk of data to read
+
+	# 	"""
+	# 	if hasattr(self, 'df'):
+	# 		del self.df
+	# 	if __name__ == 'module.preprocessing.dtdm':
+	# 		n_cores = 4
+	# 		p = Pool(n_cores)
+	# 		self.df = pd.concat(p.map(self.read_dtdm, self.fnames[n_cores*n_chunk:(n_chunk+1)*n_cores]))
+	# 	 # self.df = self.df[~self.df.isna().values.any(axis=1)] #drop na rows. This snippet is faster than self.df.dropna().
+	# 	 # self.df.loc[(self.df['cat']<4),'de'] += 5 # increase the error on plate pair observations by 0.05
+
 	def read_key(self, key):
 		"""
 		Read in the groups of uids for qsos binned into given key.

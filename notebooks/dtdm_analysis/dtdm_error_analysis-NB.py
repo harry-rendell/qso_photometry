@@ -12,23 +12,35 @@
 #     name: python3
 # ---
 
-import pandas as pd 
+# +
+import pandas as pd
 import numpy as np
-from astropy.table import Table
 import matplotlib.pyplot as plt
-from matplotlib import rc
-rc('font', **{'size':16})
-import matplotlib.cm as cmap
-from multiprocessing import Pool
-# from profilestats import profile
-from os import listdir, path
-from time import time
-import warnings
-warnings.simplefilter(action='ignore', category=FutureWarning)
-pd.options.mode.chained_assignment = None
-from module.preprocessing.dtdm import dtdm_raw_analysis
+import os
+import sys
+sys.path.insert(0, os.path.join(os.getcwd(), "..", ".."))
+from module.config import cfg
+from module.preprocessing import parse, data_io, binning
+from module.classes.dtdm import dtdm_raw_analysis
+from module.classes.analysis import analysis
+from module.plotting.common import savefigs
 
-wdir = cfg.W_DIR
+# import pandas as pd 
+# import numpy as np
+# from astropy.table import Table
+# import matplotlib.pyplot as plt
+# from matplotlib import rc
+# rc('font', **{'size':16})
+# import matplotlib.cm as cmap
+# from multiprocessing import Pool
+# # from profilestats import profile
+# from os import listdir, path
+# from time import time
+# import warnings
+# warnings.simplefilter(action='ignore', category=FutureWarning)
+# pd.options.mode.chained_assignment = None
+# from module.preprocessing.dtdm import dtdm_raw_analysis
+# -
 
 # # Splitting by property
 
