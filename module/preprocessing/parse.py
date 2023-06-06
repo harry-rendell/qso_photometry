@@ -31,6 +31,11 @@ def filter_data(df, bounds={}, dropna=True, valid_uids=None):
     Use inplace=False when testing bounds, but then switch to inplace=True once suitable bounds have been found. 
     Note, the bounds are INCLUSIVE.
     """
+
+    # Restrict the keys in bounds to those that are in df.columns
+    if bounds:
+        bounds = {k:v for k,v in bounds.items() if k in df.columns}
+
     # Restrict our dataframe rows with indices contained in valid_uids, if provided.
     df = df.copy()
     n = len(df.index)
