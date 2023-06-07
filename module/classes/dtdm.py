@@ -34,7 +34,7 @@ class dtdm_raw_analysis():
 		"""
 		Function for reading dtdm data
 		"""
-		self.df = pd.read_csv(self.fpaths[i], index_col = self.ID, dtype = {self.ID: np.uint32, 'dt': np.float32, 'dm': np.float32, 'de': np.float32, 'sid': np.uint8}).dropna()
+		self.df = pd.read_csv(self.fpaths[i], nrows=10000, index_col = self.ID, dtype = {self.ID: np.uint32, 'dt': np.float32, 'dm': np.float32, 'de': np.float32, 'sid': np.uint8}).dropna()
 
 	# #Old reading function:
 	# def read(self, n_chunk):
@@ -266,18 +266,19 @@ class dtdm_raw_analysis():
 					
 					weights = 0.5*subset['de']**-4
 
-					SF = np.average(subset['dm2_de2'], weights = weights)
+					dm2_de2 = subset['dm']**2 - subset['de']**2
+					SF = np.average(dm2_de2, weights = weights)
 					if SF < 0:
 						SF = 0
 					results['SF cwf a'][i,j, (0,1)] = SF, 1/weights.sum()
-					results['SF cwf b'][i,j, (0,1)] = SF, subset['dm2_de2'].var() #we should square root this, but then it's too large
+					results['SF cwf b'][i,j, (0,1)] = SF, dm2_de2.var() #we should square root this, but then it's too large
 					
-					mask_p = subset['dm']>0
-					mask_n = subset['dm']<0
+					mask_p = (subset['dm']>0).values
+					mask_n = (subset['dm']<0).values
 					
 					try:
-						SF_p = np.average(subset[mask_p]['dm2_de2'], weights = weights[mask_p])
-						SF_n = np.average(subset[mask_n]['dm2_de2'], weights = weights[mask_n])
+						SF_p = np.average(dm2_de2[mask_p], weights = weights[mask_p])
+						SF_n = np.average(dm2_de2[mask_n], weights = weights[mask_n])
 						if SF_p < 0:
 							SF_p = 0
 						if SF_n < 0:
@@ -498,7 +499,7 @@ class dtdm_raw_analysis():
 		# for m in [-1,0,1]:
 		# 	plt.scatter(self.de_centres_stat,self.mean_tot.mean(axis=1)+self.std_tot.mean(axis=1)*m, color='k')
 		# 	plt.plot   (self.de_centres_stat,self.mean_tot.mean(axis=1)+self.std_tot.mean(axis=1)*m, color='k', lw=0.5)
-
+##################################################################################################################################################
 class dtdm():
 	"""
 	Class for processing and analysing dtdm files
