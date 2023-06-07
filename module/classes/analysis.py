@@ -64,38 +64,6 @@ class analysis():
 		for ra, dec in coords:
 			print("https://skyserver.sdss.org/dr18/VisualTools/quickobj?ra={}&dec={}".format(ra, dec))
 
-	# def read_grouped(self, keys = ['uid'], read_in = True, redshift=True, colors=True, survey=None, restrict=False):
-	# 	"""
-	# 	Group self.df by keys and apply {'mag':['mean','std','count'], 'magerr':'mean', 'mjd': ['min', 'max', np.ptp]}
-
-	# 	Add columns to self.df_grouped:
-	# 			redshift   : by joining vac['redshift'] along uid)
-	# 			mjd_ptp_rf : max ∆t in rest frame for given object (same as self.properties)
-
-	# 	Parameters
-	# 	----------
-	# 	keys : list of str
-	# 	read_in : boolean
-	# 	survey : str
-	# 	Default is None. If 'ZTF' then read in grouped_stats computed from ZTF data only. If 'SSS' then read in grouped_stats with plate data included.
-	# 	TODO: Remove 'keys' given that we can specify survey anyway.
-	# 	"""
-
-	# 	if redshift:
-	# 		if not hasattr(self, 'redshifts'):
-	# 			# add on column for redshift. Use squeeze = True when reading in a single column.
-	# 			self.redshifts = pd.read_csv(cfg.D_DIR + 'catalogues/qsos/dr14q/dr14q_uid_desig_z.csv', index_col=self.ID, usecols=[self.ID,'z'], squeeze=True).rename('redshift')
-	# 		self.df_grouped = self.df_grouped.merge(self.redshifts, on=self.ID)
-	# 		self.df_grouped['mjd_ptp_rf'] = self.df_grouped['mjd_ptp']/(1+self.df_grouped['redshift'])
-		
-	# 	if colors:
-	# 		df_colors = pd.read_csv(cfg.D_DIR + 'computed/{}/colors_sdss.csv'.format(self.obj), index_col=0)
-	# 		self.df_grouped = self.df_grouped.join(df_colors, on=self.ID, how='left')
-
-	# 	if restrict:
-	# 		# Take the subset for which we have observations in self.df
-	# 		self.df_grouped = self.df_grouped[self.df_grouped.index.isin(self.df.index)]
-
 	def merge_with_catalogue(self, catalogue='dr12_vac', remove_outliers=True, prop_range_any = {'MBH_MgII':(6,12), 'MBH_CIV':(6,12)}):
 		"""
 		Reduce self.df to intersection of self.df and catalogue.
@@ -141,83 +109,12 @@ class analysis():
 		#calculate absolute magnitude
 		self.properties['mag_abs_mean'] = self.properties['mag_mean'] - 5*np.log10(3.0/7.0*self.redshifts*(10**9))
 		self.properties['mjd_ptp_rf']   = self.properties['mjd_ptp']/(1+self.redshifts)
-
-		if remove_outliers:
-			# Here, the last two entries of the prop_range dictionary are included on an any basis (ie if either are within the range)
-			mask_all = np.array([(bound[0] < self.properties[key]) & (self.properties[key] < bound[1]) for key, bound in prop_range_all.items()])
-			mask_any  = np.array([(bound[0] < self.properties[key]) & (self.properties[key] < bound[1]) for key, bound in prop_range_any.items()])
-			mask = mask_all.all(axis=0) & mask_any.any(axis=0)
-			self.properties = self.properties[mask]
 	
 	def merge_slopes():
 		names = ['restframe_all','restframe_ztf']
 		slopes = pd.concat([pd.read_csv(cfg.D_DIR + 'catalogues{}/slopes_{}.csv'.format(self.obj, name), index_col=self.ID, usecols=[self.ID,'m_optimal']) for name in names], axis=1)
 		slopes.columns = []
 		self.properties = self.properties.join(slopes, how='left', on=self.ID)
-
-	def save_dtdm_rf(self, uids, time_key):
-		"""
-		Save (∆t, ∆m) pairs from lightcurves. 
-		dtdm defined as: ∆m = (m2 - m1), ∆t = (t2 - t1) where (t1, m1) is the first obs and (t2, m2) is the second obs.
-		Thus a negative ∆m corresponds to a brightening of the object
-		
-		Parameters
-		----------
-		uids : array_like
-			uids of objects to be used for calcuation
-		time_key : str
-			either mjd or mjd_rf for regular and rest frame respectively
-		
-		Returns
-		-------
-		df : DataFrame
-			DataFrame(columns=[self.ID, 'dt', 'dm', 'de', 'dm2_de2', 'cat'])
-		where
-			dt : time interval between pair
-			dm : magnitude difference between pair
-			de : error on dm, calculated by combining individual errors in quadrature as sqrt(err1^2 + err2^2)
-			dm2_de2 : dm^2 - de^2, representing the intrinsic variability once photometric variance has been removed
-			cat : an ID representing which catalogue this pair was created from, calculated as survey_id_1*survey_id_2
-				where survey_ids are: 
-					1 = SSS_r1
-					3 = SSS_r2
-					5 = SDSS
-					7 = PS1
-					11 = ZTF
-		"""
-		sub_df = self.df[[time_key, 'mag', 'magerr', 'catalogue']].loc[uids]
-
-		df = pd.DataFrame(columns=[self.ID, 'dt', 'dm', 'de', 'dm2_de2', 'cat'])
-		for uid, group in sub_df.groupby(self.ID):
-			#maybe groupby then iterrows? faster?
-			mjd_mag = group[[time_key,'mag']].values
-			magerr = group['magerr'].values
-			cat	 = group['catalogue'].values
-			n = len(mjd_mag)
-
-			unique_pair_indicies = np.triu_indices(n,1)
-
-			dcat = cat*cat[:,np.newaxis]
-			dcat = dcat[unique_pair_indicies]
-
-			dtdm = mjd_mag - mjd_mag[:,np.newaxis,:]
-			dtdm = dtdm[unique_pair_indicies]
-			dtdm = dtdm*np.sign(dtdm[:,0])[:,np.newaxis]
-
-			dmagerr = ( magerr**2 + magerr[:,np.newaxis]**2 )**0.5
-			dmagerr = dmagerr[unique_pair_indicies]
-			
-			dm2_de2 = dtdm[:,1]**2 - dmagerr**2
-			
-			duid = np.full(n*(n-1)//2,uid,dtype='uint32')
-			
-			# collate data to DataFrame and append
-			df = df.append(pd.DataFrame(data={self.ID:duid,'dt':dtdm[:,0],'dm':dtdm[:,1], 'de':dmagerr, 'dm2_de2':dm2_de2, 'cat':dcat}))
-
-			if (uid % 500 == 0):
-				print(uid)
-
-		return df
 
 	def save_dtdm_rf_extras(self, df_ssa, uids, time_key):
 		"""
