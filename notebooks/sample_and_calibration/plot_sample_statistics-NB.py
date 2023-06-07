@@ -17,6 +17,7 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 path = cfg.W_DIR
+plt.style.use(cfg.FIG.STYLE_DIR + 'style1.mplstyle')
 
 df = pd.read_csv(cfg.D_DIR + 'catalogues/qsos/dr14q/dr14q_uid_mi_coords.csv', index_col='uid')
 

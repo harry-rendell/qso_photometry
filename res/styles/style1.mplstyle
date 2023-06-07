@@ -1,10 +1,109 @@
-axes.titlesize : 20
-axes.labelsize : 16
+## ***************************************************************************
+## * FONT                                                                    *
+## ***************************************************************************
+## The font properties used by `text.Text`.
+## See https://matplotlib.org/api/font_manager_api.html for more information
+## on font properties.  The 6 font properties used for font matching are
+## given below with their default values.
+##
+## The font.family property has five values:
+##     - 'serif' (e.g., Times),
+##     - 'sans-serif' (e.g., Helvetica),
+##     - 'cursive' (e.g., Zapf-Chancery),
+##     - 'fantasy' (e.g., Western), and
+##     - 'monospace' (e.g., Courier).
+## Each of these font families has a default list of font names in decreasing
+## order of priority associated with them.  When text.usetex is False,
+## font.family may also be one or more concrete font names.
+##
+## The font.style property has three values: normal (or roman), italic
+## or oblique.  The oblique style will be used for italic, if it is not
+## present.
+##
+## The font.variant property has two values: normal or small-caps.  For
+## TrueType fonts, which are scalable fonts, small-caps is equivalent
+## to using a font size of 'smaller', or about 83%% of the current font
+## size.
+##
+## The font.weight property has effectively 13 values: normal, bold,
+## bolder, lighter, 100, 200, 300, ..., 900.  Normal is the same as
+## 400, and bold is 700.  bolder and lighter are relative values with
+## respect to the current weight.
+##
+## The font.stretch property has 11 values: ultra-condensed,
+## extra-condensed, condensed, semi-condensed, normal, semi-expanded,
+## expanded, extra-expanded, ultra-expanded, wider, and narrower.  This
+## property is not currently implemented.
+##
+## The font.size property is the default font size for text, given in pts.
+## 10 pt is the standard value.
+##
+## Note that font.size controls default text sizes.  To configure
+## special text sizes tick labels, axes, labels, title, etc, see the rc
+## settings for axes and ticks.  Special text sizes can be defined
+## relative to font.size, using the following values: xx-small, x-small,
+## small, medium, large, x-large, xx-large, larger, or smaller
 
-lines.linewidth : 3
-lines.markersize : 10
+#font.family:  sans-serif
+#font.style:   normal
+#font.variant: normal
+#font.weight:  normal
+#font.stretch: normal
+font.size:    10.0
 
-xtick.labelsize : 14
-ytick.labelsize : 14
+#font.serif:      DejaVu Serif, Bitstream Vera Serif, Computer Modern Roman, New Century Schoolbook, Century Schoolbook L, Utopia, ITC Bookman, Bookman, Nimbus Roman No9 L, Times New Roman, Times, Palatino, Charter, serif
+#font.sans-serif: DejaVu Sans, Bitstream Vera Sans, Computer Modern Sans Serif, Lucida Grande, Verdana, Geneva, Lucid, Arial, Helvetica, Avant Garde, sans-serif
+#font.cursive:    Apple Chancery, Textile, Zapf Chancery, Sand, Script MT, Felipa, cursive
+#font.fantasy:    Comic Neue, Comic Sans MS, Chicago, Charcoal, ImpactWestern, Humor Sans, xkcd, fantasy
+#font.monospace:  DejaVu Sans Mono, Bitstream Vera Sans Mono, Computer Modern Typewriter, Andale Mono, Nimbus Mono L, Courier New, Courier, Fixed, Terminal, monospace
 
-legend.fontsize : 12
+## ***************************************************************************
+## * AXES                                                                    *
+## ***************************************************************************
+
+# To generate the list below, run:
+# for cmap in ['tab10', 'deep', 'muted', 'pastel', 'colorblind', 'bright', 'dark', 'Pastel1', 'Pastel2', 'Paired', 'Accent', 'Dark2', 'Set1', 'Set2', 'Set3', 'tab20', 'tab20b', 'tab20c']:
+#     color_list = [c.replace('#','') for c in sns.color_palette(cmap).as_hex()]
+#     print(f"# {cmap}\n# axes.prop_cycle: cycler('color', {color_list})")
+
+# See 
+# https://r02b.github.io/seaborn_palettes/
+
+# tab10
+axes.prop_cycle: cycler('color', ['258fda', 'ff7f0e', '2ca02c', 'd62728', '9467bd', '8c564b', 'e377c2', '7f7f7f', 'bcbd22', '17becf'])
+# deep
+# axes.prop_cycle: cycler('color', ['4c72b0', 'dd8452', '55a868', 'c44e52', '8172b3', '937860', 'da8bc3', '8c8c8c', 'ccb974', '64b5cd'])
+# muted
+# axes.prop_cycle: cycler('color', ['4878d0', 'ee854a', '6acc64', 'd65f5f', '956cb4', '8c613c', 'dc7ec0', '797979', 'd5bb67', '82c6e2'])
+# pastel
+# axes.prop_cycle: cycler('color', ['a1c9f4', 'ffb482', '8de5a1', 'ff9f9b', 'd0bbff', 'debb9b', 'fab0e4', 'cfcfcf', 'fffea3', 'b9f2f0'])
+# colorblind
+# axes.prop_cycle: cycler('color', ['0173b2', 'de8f05', '029e73', 'd55e00', 'cc78bc', 'ca9161', 'fbafe4', '949494', 'ece133', '56b4e9'])
+# bright
+# axes.prop_cycle: cycler('color', ['023eff', 'ff7c00', '1ac938', 'e8000b', '8b2be2', '9f4800', 'f14cc1', 'a3a3a3', 'ffc400', '00d7ff'])
+# dark
+# axes.prop_cycle: cycler('color', ['001c7f', 'b1400d', '12711c', '8c0800', '591e71', '592f0d', 'a23582', '3c3c3c', 'b8850a', '006374'])
+# Pastel1
+# axes.prop_cycle: cycler('color', ['fbb4ae', 'b3cde3', 'ccebc5', 'decbe4', 'fed9a6', 'ffffcc', 'e5d8bd', 'fddaec', 'f2f2f2'])
+# Pastel2
+# axes.prop_cycle: cycler('color', ['b3e2cd', 'fdcdac', 'cbd5e8', 'f4cae4', 'e6f5c9', 'fff2ae', 'f1e2cc', 'cccccc'])
+# Paired
+# axes.prop_cycle: cycler('color', ['a6cee3', '1f78b4', 'b2df8a', '33a02c', 'fb9a99', 'e31a1c', 'fdbf6f', 'ff7f00', 'cab2d6', '6a3d9a', 'ffff99', 'b15928'])
+# Accent
+# axes.prop_cycle: cycler('color', ['7fc97f', 'beaed4', 'fdc086', 'ffff99', '386cb0', 'f0027f', 'bf5b17', '666666'])
+# Dark2
+# axes.prop_cycle: cycler('color', ['1b9e77', 'd95f02', '7570b3', 'e7298a', '66a61e', 'e6ab02', 'a6761d', '666666'])
+# Set1
+# axes.prop_cycle: cycler('color', ['e41a1c', '377eb8', '4daf4a', '984ea3', 'ff7f00', 'ffff33', 'a65628', 'f781bf', '999999'])
+# Set2
+# axes.prop_cycle: cycler('color', ['66c2a5', 'fc8d62', '8da0cb', 'e78ac3', 'a6d854', 'ffd92f', 'e5c494', 'b3b3b3'])
+# Set3
+# axes.prop_cycle: cycler('color', ['8dd3c7', 'ffffb3', 'bebada', 'fb8072', '80b1d3', 'fdb462', 'b3de69', 'fccde5', 'd9d9d9', 'bc80bd', 'ccebc5', 'ffed6f'])
+# tab20
+# axes.prop_cycle: cycler('color', ['1f77b4', 'aec7e8', 'ff7f0e', 'ffbb78', '2ca02c', '98df8a', 'd62728', 'ff9896', '9467bd', 'c5b0d5', '8c564b', 'c49c94', 'e377c2', 'f7b6d2', '7f7f7f', 'c7c7c7', 'bcbd22', 'dbdb8d', '17becf', '9edae5'])
+# tab20b
+# axes.prop_cycle: cycler('color', ['393b79', '5254a3', '6b6ecf', '9c9ede', '637939', '8ca252', 'b5cf6b', 'cedb9c', '8c6d31', 'bd9e39', 'e7ba52', 'e7cb94', '843c39', 'ad494a', 'd6616b', 'e7969c', '7b4173', 'a55194', 'ce6dbd', 'de9ed6'])
+# tab20c
+# axes.prop_cycle: cycler('color', ['3182bd', '6baed6', '9ecae1', 'c6dbef', 'e6550d', 'fd8d3c', 'fdae6b', 'fdd0a2', '31a354', '74c476', 'a1d99b', 'c7e9c0', '756bb1', '9e9ac8', 'bcbddc', 'dadaeb', '636363', '969696', 'bdbdbd', 'd9d9d9'])
+
+
