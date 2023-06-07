@@ -36,6 +36,7 @@ band = 'r'
 
 # t_max w/o SSA = 6751 for qsos
 # t_max w/o SSA = 7772 for stars
+# USE cfg.MAX_DT_REST_FRAME
 # config = {'obj':'qsos'       ,'ID':'uid'  ,'t_max':23576,'n_bins_t':200,'n_bins_m':200,'n_t_chunk':19, 'width':2, 'steepness':0.005}
 config = {'obj':'calibStars','ID':'uid_s','t_max':25600,'n_bins_t':200,'n_bins_m':200,'n_t_chunk':19, 'width':1, 'steepness':0.005}
 

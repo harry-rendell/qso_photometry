@@ -40,7 +40,7 @@ band = 'r'
 
 # t_max w/o SSA = 6751 for qsos
 # t_max w/o SSA = 7772 for stars
-config = {'obj':'qsos','ID':'uid'  ,'t_max':23576,'n_bins_t':200,'n_bins_m':200, 'n_bins_m2':248, 'n_t_chunk':20, 'width':2, 'steepness':0.005, 'leftmost_bin':-0.244}
+config = {'obj':'qsos','ID':'uid'  ,'t_max':cfg.PREPROC.MAX_DT_REST_FRAME['qsos'][band],'n_bins_t':200,'n_bins_m':200, 'n_bins_m2':248, 'n_t_chunk':20, 'width':2, 'steepness':0.005, 'leftmost_bin':-0.244}
 # config = {'obj':'calibStars','ID':'uid_s','t_max':25200,'n_bins_t':200,'n_bins_m':200, 'n_bins_m2':235,'n_t_chunk':20, 'width':1, 'steepness':0.005, 'leftmost_bin':-0.21}
 
 width   = config['width']

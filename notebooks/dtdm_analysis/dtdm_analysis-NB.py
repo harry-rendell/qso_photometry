@@ -14,28 +14,31 @@
 
 # ### Code below is for reading in + analysis
 
-import pandas as pd 
+import pandas as pd
 import numpy as np
-from astropy.table import Table
 import matplotlib.pyplot as plt
-import matplotlib
-font = {'size' : 18}
-matplotlib.rc('font', **font)
-# %matplotlib inline
-from multiprocessing import Pool
+import os
+import sys
+sys.path.insert(0, os.path.join(os.getcwd(), "..", ".."))
+from module.config import cfg
+from module.preprocessing import parse, data_io, binning
+from module.classes.dtdm import dtdm_raw_analysis
+from module.classes.analysis import analysis
+from module.plotting.common import savefigs
+
+
 # from profilestats import profile
 from scipy.stats import binned_statistic, skew, iqr
 from scipy.optimize import curve_fit
-from module.classes.analysis import *
 from module.preprocessing.binning import bin_data
 from os import listdir
-import os
 import time
+# -
 
-from module.preprocessing.dtdm import dtdm, dtdm_key
+from module.classes.dtdm import dtdm, dtdm_key
 
 # +
-config = {'obj':'qsos','ID':'uid','t_max':23576,'n_bins_t':200,'n_bins_m':200, 'n_bins_m2':248, 
+config = {'obj':'qsos','ID':'uid','t_max':cfg.PREPROC.MAX_DT_REST_FRAME[OBJ][BAND],'n_bins_t':200,'n_bins_m':200, 'n_bins_m2':248, 
           'n_t_chunk':20, 'width':2, 'steepness':0.005, 'leftmost_bin':-0.244, 'subset':'all'}
 
 # Must ensure that this list is exactly the same as the keys in the config dictionary above

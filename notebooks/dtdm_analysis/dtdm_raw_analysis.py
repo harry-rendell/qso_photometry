@@ -27,7 +27,15 @@ from module.plotting.common import savefigs
 config = {'obj':'qsos','ID':'uid'  ,'t_max':6751,'n_bins_t':200,'n_bins_m':200, 'n_bins_m2':248, 'n_t_chunk':19, 'width':2, 'steepness':0.005, 'leftmost_bin':-0.244}
 
 
-q = dtdm_raw_analysis(config['obj'], config['ID'], 'r', 'qsos')
+OBJ    = 'qsos'
+ID     = 'uid' if OBJ == 'qsos' else 'uid_s'
+BAND   = 'r'
+q = dtdm_raw_analysis(OBJ, ID, BAND, 'qsos')
 # dtdm_qsos_lbol.calculate_stats_looped_key(26, 'log', 'Lbol', save=True)
 
-q.calculate_stats_loops()
+q.calculate_stats_looped(n_chunks=4, log_or_lin='log', max_t=cfg.PREPROC.MAX_DT_REST_FRAME[OBJ][BAND])
+
+fig, ax = plt.subplots(2,2)
+q.plot_stats('',(fig,ax))
+
+

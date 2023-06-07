@@ -53,7 +53,7 @@ pooled_var
         if log_or_lin.startswith('log'):
             self.mjd_edges = np.logspace(0, 4.37247, n_points+1) # TODO add max t into argument
         elif log_or_lin.startswith('lin'):
-            self.mjd_edges = np.linspace(0, 23576, n_points+1)
+            self.mjd_edges = np.linspace(0, 23576, n_points+1) # CHANGE TO cfg.MAX_DT_REST_FRAME
             
         self.mjd_centres = (self.mjd_edges[:-1] + self.mjd_edges[1:])/2
         
