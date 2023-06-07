@@ -1,3 +1,26 @@
+"""
+Save (∆t, ∆m) pairs from lightcurves. 
+dtdm defined as: ∆m = (m2 - m1), ∆t = (t2 - t1) where (t1, m1) is the first obs and (t2, m2) is the second obs.
+Thus a negative ∆m corresponds to a brightening of the object
+
+time_key : str
+    either mjd or mjd_rf for regular and rest frame respectively
+
+Output
+-------
+DataFrame(columns=[self.ID, 'dt', 'dm', 'de', 'dsid'])
+    dt : time interval between pair
+    dm : magnitude difference between pair
+    de : error on dm, calculated by combining individual errors in quadrature as sqrt(err1^2 + err2^2)
+    dsid : an ID representing which catalogue this pair was created from, calculated as survey_id_1*survey_id_2
+        where survey_ids are: 
+            1 = SSS_r1
+            3 = SSS_r2
+            5 = SDSS
+            7 = PS1
+            11 = ZTF
+"""
+
 import pandas as pd
 import numpy as np
 import time
