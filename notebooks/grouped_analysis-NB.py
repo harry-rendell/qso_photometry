@@ -25,14 +25,34 @@ from module.preprocessing import colour_transform, parse, data_io, lightcurve_st
 from matplotlib_venn import venn2, venn3, venn3_unweighted, venn3_circles
 
 obj = 'qsos'
-band = 'i'
+ID  = 'uid' if obj == 'qsos' else 'uid_s'
+band = 'r'
 sdss = pd.read_csv(cfg.D_DIR + 'surveys/sdss/{}/clean/{}_band/grouped.csv'.format(obj,band), index_col=0)
 ps   = pd.read_csv(cfg.D_DIR + 'surveys/ps/{}/clean/{}_band/grouped.csv'.format(obj,band), index_col=0)
 ztf  = pd.read_csv(cfg.D_DIR + 'surveys/ztf/{}/clean/{}_band/grouped.csv'.format(obj,band), index_col=0)
 ssa  = pd.read_csv(cfg.D_DIR + 'surveys/supercosmos/{}/clean/{}_band/grouped.csv'.format(obj,band), index_col=0)
 tot  = pd.read_csv(cfg.D_DIR + 'merged/{}/clean/grouped_{}.csv'.format(obj,band), index_col=0)
+redshift = pd.read_csv(cfg.D_DIR + 'catalogues/qsos/dr14q/dr14q_redshift.csv').set_index(ID)
 
-tot
+
+obj = 'calibStars'
+dic1 = {}
+dic2 = {}
+for band in 'gri':
+    print(band)
+    tot  = pd.read_csv(cfg.D_DIR + 'merged/{}/clean/grouped_{}.csv'.format(obj,band), index_col=0)
+    tot = tot.join(redshift, how='left')
+    tot['mjd_ptp_rf'] = tot['mjd_ptp']/(1+tot['z'])
+    print('rest frame:')
+    print('max ∆t rest frame:',tot['mjd_ptp_rf'].max())
+    print('obs frame')
+    print('max ∆t obs frame:',tot['mjd_ptp'].max())
+    dic1[band] = int(np.ceil(tot['mjd_ptp_rf'].max()))
+    dic2[band] = int(np.ceil(tot['mjd_ptp'].max()))
+
+dic1
+
+dic2
 
 # +
 from module.plotting.plotting_common import savefigs
@@ -51,7 +71,7 @@ v1 = venn3_unweighted(
 
 venn3_circles([1]*7, ax=ax, lw=0.5)
 
-savefigs(fig, 'SURVEY-DATA_venn_diagram', 'chap2')
+savefigs(fig, 'SURVEY-DATA-venn_diagram', 'chap2')
 
 
 # -
