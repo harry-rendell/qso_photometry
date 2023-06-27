@@ -122,7 +122,7 @@ def process_input(function, df_or_fname, kwargs):
 		# In this case, df_or_fname is a DataFrame chunk.
 		return function(df_or_fname, kwargs)
 
-def dispatch_function(function, chunks=None, max_processes=64, **kwargs):
+def dispatch_function(function, chunks=None, max_processes=64, concat_output=True, **kwargs):
 	"""
 	Parameters
 	----------
@@ -141,7 +141,7 @@ def dispatch_function(function, chunks=None, max_processes=64, **kwargs):
 	"""
 	if chunks is None:
 		if 'basepath' in kwargs:
-			chunks = sorted([f for f in os.listdir(kwargs['basepath']) if (f.startswith('lc_') and f.endswith('.csv'))])
+			chunks = sorted([f for f in os.listdir(kwargs['basepath']) if ((f.startswith('lc_') or f.startswith('dtdm_')) and f.endswith('.csv'))])
 		else:
 			raise Exception('Either one of chunks or basepath (in kwargs) must be provided')
 	elif isinstance(chunks, pd.DataFrame):
@@ -160,11 +160,12 @@ def dispatch_function(function, chunks=None, max_processes=64, **kwargs):
 		if not all(o is None for o in output):
 			# If it is better to save chunks rather than concatenate result into one DataFrame
 			#    (eg in case of calculate dtdm) then only run this block if a result is returned.
-			output = pd.concat(output, sort=True) # overwrite immediately for prevent holding unnecessary dataframes in memory
-
-			if 'dtypes' in kwargs:
-				dtypes = {k:v for k,v in kwargs['dtypes'].items() if k in output.columns}
+			if concat_output:
+				output = pd.concat(output, sort=True) # overwrite immediately for prevent holding unnecessary dataframes in memory
+				if 'dtypes' in kwargs:
+					dtypes = {k:v for k,v in kwargs['dtypes'].items() if k in output.columns}
+				else:
+					dtypes={}
+				return output.astype(dtypes)
 			else:
-				dtypes={}
-
-			return output.astype(dtypes)
+				return output
