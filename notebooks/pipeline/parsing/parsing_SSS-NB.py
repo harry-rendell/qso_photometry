@@ -21,7 +21,7 @@ from scipy.stats import linregress
 from astropy.time import Time
 import os
 import sys
-sys.path.insert(0, os.path.join(os.getcwd(), "..", ".."))
+sys.path.insert(0, os.path.join(os.getcwd(), "..", "..", ".."))
 from module.config import cfg
 from module.preprocessing import parse, data_io
 from module.preprocessing.colour_transform import ssa_transform

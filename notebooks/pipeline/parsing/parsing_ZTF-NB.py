@@ -18,7 +18,7 @@ import matplotlib.pyplot as plt
 from astropy.table import Table
 import os
 import sys
-sys.path.insert(0, os.path.join(os.getcwd(), "..", ".."))
+sys.path.insert(0, os.path.join(os.getcwd(), "..", "..", ".."))
 from module.config import cfg
 from module.preprocessing import parse, data_io
 

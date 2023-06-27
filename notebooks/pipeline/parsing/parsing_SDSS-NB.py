@@ -18,7 +18,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 import sys
-sys.path.insert(0, os.path.join(os.getcwd(), "..", ".."))
+sys.path.insert(0, os.path.join(os.getcwd(), "..", "..", ".."))
 from module.config import cfg
 from module.preprocessing import colour_transform, parse, data_io
 
@@ -129,7 +129,7 @@ sdss_unmelted = parse.filter_data(sdss_unmelted, valid_uids=valid_uids)
 for b1, b2 in zip('gri','riz'):
     sdss_unmelted[b1+'-'+b2] = sdss_unmelted['mag_'+b1] - sdss_unmelted['mag_'+b2]
 
-SAVE_COLORS = True
+SAVE_COLORS = False
 if SAVE_COLORS:
     colors = sdss_unmelted[['g-r','r-i','i-z']].groupby(ID).agg('mean')
     colors.to_csv(cfg.D_DIR + 'computed/{}/colors_sdss.csv'.format(OBJ))
@@ -151,6 +151,13 @@ sdss_melted
 sdss_transformed = colour_transform.transform_sdss_to_ps(sdss_melted, color='g-r', system='tonry').sort_values(['uid_s','mjd']).astype(np.float32)
 
 sdss_transformed.isna().sum()
+
+# # Some stats to quote
+# ---
+
+for band in 'griz':
+    print(band)
+    (sdss_transformed.loc[pd.IndexSlice[:, band],:]).describe()
 
 # # Save data
 # ---
