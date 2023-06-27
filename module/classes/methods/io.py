@@ -87,9 +87,12 @@ def read_vac(self, catalogue_name='dr16q_vac'):
 
     vac = pd.read_csv(os.path.join(cfg.D_DIR,fpath), index_col=self.ID)
     vac = vac.rename(columns={'z':'redshift_vac'});
+    if catalogue_name == 'dr16q_vac':
+        # Note, in dr16q, bad nEdd entries are set to 0 (exactly) so we can remove those.
+        vac['nEdd'] = vac['nEdd'].where((vac['nEdd']!=0).values)
     self.vac = vac
 
-def read_redshifts():
+def read_redshifts(self):
     if self.obj == 'calibStars':
         raise Exception('Stars have no redshift data')
     redshift = pd.read_csv(cfg.D_DIR + 'catalogues/qsos/dr14q/dr14q_redshift.csv').set_index(ID)
