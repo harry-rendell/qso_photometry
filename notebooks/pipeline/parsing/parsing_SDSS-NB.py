@@ -22,8 +22,8 @@ sys.path.insert(0, os.path.join(os.getcwd(), "..", "..", ".."))
 from module.config import cfg
 from module.preprocessing import colour_transform, parse, data_io
 
-OBJ    = 'calibStars'
-ID     = 'uid_s'
+OBJ    = 'qsos'
+ID     = 'uid'
 wdir = cfg.W_DIR
 
 # Query used to obtain data (context = DR16):
@@ -119,7 +119,9 @@ wdir = cfg.W_DIR
 cols = [ID, 'objID'] + [x for y in zip(['mag_'+b for b in 'griz'], ['magerr_'+b for b in 'griz']) for x in y] + ['mjd','get_nearby_distance']
 sdss_unmelted = pd.read_csv(cfg.D_DIR + 'surveys/sdss/{}/sdss_secondary.csv'.format(OBJ), usecols=cols, dtype = cfg.COLLECTION.SDSS.dtypes)
 
+n = len(sdss_unmelted)
 sdss_unmelted = sdss_unmelted.drop_duplicates(subset=[ID,'objID','mjd']).set_index(ID)
+print('number of duplicates removed:',n-len(sdss_unmelted))
 sdss_unmelted['get_nearby_distance'] *= 60
 
 valid_uids = pd.read_csv(cfg.D_DIR + 'catalogues/{}/{}_subsample_coords.csv'.format(OBJ,OBJ), usecols=[ID], index_col=ID, comment='#')
@@ -143,16 +145,14 @@ df_sdss_unpivot2['filtercode'] = df_sdss_unpivot2['filtercode'].str[-1]
 sdss_melted = pd.merge(sdss_unmelted.reset_index()[[ID,'objID','mjd']], pd.merge(df_sdss_unpivot1, pd.merge(df_sdss_unpivot2, sdss_unmelted[['objID','g-r','r-i','i-z']], on='objID'), on = ['objID','filtercode']), on = 'objID').set_index([ID,'filtercode']).drop('objID',axis=1)
 # -
 
-sdss_melted
-
 # # Transform to PanSTARRS
 # ---
 
-sdss_transformed = colour_transform.transform_sdss_to_ps(sdss_melted, color='g-r', system='tonry').sort_values(['uid_s','mjd']).astype(np.float32)
+sdss_transformed = colour_transform.transform_sdss_to_ps(sdss_melted, color='g-r', system='tonry').sort_values([ID,'mjd']).astype(np.float32)
 
 sdss_transformed.isna().sum()
 
-# # Some stats to quote
+# # Basic stats
 # ---
 
 for band in 'griz':

@@ -15,16 +15,13 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib
-font = {'size'   : 14}
-matplotlib.rc('font', **font)
 import os
 import sys
-sys.path.insert(0, os.path.join(os.getcwd(), "..", ".."))
+sys.path.insert(0, os.path.join(os.getcwd(), "..", "..", ".."))
 from module.config import cfg
 from module.preprocessing import colour_transform, parse, data_io, lightcurve_statistics
+from module.plotting.common import savefigs
 
-rdir = cfg.USER.R_DIR
 ddir = cfg.D_DIR
 wdir = cfg.W_DIR
 OBJ = 'calibStars'
@@ -71,7 +68,7 @@ bounds = {
         **{'mag_mean_'+b:(cfg.PREPROC.FILTER_BOUNDS['mag']) for b in 'gri'},
         **{'mag_mean_err_'+b:(cfg.PREPROC.FILTER_BOUNDS['magerr']) for b in 'gri'},
         **{'n_obs_'+b: (4,np.inf) for b in 'gri'}, # CONDITION (1)
-        **{'phot_err_'+b: (0,0.5) for b in 'gri'} # CONDITION (2)
+        **{'phot_err_'+b: (0,0.5) for b in 'gri'} # CONDITION (2) not fully satisfied as it removed too many objects.
          }
 
 star_data_filtered = parse.filter_data(raw_star_data, bounds, dropna=True,)
@@ -104,12 +101,6 @@ star_data_filtered = star_data_filtered.join(counts)
 
 grouped_qsos
 
-grouped_sdss
-
-
-
-
-
 # + active=""
 # plt.style.available
 
@@ -136,9 +127,9 @@ subsample = parse.filter_data(subsample, valid_uids=valid_uids)
 # Plot mag distributions
 #------------------------------------------------------------------------------
 plt.style.use('default')
-plt.style.use(cfg.FIG.STYLE_DIR + 'style1.mplstyle')
-plt.style.use('seaborn-colorblind')
-fig, axes = plt.subplots(3,1, figsize=(18,18))
+plt.style.use(cfg.FIG.STYLE_DIR + 'style.mplstyle')
+# plt.style.use('seaborn-colorblind')
+fig, axes = plt.subplots(3,1, figsize=(10,11))
 
 kwargs = {'bins': n+100, 'edgecolor':'k', 'lw':0.4, 'range':(15,23.5), 'density':False}
 for ax, band in zip(axes, 'gri'):
@@ -151,9 +142,10 @@ for ax, band in zip(axes, 'gri'):
     ax.set(xlim=[16,23.5], xlabel=r'${}$-band (mag)'.format(band), ylabel='Number of objects')
     handles, labels = ax.get_legend_handles_labels()
     ax.legend([handles[i] for i in [0,2,1]], [labels[i] for i in [0,2,1]], loc='upper left') # [0,2,1] to change the order of the labels in the legend
+    plt.subplots_adjust(hspace=0.35)
 
 if SAVE_FIG:
-    fig.savefig(rdir + 'plots/calibStars/matching_mag_distributions/seaborn-colorblind.pdf', bbox_inches='tight')
+    savefigs(fig, 'SURVEY-matching_qso_calibstar_mag_distributions', 'chap2')
       
 if SAVE_SUBSAMPLE:
     savecols = ['ra','dec','n_epochs'] + [a+b for b in 'gri' for a in ['mag_mean_','mag_mean_err_']]
@@ -170,3 +162,6 @@ for b1, b2 in zip('gri','riz'):
 
 if SAVE_COLORS:
     subsample.to_csv(ddir+'computed/calibStars/colors_sdss.csv', columns=['g-r','r-i','i-z'])
+# -
+
+

@@ -24,18 +24,19 @@ from module.classes.dtdm import dtdm_raw_analysis
 from module.classes.analysis import analysis
 from module.plotting.common import savefigs
 
-config = {'obj':'qsos','ID':'uid'  ,'t_max':6751,'n_bins_t':200,'n_bins_m':200, 'n_bins_m2':248, 'n_t_chunk':19, 'width':2, 'steepness':0.005, 'leftmost_bin':-0.244}
+dtdm_qsos_lbol = dtdm_raw_analysis('qsos', 'uid', 'r', 'qsos')
+dtdm_qsos_lbol.read_pooled_stats('log', key='Lbol')
 
+dtdm_qsos_mbh = dtdm_raw_analysis('qsos', 'uid', 'r', 'qsos')
+dtdm_qsos_mbh.read_pooled_stats('log', key='MBH')
 
-OBJ    = 'qsos'
-ID     = 'uid' if OBJ == 'qsos' else 'uid_s'
-BAND   = 'r'
-q = dtdm_raw_analysis(OBJ, ID, BAND, 'qsos')
-# dtdm_qsos_lbol.calculate_stats_looped_key(26, 'log', 'Lbol', save=True)
+dtdm_qsos_nedd = dtdm_raw_analysis('qsos', 'uids', 'r', 'qsos')
+dtdm_qsos_nedd.read_pooled_stats('log', key='nEdd')
 
-q.calculate_stats_looped(n_chunks=4, log_or_lin='log', max_t=cfg.PREPROC.MAX_DT_REST_FRAME[OBJ][BAND])
+dtdm_qsos_lbol.pooled_stats.keys()
 
-fig, ax = plt.subplots(2,2)
-q.plot_stats('',(fig,ax))
+fig, ax = dtdm_qsos_lbol.plot_stats_property(['SF cwf a'], figax=None, xscale='log', yscale='linear', ylim=(0, 1), ylabel='Structure Function$^2$')
 
+fig, ax = dtdm_qsos_mbh.plot_stats_property(['SF cwf a'], figax=None, xscale='log', yscale='linear', ylim=(0, 1), ylabel='Structure Function$^2$')
 
+fig, ax = dtdm_qsos_nedd.plot_stats_property(['SF cwf a'], figax=None, xscale='log', yscale='linear', ylim=(0, 1), ylabel='Structure Function$^2$')

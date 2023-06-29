@@ -26,10 +26,11 @@ OBJ    = 'calibStars'
 ID     = 'uid_s'
 wdir = cfg.W_DIR
 ddir = cfg.D_DIR
-SAVE_OIDS = True
+SAVE_OIDS = False
 
 read_cols = [ID+'_01','dist_x','ra_01','dec_01','ra','dec','oid','filtercode','ngoodobsrel','medianmag','medianmagerr','minmag','maxmag']
 meta_data = Table.read(ddir+'surveys/ztf/{}/ztf_meta_ipac.txt'.format(OBJ), format='ipac', include_names=read_cols).to_pandas().set_index(ID+'_01')
+# meta_data = pd.read_csv(ddir+'surveys/ztf/{}/ztf_meta.csv'.format(OBJ), usecols=read_cols).set_index(ID+'_01') # for qsos
 meta_data.index.name = ID
 
 # ---
@@ -76,7 +77,7 @@ import pandas as pd
 import numpy as np
 import os
 import sys
-sys.path.insert(0, os.path.join(os.getcwd(), "..", ".."))
+sys.path.insert(0, os.path.join(os.getcwd(), "..", "..", ".."))
 from module.config import cfg
 from module.preprocessing import parse, data_io, colour_transform
 

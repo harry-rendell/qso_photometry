@@ -54,7 +54,7 @@ if CHECK_FOR_NON_UNIQUE_MATCHES:
     
     # Display cases where one uid matches to multiple PS objIDs, or vice versa
     print('-'*50)
-    print('Non 1-to1 matches:')
+    print('Non 1-to-1 matches:')
     mask1 = ps_neighbours_no_duplicates.index.duplicated(keep=False)
     mask2 = ps_neighbours_no_duplicates.duplicated('objID_ps', keep=False)
     display(ps_neighbours_no_duplicates[(mask1 ^ mask2)])
@@ -84,6 +84,13 @@ df_ps['mag'] = -2.5*np.log10(df_ps['psfFlux']) + 8.90
 df_ps['magerr'] = 1.086*df_ps['psfFluxErr']/df_ps['psfFlux']
 df_ps = df_ps.drop(['psfFlux','psfFluxErr','objID_ps'], axis = 1)
 df_ps = df_ps.set_index('filtercode', append=True)#.astype(np.float32)
+
+# # Basic stats
+# ---
+
+
+
+print(df_ps.head(20).to_latex(caption='<caption>',label='<label>', float_format='%.3f'))
 
 # # Save data
 # ---

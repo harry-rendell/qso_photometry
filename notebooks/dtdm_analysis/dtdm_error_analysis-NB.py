@@ -54,7 +54,12 @@ dtdm_qsos_lbol.read_pooled_stats('log', key='Lbol')
 
 dtdm_qsos_civ = dtdm_raw_analysis('qsos', 'uid', 'r', 'qsos')
 # dtdm_qsos_civ.calculate_stats_looped_key(26, 'log2', 'MBH_CIV', save=True)
-dtdm_qsos_civ.read_pooled_stats('log', key='MBH_CIV')
+dtdm_qsos_civ.read_pooled_stats('log', key='MBH')
+# dtdm_qsos_lbol.pooled_stats.keys()
+
+dtdm_qsos_nedd = dtdm_raw_analysis('qsos', 'uid', 'r', 'qsos')
+# dtdm_qsos_nedd.calculate_stats_looped_key(26, 'log', 'nEdd', save=True)
+dtdm_qsos_nedd.read_pooled_stats('log', key='nEdd')
 # dtdm_qsos_lbol.pooled_stats.keys()
 
 # +
@@ -67,24 +72,18 @@ dtdm_qsos_civ.read_pooled_stats('log', key='MBH_CIV')
 #     dtdm_qsos_civ.read(i)
 #     dt = dtdm_qsos_civ.df[dtdm_qsos_civ.df.index.isin(uids)]['dt'].max()
 #     dts.append(dt)
-# -
-
-dtdm_qsos_nedd = dtdm_raw_analysis('qsos', 'uid', 'r', 'qsos')
-# dtdm_qsos_nedd.calculate_stats_looped_key(26, 'log', 'nEdd', save=True)
-dtdm_qsos_nedd.read_pooled_stats('log', key='nEdd')
-# dtdm_qsos_lbol.pooled_stats.keys()
 
 # +
 # fig, ax = dtdm_qsos_nedd.plot_stats_property(['SF cwf a'], figax=None, xscale='log', yscale='linear', ylim=(0, 0.45), ylabel='Structure Function$^2$')
 # fig.savefig('plots/qso_nedd_lin.pdf', bbox_inches='tight')
 # -
 
-dtdm_qsos_civ.pooled_stats.keys()
+dtdm_qsos_lbol.pooled_stats.keys()
 
-fig, ax = dtdm_qsos_civ.plot_stats_property(['SF cwf a'], figax=None, xscale='log', yscale='log', xlim=(0,10000), ylim=(1e-2, 1e0 ), ylabel='Structure Function$^2$')
+fig, ax = dtdm_qsos_civ.plot_stats_property(['SF cwf a'], figax=None, xscale='log', yscale='log', xlim=(0,20000), ylim=(1e-2, 1e0 ), ylabel='Structure Function$^2$')
 # fig.savefig('plots/qso_mbh_log.pdf', bbox_inches='tight')
 
-fig, ax = dtdm_qsos_lbol.plot_stats_property(['SF cwf a'], figax=None, xscale='log', yscale='linear', ylim=(0, 0.3), ylabel='Structure Function$^2$')
+fig, ax = dtdm_qsos_lbol.plot_stats_property(['SF cwf a'], figax=None, xscale='log', yscale='linear', ylim=(0, 1), ylabel='Structure Function$^2$')
 # fig.savefig('plots/qso_lbol_lin.pdf', bbox_inches='tight')
 
 # # Skewness

@@ -20,9 +20,11 @@ import os
 import sys
 sys.path.insert(0, os.path.join(os.getcwd(), ".."))
 from module.config import cfg
-from module.preprocessing import colour_transform, parse, data_io, lightcurve_statistics
+from module.preprocessing import colour_transform, parse, data_io, lightcurve_statistics, binning
 
-from matplotlib_venn import venn2, venn3, venn3_unweighted, venn3_circles
+# +
+# from matplotlib_venn import venn2, venn3, venn3_unweighted, venn3_circles
+# -
 
 obj = 'qsos'
 ID  = 'uid' if obj == 'qsos' else 'uid_s'
@@ -43,12 +45,25 @@ for band in 'gri':
     tot  = pd.read_csv(cfg.D_DIR + 'merged/{}/clean/grouped_{}.csv'.format(obj,band), index_col=0)
     tot = tot.join(redshift, how='left')
     tot['mjd_ptp_rf'] = tot['mjd_ptp']/(1+tot['z'])
-    print('rest frame:')
-    print('max ∆t rest frame:',tot['mjd_ptp_rf'].max())
-    print('obs frame')
-    print('max ∆t obs frame:',tot['mjd_ptp'].max())
-    dic1[band] = int(np.ceil(tot['mjd_ptp_rf'].max()))
-    dic2[band] = int(np.ceil(tot['mjd_ptp'].max()))
+
+    vac = pd.read_csv(os.path.join(cfg.D_DIR,'catalogues/qsos/dr16q/dr16q_vac_shen_matched.csv'), index_col=ID)
+    vac = vac.rename(columns={'z':'redshift_vac'});
+    # Note, in dr16q, bad nEdd entries are set to 0 (exactly) so we can remove those.
+    vac['nEdd'] = vac['nEdd'].where((vac['nEdd']!=0).values)
+    tot = tot.join(vac)
+    vac = parse.filter_data(vac, cfg.PREPROC.VAC_BOUNDS, dropna=False)
+    
+    bounds_z = np.array([-3.5,-1.5,-1,-0.5,0,0.5,1,1.5,3.5])
+    groups, bounds_values = binning.calculate_groups(vac['Lbol'], 'Lbol', bounds = bounds_z)
+    for group in groups:
+        print(tot.loc[tot.index.isin(group),'mjd_ptp_rf'].max())
+
+        # print('rest frame:')
+        # print('max ∆t rest frame:',tot['mjd_ptp_rf'].max())
+        # print('obs frame')
+        # print('max ∆t obs frame:',tot['mjd_ptp'].max())
+        # dic1[band] = int(np.ceil(tot['mjd_ptp_rf'].max()))
+        # dic2[band] = int(np.ceil(tot['mjd_ptp'].max()))
 
 dic1
 
