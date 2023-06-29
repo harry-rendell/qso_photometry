@@ -24,12 +24,11 @@ class analysis():
 		self.ID = ID
 		self.obj = obj
 		self.band = band
-		self.plt_color = {'u':'m', 'g':'g', 'r':'r','i':'k','z':'b'}
-		self.plt_color_bokeh = {'u':'magenta', 'g':'green', 'r':'red','i':'black','z':'blue'}
-		self.marker_dict = {1:'^', 3:'v', 5:'D', 7:'s', 11:'o'}
-		self.marker_dict_bokeh = {1:'triangle', 3:'inverted_triangle', 5:'diamond', 7:'square', 11:'circle'}
-		self.survey_dict = {1:'SSS_r1', 3: 'SSS_r2', 5:'SDSS', 7:'PS1', 11:'ZTF'}
-		self.coords = pd.read_csv(cfg.D_DIR + f'catalogues/{obj}/{obj}_subsample_coords.csv', index_col=ID, comment='#')
+		# self.plt_color = {'u':'m', 'g':'g', 'r':'r', 'i':'k', 'z':'b'}
+		# self.plt_color_bokeh = {'u':'magenta', 'g':'green', 'r':'red', 'i':'black', 'z':'blue'}
+		# self.marker_dict = {1:'^', 3:'v', 5:'D', 7:'s', 11:'o'}
+		# self.marker_dict_bokeh = {1:'triangle', 3:'inverted_triangle', 5:'diamond', 7:'square', 11:'circle'}
+		# self.survey_dict = {3: 'SSS', 5:'SDSS', 7:'PS1', 11:'ZTF'}
 
 	# Imported methods
 	from .methods.plotting import plot_sf_moments_pm
@@ -47,6 +46,7 @@ class analysis():
 		self.idx_cat : array_like
 				list of surveys which contribute to observations (sdss=1, ps=2, ztf=3)
 		"""
+		self.coords = pd.read_csv(cfg.D_DIR + f'catalogues/{self.obj}/{self.obj}_subsample_coords.csv', index_col=self.ID, comment='#')
 		# Check which qsos we are missing and which we have, given a list
 		uids_complete	 = self.coords.index
 		
@@ -110,7 +110,7 @@ class analysis():
 		self.properties['mag_abs_mean'] = self.properties['mag_mean'] - 5*np.log10(3.0/7.0*self.redshifts*(10**9))
 		self.properties['mjd_ptp_rf']   = self.properties['mjd_ptp']/(1+self.redshifts)
 	
-	def merge_slopes():
+	def merge_slopes(self):
 		names = ['restframe_all','restframe_ztf']
 		slopes = pd.concat([pd.read_csv(cfg.D_DIR + 'catalogues{}/slopes_{}.csv'.format(self.obj, name), index_col=self.ID, usecols=[self.ID,'m_optimal']) for name in names], axis=1)
 		slopes.columns = []
