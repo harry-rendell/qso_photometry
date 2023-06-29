@@ -1,6 +1,5 @@
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 from ..plotting.common import savefigs
 
 def bin_data(dtdm, n_bins_t, n_bins_m, n_bins_m2, t_max, n_t_chunk, leftmost_bin=None, t_spacing = 'log', m_spacing = 'log', compute=True, steepness=None, width=None):
@@ -72,8 +71,9 @@ def bin_data(dtdm, n_bins_t, n_bins_m, n_bins_m2, t_max, n_t_chunk, leftmost_bin
 	else:
 		return t_bin_edges, t_bin_chunk, t_bin_chunk_centres, m_bin_edges, m_bin_centres, m_bin_widths, e_bin_edges, t_dict, m2_bin_edges, m2_bin_widths, m2_bin_centres
 
-def calculate_bins_and_z_scores(x, key, bounds = np.array([-6,-1.5,-1,-0.5,0,0.5,1,1.5,6]), plot=False, hist_kwargs={}, ax_kwargs={}):
+def calculate_groups(x, key, bounds):
 	"""
+	TODO: remove key from args
 	Compute z score of key for each object
 
 	Parameters
@@ -88,41 +88,12 @@ def calculate_bins_and_z_scores(x, key, bounds = np.array([-6,-1.5,-1,-0.5,0,0.5
 	z_score : pandas.DataFrame
 			z value of property column (value-mean / std) and original value
 	self.bounds_values : values of property for each value in bounds
-	mean : float 
-		mean of the property of the total population
-	std : float
-		std  of the property of the total population
-	ax : axes handle
 	"""
+	bounds_tuple = list(zip(bounds[:-1],bounds[1:]))
 	mean = x.mean()
 	std  = x.std()
 	z_score = (x-mean)/std
 	bounds_values = bounds * std + mean
-	for i in range(len(bounds)-1):
-		# print('{:+.2f} < z < {:+.2f}: {:,}'.format(bounds[i],bounds[i+1],((bounds[i]<z_score)&(z_score<bounds[i+1])&(self.properties['mag_count']>2)).sum()))
-		print('{:+.2f} < z < {:+.2f}: {:,}'.format(bounds[i],bounds[i+1],((bounds[i]<z_score)&(z_score<bounds[i+1])).sum()))
-	bounds_tuple = list(zip(bounds[:-1],bounds[1:]))
-
-	fig = None
-	if plot:
-		fig, ax = plt.subplots(1,1,figsize = (12,5))
-
-		ax.hist(x, **hist_kwargs)
-		for value, z in zip(bounds_values, bounds):
-			ax.axvline(x=value, ymax=1, color = 'k', lw=0.5, ls='--')
-			# ax.axvline(x=value, ymin=0.97, ymax=1, color = 'k', lw=0.5, ls='--') # If we prefer to have the numbers inside the plot, use two separate lines to make
-			# a gap between text
-			ax.text(x=value, y=1.01, s=r'${}\sigma$'.format(z), horizontalalignment='center', transform=ax.get_xaxis_transform(), fontsize='small')
-		ax.set(xlim=[bounds_values[0],bounds_values[-1]], **ax_kwargs)
-
-
-		# ax2 = ax.twiny()
-		# hist_kwargs['alpha'] = 0
-		# ax2.hist(z_score, **hist_kwargs)
-		# for bound in bounds_values:
-		# 	ax2.axvline(x=bound, color = 'k', lw=0.5, ls='--')
-		
-		# ax2.set_xticks(bounds)
-		# ax2.set_xticklabels()
-
-	return bounds_tuple, z_score, bounds_values, mean, std, fig
+	groups = [z_score[(lower <= z_score).values & (z_score < upper).values].index.values for lower, upper in bounds_tuple]
+	# label_range_val = {i:'{:.1f} < {} < {:.1f}'.format(bounds_values[i],key,bounds_values[i+1]) for i in range(len(bounds_values)-1)}
+	return groups, bounds_values
