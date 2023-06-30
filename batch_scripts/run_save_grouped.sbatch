@@ -14,5 +14,5 @@
 
 # use same number of cores as cpus-per-task above
 n_cores=4
-python scripts/save_grouped.py --object='qsos'       --band='gri' --survey='supercosmos' --n_cores=$n_cores > batch_scripts/logs/log_save_grouped_qsos.txt
-python scripts/save_grouped.py --object='calibStars' --band='gri' --survey='supercosmos' --n_cores=$n_cores > batch_scripts/logs/log_save_grouped_calibStars.txt
+python scripts/save_grouped.py --object='qsos'       --band='gri' --survey='supercosmos' --n_cores=$n_cores > batch_scripts/logs/log_save_grouped_qsos.log
+python scripts/save_grouped.py --object='calibStars' --band='gri' --survey='supercosmos' --n_cores=$n_cores > batch_scripts/logs/log_save_grouped_calibStars.log

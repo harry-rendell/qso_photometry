@@ -14,5 +14,5 @@
 
 # use same number of cores as cpus-per-task above
 n_cores=4
-python scripts/average_nightly_observations.py --object='qsos'       --band='gri' --survey='supercosmos' --n_cores=$n_cores --dry_run >& batch_scripts/logs/log_average_nightly_observations_qsos.txt
-python scripts/average_nightly_observations.py --object='calibStars' --band='gri' --survey='supercosmos' --n_cores=$n_cores --dry_run >& batch_scripts/logs/log_average_nightly_observations_calibStars.txt
+python scripts/average_nightly_observations.py --object='qsos'       --band='gri' --survey='supercosmos' --n_cores=$n_cores --dry_run >& batch_scripts/logs/log_average_nightly_observations_qsos.log
+python scripts/average_nightly_observations.py --object='calibStars' --band='gri' --survey='supercosmos' --n_cores=$n_cores --dry_run >& batch_scripts/logs/log_average_nightly_observations_calibStars.log
