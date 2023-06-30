@@ -3,7 +3,7 @@ import pandas as pd
 import os
 from ..config import cfg
 from .parse import split_into_non_overlapping_chunks
-from scipy.stats import binned_statistic, skew, skewtest, iqr, kurtosis, kurtosistest
+from scipy.stats import skew, skewtest, kurtosis, kurtosistest
 
 def groupby_dtdm_between(df, args):
     for index, group in df.groupby(df.index.name):
