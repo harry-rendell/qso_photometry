@@ -12,7 +12,7 @@ def to_ipac(df, save_as, columns):
 
 def reader(fname, kwargs):
 	"""
-	Reading function for multiprocessing
+	Generalised pandas csv reader
 	"""
 	dtypes = kwargs['dtypes'] if 'dtypes' in kwargs else None
 	nrows  = kwargs['nrows']  if 'nrows'  in kwargs else None
@@ -66,11 +66,6 @@ def writer(i, chunk, kwargs):
 	"""
 	mode = kwargs['mode'] if 'mode' in kwargs else 'w'
 	savecols = kwargs['savecols'] if 'savecols' in kwargs else None
-	
-	if mode == 'a':
-		header = False
-	else:
-		header = True
 
 	if 'basepath' in kwargs:
 		basepath = kwargs['basepath']
@@ -84,9 +79,25 @@ def writer(i, chunk, kwargs):
 		if 'comment' in kwargs:
 			newline = '' if kwargs['comment'].endswith('\n') else '\n'
 			f.write(kwargs['comment']+newline)
-		chunk.to_csv(f, columns=savecols, header=header)
+		chunk.to_csv(f, columns=savecols, header=(not mode.startswith('a')))
 		if mode.startswith('w'):
 			print('output saved to:',f.name)
+
+def to_csv(df, save_as, columns=None, comment=None):
+	"""
+	Generalised pandas csv writer, allowing user to pass comments, 
+		written at the top of the file
+	"""
+	if columns is None:
+		columns = df.columns
+	# overwrite file if it exists
+	with open(save_as, 'w') as f:
+		pass
+	with open(save_as, 'a') as f:
+		if comment is not None:
+			newline = '' if comment.endswith('\n') else '\n'
+			f.write(comment+newline)
+		df.to_csv(f, columns=columns)
 
 def dispatch_writer(chunks, kwargs, max_processes=64, fname_suffixes=None):
 	"""
@@ -111,7 +122,7 @@ def dispatch_writer(chunks, kwargs, max_processes=64, fname_suffixes=None):
 
 def process_input(function, df_or_fname, kwargs):
 	"""
-	This function handles inputs
+	Handles inputs for dispatch_function
 	"""
 	if isinstance(df_or_fname, str):
 		# In this case, are provided a filename. Read it with reader() then pass to function()
