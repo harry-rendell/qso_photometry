@@ -71,8 +71,14 @@ if __name__ == "__main__":
     start = time.time()
     
     for band in args.band:
+        print(f'band: {band}')
         bool_arr = pd.read_csv(cfg.D_DIR + f'catalogues/{OBJ}/sets/clean_{band}.csv', index_col=ID, comment='#')
-        restricted_set = bool_arr.index[ bool_arr['vac'].values & np.any(bool_arr[['sdss','ps']].values, axis=1)]
+        if OBJ == 'qsos':
+            mask = bool_arr['vac'].values & np.any(bool_arr[['sdss','ps']].values, axis=1)
+        elif OBJ == 'calibStars':
+            mask = np.any(bool_arr[['sdss','ps']].values, axis=1)
+        restricted_set = bool_arr.index[mask]
+        print(f'size of restricted set: {len(restricted_set)}')
         del bool_arr
 
         kwargs['band'] = band
