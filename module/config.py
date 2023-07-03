@@ -233,16 +233,17 @@ __C.PREPROC.VAC_BOUNDS = {'z':(0,5),
 						  'Mi:':(-30,-20),
 						  'mag_mean':(15,23.5)}
 
+__C.PREPROC.MAX_DT = edict()
 # Max ∆t for quasars and stars in rest frame, rounded up to the nearest integer.
 # Calculated from mjd_ptp_rf.max() from clean/grouped_{band}.csv
-__C.PREPROC.MAX_DT_REST_FRAME = {'qsos':{'g': 13794, 'r': 24765, 'i': 13056},
+__C.PREPROC.MAX_DT['REST'] = {'qsos':{'g': 13794, 'r': 24765, 'i': 13056},
 								 'calibStars':{'g':np.nan, 'r':np.nan, 'i':np.nan}}
 
 # Do the same except with each black hole property
 
 # Max ∆t for quasras and stars in observer frame frame, rounded up to the nearest integer
 # Calculated from mjd_ptp.max() from clean/grouped_{band}.csv
-__C.PREPROC.MAX_DT_OBS_FRAME  = {'qsos':{'g':16513, 'r':26702, 'i':14698},
+__C.PREPROC.MAX_DT['OBS']  = {'qsos':{'g':16513, 'r':26702, 'i':14698},
 								 'calibStars':{'g':15122, 'r':26062, 'i':12440}}
 
 
