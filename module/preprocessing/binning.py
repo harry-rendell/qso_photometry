@@ -71,9 +71,8 @@ def bin_data(dtdm, n_bins_t, n_bins_m, n_bins_m2, t_max, n_t_chunk, leftmost_bin
 	else:
 		return t_bin_edges, t_bin_chunk, t_bin_chunk_centres, m_bin_edges, m_bin_centres, m_bin_widths, e_bin_edges, t_dict, m2_bin_edges, m2_bin_widths, m2_bin_centres
 
-def calculate_groups(x, key, bounds):
+def calculate_groups(x, bounds):
 	"""
-	TODO: remove key from args
 	Compute z score of key for each object
 
 	Parameters

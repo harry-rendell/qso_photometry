@@ -5,11 +5,11 @@ from module.config import cfg
 import matplotlib.pyplot as plt
 from module.preprocessing.binning import calculate_groups
 
-def plot_groups(x, key, bounds, plot=False, hist_kwargs={}, ax_kwargs={}):
+def plot_groups(x, bounds, plot=False, hist_kwargs={}, ax_kwargs={}):
     """
     Plot distribution of quasar property from VAC, and show groups.
     """
-    groups, bounds_values, label_range_val = calculate_groups(x, key, bounds)
+    groups, bounds_values, label_range_val = calculate_groups(x, bounds)
     for i in range(len(bounds)-1):
         print('{:+.2f} < z < {:+.2f}: {:,}'.format(bounds[i],bounds[i+1],len(groups[i])))
         # print('{:+.2f} < z < {:+.2f}: {:,}'.format(bounds[i],bounds[i+1],((bounds[i]<z_score)&(z_score<bounds[i+1])&(self.properties['mag_count']>2)).sum()))

@@ -71,7 +71,7 @@ hist_kwargs = {'bins':250, 'alpha':1}
 ax_kwargs = {'xlabel':r'Eddington ratio / $\log_{10}(n_{\mathrm{Edd}})$',
              'ylabel':r'Number of Quasars'}
 
-bounds_tuple, z_score_val, bounds_values, mean, std, fig = binning.calculate_bins_and_z_scores(dr.vac[key], key, bounds = bounds_z, plot=True, hist_kwargs=hist_kwargs, ax_kwargs=ax_kwargs)
+bounds_tuple, z_score_val, bounds_values, mean, std, fig = binning.calculate_bins_and_z_scores(dr.vac[key], bounds = bounds_z, plot=True, hist_kwargs=hist_kwargs, ax_kwargs=ax_kwargs)
 if SAVE_FIGS:
     savefigs(fig, f'ENSEMBLE-PROPERTIES-vac_bounds_{OBJ}_{key}', 'chap3') 
 

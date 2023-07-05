@@ -54,7 +54,7 @@ for band in 'gri':
     vac = parse.filter_data(vac, cfg.PREPROC.VAC_BOUNDS, dropna=False)
     
     bounds_z = np.array([-3.5,-1.5,-1,-0.5,0,0.5,1,1.5,3.5])
-    groups, bounds_values = binning.calculate_groups(vac['Lbol'], 'Lbol', bounds = bounds_z)
+    groups, bounds_values = binning.calculate_groups(vac['Lbol'], bounds = bounds_z)
     for group in groups:
         print(tot.loc[tot.index.isin(group),'mjd_ptp_rf'].max())
 
