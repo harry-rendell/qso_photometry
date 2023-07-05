@@ -47,7 +47,7 @@ if __name__ == "__main__":
                       'basepath': cfg.D_DIR + f'surveys/{survey}/{OBJ}/clean/{band}_band/',
 					  'usecols':[ID,'mjd','mag','magerr']}
             
-            df = data_io.dispatch_reader(kwargs, multiproc=True, max_processes=32)
+            df = data_io.dispatch_reader(kwargs, multiproc=True, max_processes=32).dropna()
             df['band'] = np.array(band, dtype=np.dtype(('U',1)))
             df['sid'] = np.array(cfg.PREPROC.SURVEY_IDS[survey], dtype=np.uint8)
 

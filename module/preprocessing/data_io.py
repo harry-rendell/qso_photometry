@@ -5,6 +5,7 @@ from .import parse
 from ..config import cfg
 from astropy.table import Table
 from astropy.io import ascii
+from tqdm import tqdm
 
 def to_ipac(df, save_as, columns):
 	t = Table.from_pandas(df[columns], index=True)
@@ -12,13 +13,23 @@ def to_ipac(df, save_as, columns):
 
 def reader(fname, kwargs):
 	"""
-	Generalised pandas csv reader
+	Generalised pandas csv reader.
+	dtypes		: dict of column names and dtypes
+	nrows 		: number of rows to read
+	usecols		: list of columns to read
+	skiprows	: number of rows to skip
+	delimiter	: delimiter to use for parsing
+	na_filter	: whether to check for NaNs when parsing.
+		set to False if it is known that there are no NaNs in the file
+		as it will improve performance.
+	basepath	: path to the folder containing the file
 	"""
 	dtypes = kwargs['dtypes'] if 'dtypes' in kwargs else None
 	nrows  = kwargs['nrows']  if 'nrows'  in kwargs else None
 	usecols = kwargs['usecols'] if 'usecols' in kwargs else None
 	skiprows = kwargs['skiprows'] if 'skiprows' in kwargs else None
 	delimiter = kwargs['delimiter'] if 'delimiter' in kwargs else ','
+	na_filter = kwargs['na_filter'] if 'na_filter' in kwargs else True
 	basepath = kwargs['basepath']
 	
 	if 'ID' in kwargs:
@@ -41,7 +52,8 @@ def reader(fname, kwargs):
 						   nrows=nrows,
 						   names=names,
 						   skiprows=skiprows,
-						   delimiter=delimiter).set_index(ID)
+						   delimiter=delimiter,
+						   na_filter=na_filter).set_index(ID)
 
 def dispatch_reader(kwargs, multiproc=True, i=0, max_processes=64):
 	"""

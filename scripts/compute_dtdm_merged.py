@@ -64,6 +64,7 @@ if __name__ == "__main__":
               'nrows': nrows,
               'skiprows': skiprows,
               'basepath': cfg.D_DIR + f'merged/{OBJ}/clean/',
+              'na_filter': False,
               'usecols': [ID,mjd_key,'mag','magerr','band','sid'],
               'ID':ID,
               'mjd_key':mjd_key}

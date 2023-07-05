@@ -75,7 +75,7 @@ def groupby_save_pairwise(df, kwargs):
         # If multiple bands are provided, iterate through them.
         s = chunk.groupby(kwargs['ID']).apply(calculate_dtdm, mjd_key)
         s = pd.DataFrame(s.values.tolist(), columns=s.columns, dtype='float32').astype({k:v for k,v in kwargs['dtypes'].items() if k in s.columns})
-        s.to_csv(output_fpath, index=False, header=False, mode='a')
+        s.dropna(axis=0, how='any').to_csv(output_fpath, index=False, header=False, mode='a')
         del s
     print('finished processing file:',kwargs['fname'], flush=True)
 
@@ -120,6 +120,7 @@ def calculate_stats_looped(df, kwargs):
     -------
     results : dict of nd_arrays, shape (n_chunk, n_points)
     """
+    
     inner = kwargs['inner']
     features = kwargs['features']
     n_points = kwargs['n_points'] # number of points to plot
@@ -131,6 +132,8 @@ def calculate_stats_looped(df, kwargs):
 
     if inner:
         df = df[np.sqrt(df['dsid'])%1==0]
+
+    df = df.dropna()
 
     for j, edges in enumerate(zip(mjd_edges[:-1], mjd_edges[1:])):
         mjd_lower, mjd_upper = edges
@@ -164,8 +167,11 @@ def calculate_stats_looped(df, kwargs):
 
             if SF < 0:
                 SF = 0
-            results['SF cwf a'][j, (0,1)] = SF, 1/weights.sum()
-            results['SF cwf b'][j, (0,1)] = SF, dm2_de2.var() #we should square root this, but then it's too large
+            results['SF cwf a'][j, 0] = SF
+            results['SF cwf a'][j, 1] = 1/weights.sum()
+
+            results['SF cwf b'][j, 0] = SF
+            results['SF cwf b'][j, 1] = dm2_de2.var() #we should square root this, but then it's too large
             
             mask_p = (subset['dm']>0).values
             mask_n = (subset['dm']<0).values
@@ -175,13 +181,15 @@ def calculate_stats_looped(df, kwargs):
                     SF_p = np.average(dm2_de2[mask_p], weights = weights[mask_p])
                     if SF_p < 0:
                         SF_p = 0
-                    results['SF cwf p'][j,(0,1)] = SF_p, 1/weights[mask_p].sum()
+                    results['SF cwf p'][j,0] = SF_p
+                    results['SF cwf p'][j,1] = 1/weights[mask_p].sum()
                 
                 if mask_n.sum()>0:
                     SF_n = np.average(dm2_de2[mask_n], weights = weights[mask_n])
                     if SF_n < 0:
                         SF_n = 0
-                    results['SF cwf n'][j,(0,1)] = SF_n, 1/weights[mask_n].sum()
+                    results['SF cwf n'][j,0] = SF_n
+                    results['SF cwf n'][j,1] = 1/weights[mask_n].sum()
             except:
                 # pass
                 print('weights cannot be normalized')
@@ -210,23 +218,23 @@ def calculate_stats_looped_key(df, kwargs):
     results : dict of nd_arrays, shape (n_chunk, n_points)
     """
 
-    inner = kwargs['inner']
     features = kwargs['features']
     n_points = kwargs['n_points'] # number of points to plot
     mjd_edges = kwargs['mjd_edges']
     groups = kwargs['groups']
-    prop = kwargs['property']
     n_groups = len(groups)
 
     results = {feature:np.zeros(shape=(n_points, n_groups, 2)) for feature in features}
     results['n'] = np.zeros(shape=(n_points, n_groups), dtype='uint64')
+
+    df = df.dropna()
 
     for group_idx in range(n_groups):
         subgroup = df[df.index.isin(groups[group_idx])]
         # print('subgroup: {}'.format(group_idx))
         # print('\tmax ∆t: {:.2f}'.format(subgroup['dt'].max()))
         
-        for j, edges in enumerate(zip(mjd_edges[:-1], mjd_edges[1:])):
+        for j, edges in enumerate(zip(mjd_edges[group_idx][:-1], mjd_edges[group_idx][1:])):
             mjd_lower, mjd_upper = edges
             boolean = ((mjd_lower < subgroup['dt']) & (subgroup['dt'] < mjd_upper)).values# & (subgroup['dm2_de2']>0) # include last condition to remove negative SF values
             subset = subgroup[boolean]
