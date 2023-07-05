@@ -236,17 +236,26 @@ __C.PREPROC.VAC_BOUNDS = {'z':(0,5),
 __C.PREPROC.MAX_DT = edict()
 # Max ∆t for quasars and stars in rest frame, rounded up to the nearest integer.
 # Calculated from mjd_ptp_rf.max() from clean/grouped_{band}.csv
-__C.PREPROC.MAX_DT['REST'] = {'qsos':{'g': 13794, 'r': 24765, 'i': 13056},
-								 'calibStars':{'g':np.nan, 'r':np.nan, 'i':np.nan}}
+__C.PREPROC.MAX_DT['REST'] = {'qsos':      {'g': 13794, 'r': 24765, 'i': 13056},
+							  'calibStars':{'g':np.nan, 'r':np.nan, 'i':np.nan}}
 
 # Do the same except with each black hole property
 
-# Max ∆t for quasras and stars in observer frame frame, rounded up to the nearest integer
-# Calculated from mjd_ptp.max() from clean/grouped_{band}.csv
-__C.PREPROC.MAX_DT['OBS']  = {'qsos':{'g':16513, 'r':26702, 'i':14698},
-								 'calibStars':{'g':15122, 'r':26062, 'i':12440}}
+# Max ∆t for quasars and stars in observer frame frame, rounded up to the nearest integer
+# Calculated from mjd_ptp.max() from clean/grouped_{band}.csv in grouped_analysis-NB.py
+__C.PREPROC.MAX_DT['OBS']  = {'qsos':      {'g': 16513, 'r': 26702, 'i': 14698},
+							  'calibStars':{'g': 15122, 'r': 26062, 'i': 12440}}
 
-
+# Max ∆t for quasars when splitting by black hole property, rounded up to the nearest integer
+__C.PREPROC.MAX_DT_VAC = {'Lbol': {'g': [12896, 12735, 13077, 12919, 11698, 11964, 11268, 10467],
+                                   'r': [23444, 22841, 23992, 22168, 22488, 21900, 19946, 18295],
+                                   'i': [10631, 10624, 9652,  9677,  9998,  11184, 10280, 8603 ]},
+                          'MBH':  {'g': [12896, 12735, 13077, 12919, 11698, 11964, 11268, 10467],
+                                   'r': [23444, 22841, 23992, 22168, 22488, 21900, 19946, 18295],
+                                   'i': [10631, 10624, 9652,  9677,  9998,  11184, 10280, 8603 ]},
+                          'nEdd': {'g': [12896, 12735, 13077, 12919, 11698, 11964, 11268, 10467],
+                                   'r': [23444, 22841, 23992, 22168, 22488, 21900, 19946, 18295],
+                                   'i': [10631, 10624, 9652,  9677,  9998,  11184, 10280,  8603]}}
 
 #------------------------------------------------------------------------------
 # Colour transformations
