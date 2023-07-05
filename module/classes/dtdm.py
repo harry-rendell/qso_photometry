@@ -15,9 +15,9 @@ class dtdm_raw_analysis():
 	"""
 	Class for analysing dtdm files
 	"""
-	def __init__(self, obj, ID, band, name):
+	def __init__(self, obj, band, name):
 		self.obj = obj
-		self.ID = ID
+		self.ID = 'uid' if (obj == 'qsos') else 'uid_s'
 		self.band = band
 		self.data_path = cfg.D_DIR + 'merged/{}/clean/dtdm_{}/'.format(obj,band)
 		self.name = name
@@ -30,11 +30,11 @@ class dtdm_raw_analysis():
 			self.fnames = [name for i in [0,1,2,3] for sizename, name in sorted(zip(size, fnames))[i::4]]
 			self.fpaths = [self.data_path + fname for fname in self.fnames]
 
-	def read(self, i=0):
+	def read(self, i=0, **kwargs):
 		"""
 		Function for reading dtdm data
 		"""
-		self.df = pd.read_csv(self.fpaths[i], nrows=10000, index_col = self.ID, dtype = {self.ID: np.uint32, 'dt': np.float32, 'dm': np.float32, 'de': np.float32, 'sid': np.uint8}).dropna()
+		self.df = pd.read_csv(self.fpaths[i], index_col = self.ID, dtype = {self.ID: np.uint32, 'dt': np.float32, 'dm': np.float32, 'de': np.float32, 'sid': np.uint8}, **kwargs)
 
 	# #Old reading function:
 	# def read(self, n_chunk):
@@ -200,12 +200,12 @@ class dtdm_raw_analysis():
 	def read_pooled_stats(self, log_or_lin, key=None):
 		self.log_or_lin = log_or_lin
 		self.key = key
-		if key is None:
-			fpath = cfg.D_DIR + 'computed/{}/dtdm_stats/{}/'.format(self.obj, self.log_or_lin)
+		if key == 'all':
+			fpath = cfg.D_DIR + f'computed/{self.obj}/dtdm_stats/all/{self.log_or_lin}/{self.band}/'
 			names = os.listdir(fpath)
 			self.pooled_stats = {name[7:-4].replace('_',' '):np.loadtxt(fpath+name) for name in names if name.startswith('pooled')}
 		else:
-			fpath = cfg.D_DIR + 'computed/{}/dtdm_stats/{}/{}/'.format(self.obj, key, self.log_or_lin)
+			fpath = cfg.D_DIR + f'computed/{self.obj}/dtdm_stats/{key}/{self.log_or_lin}/{self.band}/'
 			self.bounds_values = np.loadtxt(fpath + 'bounds_values.csv'.format(self.obj, self.key))
 			self.n_groups = len(self.bounds_values)-1
 			self.label_range_val = {i:'{:.1f} < {} < {:.1f}'.format(self.bounds_values[i],self.key,self.bounds_values[i+1]) for i in range(len(self.bounds_values)-1)}
@@ -224,7 +224,7 @@ class dtdm_raw_analysis():
 		if keys=='all':
 			keys = list(self.pooled_stats.keys())[1:]
 
-		for key in keys:
+		for key, color in zip(keys,colors):
 			y = self.pooled_stats[key]
 			# ax.errorbar(self.mjd_centres, y[:,0], yerr=y[:,1]**0.5, label='{}, {}'.format(key,self.name), color=color, lw=2.5) # square root this
 			ax.errorbar(self.mjd_centres, y[:,0], yerr=y[:,1], label='{}, {}'.format(self.name,key), color=color, lw=2.5, capsize=10)
