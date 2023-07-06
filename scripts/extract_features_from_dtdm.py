@@ -11,9 +11,10 @@ from module.preprocessing import data_io, parse, lightcurve_statistics, pairwise
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--object", type=str, required=True, help ="qsos or calibStars")
-    parser.add_argument("--bands", type=str, required=True, help="one or more filterbands for analysis")
+    parser.add_argument("--band", type=str, required=True, help="one or more filterbands for analysis")
     parser.add_argument("--n_cores", type=int, help="Number of cores to use. If left blank, then this value is taken from N_CORES in the config file.")
     parser.add_argument("--n_rows", type=int, help="Number of rows to read in from the photometric data")
+    parser.add_argument("--dry_run", action='store_true', help="Whether to do a dry run (i.e. don't save the output)")
     parser.add_argument("--frame", type=str, help=("OBS or REST to specify rest frame or observer frame time. \n"
                                                    "Defaults to rest frame for Quasars and observer time for Stars.\n"))
     args = parser.parse_args()
@@ -37,8 +38,6 @@ if __name__ == "__main__":
     n_points = 20
     log_or_lin = 'log'
 
-
-
     # keyword arguments to pass to our reading function
     kwargs = {'dtypes': cfg.PREPROC.dtdm_dtypes,
               'nrows': nrows,
@@ -50,7 +49,7 @@ if __name__ == "__main__":
               'features':['n', 'mean weighted a', 'mean weighted b', 'SF cwf a', 'SF cwf b', 'SF cwf p', 'SF cwf n', 'skewness', 'kurtosis'],
               'n_points':n_points}
 
-    for band in args.bands:
+    for band in args.band:
         # set the maximum time to use for this band
         if args.frame:
             max_t = cfg.PREPROC.MAX_DT[args.frame][OBJ][band]
@@ -68,12 +67,11 @@ if __name__ == "__main__":
         # add these back into the kwargs dictionary
         kwargs['band'] = band
         kwargs['basepath'] = cfg.D_DIR + f'merged/{OBJ}/clean/dtdm_{band}'
-        kwargs['max_t'] = max_t
         kwargs['mjd_edges'] = mjd_edges
 
         start = time.time()
         print('band:',band)
-
+    
         # create output directories
         output_dir = os.path.join(cfg.D_DIR, f'computed/{OBJ}/dtdm_stats/all/{log_or_lin}/{band}')
         print(f'creating output directory if it does not exist: {output_dir}')
@@ -100,9 +98,10 @@ if __name__ == "__main__":
                         pooled_results[key][:,1] = pooled_var
             else:
                 pooled_results[key] = results[key].sum(axis=0)
-
-        for key in pooled_results.keys():
-            np.savetxt(os.path.join(output_dir, f"pooled_{key.replace(' ','_')}.csv"), pooled_results[key])
-        np.savetxt(os.path.join(output_dir, 'mjd_edges.csv'), mjd_edges)
+        
+        if not args.dry_run:
+            for key in pooled_results.keys():
+                np.savetxt(os.path.join(output_dir, f"pooled_{key.replace(' ','_')}.csv"), pooled_results[key])
+            np.savetxt(os.path.join(output_dir, 'mjd_edges.csv'), mjd_edges)
 
         print('Elapsed:',time.strftime("%Hh %Mm %Ss",time.gmtime(time.time()-start)))
