@@ -24,6 +24,16 @@ def calculate_features(group):
     mjd, mag, magerr = group[['mjd','mag','magerr']].values.T
 
 def average_nightly_obs(group):
+    """
+    Parameters
+    ----------
+    group : pandas.DataFrame
+        A group of observations for a single object on a single night.
+    Returns
+    -------
+    pandas.Series
+        A series containing the average magnitude, error, and number of observations for the group.
+    """
     n = len(group)
     # bear in mind this will fail on PS data which does not have mag_orig
     mjd, mag, magerr, mag_median, mag_std = group[['mjd','mag','magerr','mag_med','mag_std']].values.T
@@ -53,6 +63,16 @@ def average_nightly_obs(group):
     return {'mjd':mjd_mean, 'mag':mag_mean, 'mag_orig':mag_mean_native, 'magerr':magerr_mean}
 
 def stats(group):
+    """
+    Parameters
+    ----------
+    group : pandas.DataFrame
+        A group of observations for a single object.
+    Returns
+    -------
+    pandas.Series
+        A series containing the statistics for the group.
+    """
     # assign pandas columns to numpy arrays
     mjd, mag, magerr = group[['mjd','mag','magerr']].values.T
 
