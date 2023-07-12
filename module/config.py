@@ -139,6 +139,10 @@ __C.PREPROC.pairwise_dtypes = {'uid': np.uint32,
 							   'de' :np.float32
 							   }
 
+# Bounds to be applied in when running calculate_stats_looped
+__C.PREPROC.dtdm_bounds = {'qsos':       {'dm': (-5, 5), 'de': (1e-10, 2)},
+                           'calibStars': {'dm': (-0.75, 0.75), 'de': (0, 1)}}
+
 # Limiting magnitudes
 __C.PREPROC.LIMIT_MAG = edict()
 
@@ -209,7 +213,7 @@ __C.PREPROC.LIMIT_MAG.SUPERCOSMOS = {
 __C.PREPROC.MAG_ERR_THRESHOLD = 0.198
 
 # Bounds to use on parse.filter_data in average_nightly_observations.py when removing bad data.
-__C.PREPROC.FILTER_BOUNDS = {'mag':(15,25),'magerr':(0,2)}
+__C.PREPROC.FILTER_BOUNDS = {'mag':(15,25),'magerr':(1e-10,2)}
 
 __C.PREPROC.SURVEY_IDS =   {'supercosmos':3,
 						 	'sdss': 5,
