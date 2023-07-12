@@ -1,10 +1,10 @@
 #!/bin/bash
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=32
+#SBATCH --cpus-per-task=20
 #SBATCH --job-name=qso_sg
-#SBATCH --mem=42G
-#SBATCH -t 99:00:00
+#SBATCH --mem=50G
+#SBATCH -t 8:00:00
 #SBATCH --mail-user=harry.rendell@ed.ac.uk
 
 # Note, we can run this as a normal batch script using bash <filename>
@@ -15,7 +15,7 @@
 # use same number of cores as cpus-per-task above
 n_cores=38
 surveys="supercosmos sdss ps ztf"
-band='gri'
+bands='gri'
 
 # #------------------------------------------------------------------------------
 # # Save grouped data (using uncleaned photometry)
@@ -56,26 +56,26 @@ band='gri'
 
 
 #------------------------------------------------------------------------------
-# Calculate dtdm
+# Calculate and save dtdm. 
+#   NOTE: This appends instead of overwrites. Remove previously saved data if it is no longer needed.
 # ------------------------------------------------------------------------------
-# python scripts/compute_dtdm_merged.py --object='qsos' --band='gi' --n_cores=$n_cores >& batch_scripts/logs/log_compute_dtdm_merged_qsos.log
-# python scripts/compute_dtdm_merged.py --object='calibStars' --band='gi' --n_cores=$n_cores >& batch_scripts/logs/log_compute_dtdm_merged_calibStars.log
+# python scripts/compute_dtdm_merged.py --object='qsos' --band=$bands --n_cores=$n_cores >& batch_scripts/logs/log_compute_dtdm_merged_qsos.log
+# python scripts/compute_dtdm_merged.py --object='calibStars' --band=$bands --n_cores=$n_cores >& batch_scripts/logs/log_compute_dtdm_merged_calibStars.log
 
 
 #------------------------------------------------------------------------------
 # Extract and save features from dtdm
 # ------------------------------------------------------------------------------
-# python scripts/extract_features_from_dtdm.py --object='qsos' --band='g' --n_cores=$n_cores >& batch_scripts/logs/log_extract_features_from_dtdm_qsos.log
-# python scripts/extract_features_from_dtdm.py --object='calibStars' --band='ri' --n_cores=$n_cores #>& batch_scripts/logs/log_extract_features_from_dtdm_calibStars.log
+# python scripts/extract_features_from_dtdm.py --object='qsos'       --band=$bands --n_cores=$n_cores --name='log_40' --n_bins=40  >& batch_scripts/logs/log_extract_features_from_dtdm_qsos.log
+# python scripts/extract_features_from_dtdm.py --object='calibStars' --band=$bands --n_cores=$n_cores --name='log_30' --n_bins=30 >& batch_scripts/logs/log_extract_features_from_dtdm_calibStars.log
 
 
 #------------------------------------------------------------------------------
 # Extract and save features from grouped dtdm (only applied to qsos)
 # ------------------------------------------------------------------------------
-python scripts/extract_features_from_dtdm_group.py --band='gi' --property='Lbol' --n_cores=$n_cores --n_rows=100000 --dry_run #>& batch_scripts/logs/log_extract_features_from_dtdm_group_qsos_lbol.log
-# python scripts/extract_features_from_dtdm_group.py --band='gi' --property='Lbol' --n_cores=$n_cores >& batch_scripts/logs/log_extract_features_from_dtdm_group_qsos_lbol.log
-# python scripts/extract_features_from_dtdm_group.py --band='gi' --property='MBH' --n_cores=$n_cores >& batch_scripts/logs/log_extract_features_from_dtdm_group_qsos_mbh.log
-# python scripts/extract_features_from_dtdm_group.py --band='gi' --property='nEdd' --n_cores=$n_cores >& batch_scripts/logs/log_extract_features_from_dtdm_group_qsos_nedd.log
+python scripts/extract_features_from_dtdm_group.py --object='qsos' --band=$bands --property='Lbol' --n_cores=$n_cores --name='log_30' --n_bins=30 >& batch_scripts/logs/log_extract_features_from_dtdm_group_qsos_lbol.log
+python scripts/extract_features_from_dtdm_group.py --object='qsos' --band=$bands --property='MBH' --n_cores=$n_cores --name='log_30' --n_bins=30 >& batch_scripts/logs/log_extract_features_from_dtdm_group_qsos_mbh.log
+python scripts/extract_features_from_dtdm_group.py --object='qsos' --band=$bands --property='nEdd' --n_cores=$n_cores --name='log_30' --n_bins=30 >& batch_scripts/logs/log_extract_features_from_dtdm_group_qsos_nedd.log
 
 
 #------------------------------------------------------------------------------
