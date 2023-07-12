@@ -29,7 +29,7 @@ import os
 import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from module.config import cfg
-from module.preprocessing import data_io, parse, lightcurve_statistics, pairwise
+from module.preprocessing import data_io, pairwise
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

@@ -4,9 +4,9 @@ from ..config import cfg
 
 def groupby_apply_features(df, kwargs):
     if ('band' in kwargs) & ('band' in df.columns):
-        s = df[df['band'] == kwargs['band']].groupby(df.index.name).apply(calculate_statistics)
+        s = df[df['band'] == kwargs['band']].groupby(df.index.name).apply(calculate_features)
     else:
-        s = df.groupby(df.index.name).apply(calculate_statistics)
+        s = df.groupby(df.index.name).apply(calculate_features)
     return pd.DataFrame(s.values.tolist(), index=s.index, dtype='float32')
 
 def groupby_apply_average(df, kwargs):

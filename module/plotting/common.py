@@ -71,7 +71,7 @@ def savefigs(fig, imgname, dirname, dpi=100, noaxis=False, **kwargs):
         kwargs['pad_inches'] = 0
 
     kwargs['bbox_inches'] = 'tight'
-    fig.savefig(os.path.join(png_path,imgname)+'.png',dpi=100, **kwargs)
+    fig.savefig(os.path.join(png_path,imgname)+'.png',dpi=dpi, **kwargs)
     fig.savefig(os.path.join(pdf_path,imgname)+'.pdf', **kwargs)
 
 # from  matplotlib import rcParams
