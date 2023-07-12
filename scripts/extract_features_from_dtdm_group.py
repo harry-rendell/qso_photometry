@@ -10,12 +10,16 @@ from module.classes.analysis import analysis
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--band", type=str, required=True, help="one or more filterbands for analysis")
-    parser.add_argument("--property", type=str, required=True, help="QSO property to use for splitting features")
+    parser.add_argument("--object",  type=str, required=True, help ="qsos or calibStars")
+    parser.add_argument("--band",    type=str, required=True, help="one or more filterbands for analysis")
+    parser.add_argument("--property",type=str, required=True, help="QSO property to use for splitting features")
     parser.add_argument("--n_cores", type=int, help="Number of cores to use. If left blank, then this value is taken from N_CORES in the config file.")
-    parser.add_argument("--n_rows", type=int, help="Number of rows to read in from the photometric data")
+    parser.add_argument("--name",    type=str, required=True, help="name for folder of output files, should start with log or lin to indicate whether to use log or linear time bins")
+    parser.add_argument("--n_bins",  type=int, required=True, help="Number of time bins to use")
+    parser.add_argument("--n_rows",  type=int, help="Number of rows to read in from the photometric data")
     parser.add_argument("--dry_run", action='store_true', help="Whether to do a dry run (i.e. don't save the output)")
-
+    parser.add_argument("--frame",   type=str, help=("OBS or REST to specify rest frame or observer frame time. \n"
+                                                   "Defaults to rest frame for Quasars and observer time for Stars.\n"))
     args = parser.parse_args()
     # Print the arguments for the log
     print(time.strftime('%H:%M:%S %d/%m/%y'))
@@ -29,8 +33,8 @@ if __name__ == "__main__":
     if args.n_cores:
         cfg.USER.N_CORES = args.n_cores
 
-    log_or_lin = 'log'
-    n_points = 20
+    n_points = args.n_bins
+    log_or_lin = args.name
 
     dr = analysis(ID, OBJ, 'r')
     dr.read_vac(catalogue_name='dr16q_vac')
@@ -41,7 +45,8 @@ if __name__ == "__main__":
     n_groups = len(groups)
     
     # keyword arguments to pass to our reading function
-    kwargs = {'dtypes': cfg.PREPROC.dtdm_dtypes,
+    kwargs = {'obj':OBJ,
+              'dtypes': cfg.PREPROC.dtdm_dtypes,
               'nrows': nrows,
               'usecols': [ID,'dt','dm','de','dsid'],
               'ID':ID,
@@ -62,7 +67,9 @@ if __name__ == "__main__":
             mjd_edges = [np.logspace(0, np.log10(max_t), n_points+1) for max_t in max_ts]
         elif log_or_lin.startswith('lin'):
             mjd_edges = [np.linspace(0, max_t, n_points+1) for max_t in max_ts]
-
+        else:
+            raise ValueError(f'name should start with log or lin')
+       
         # add these back into the kwargs dictionary
         kwargs['band'] = band
         kwargs['basepath'] = cfg.D_DIR + f'merged/{OBJ}/clean/dtdm_{band}'
@@ -81,28 +88,7 @@ if __name__ == "__main__":
         # repack results
         results = {key:np.array([result[key] for result in results]) for key in kwargs['features']}
 
-        pooled_results = {key:np.zeros(shape=(kwargs['n_points'], n_groups, 2)) for key in kwargs['features']}
-        pooled_results['n'] = np.zeros(shape=(kwargs['n_points'], n_groups), dtype='uint64')
-        
-        for key in results.keys():
-            if key != 'n':
-                try:
-                    # Two options. Could iterate over the group_idx, leaving pooled_mean = 0 in cases where the weights sum to zero
-                    # or, use 15767 (for Lbol) as the highest ∆t so that we can use the code below. There is a large discrepancy between max dt for differently grouped
-                    # qsos, because LboL is correlated with redshift (observational bias)
-                    pooled_mean = np.average(results[key][:,:,:,0], weights=results['n'], axis=0)
-                    pooled_var  = np.average(results[key][:,:,:,1], weights=results['n'], axis=0) + np.average((results[key][:,:,:,0]-pooled_mean)**2, weights=results['n'], axis=0) # this second term should be negligible since the SF of each chunk should be the same. # Note that the pooled variance is an estimate of the *common* variance of several populations with different means.
-                except ZeroDivisionError:
-                    print('Not all bins are populated.')
-                    
-                if key.startswith('SF'):
-                    pooled_results[key][:,:,0] = pooled_mean ** 0.5 # Square root to get SF instead of SF^2
-                    pooled_results[key][:,:,1] = pooled_var ** 0.5 # Square root to get std instead of var
-                else:
-                    pooled_results[key][:,:,0] = pooled_mean
-                    pooled_results[key][:,:,1] = pooled_var
-            else:
-                pooled_results[key] = results[key].sum(axis=0)
+        pooled_results = pairwise.calculate_pooled_statistics(results, n_points, n_groups)
         
         if not args.dry_run:
             for key in pooled_results.keys():

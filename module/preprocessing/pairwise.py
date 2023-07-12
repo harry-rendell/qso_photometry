@@ -2,8 +2,9 @@ import numpy as np
 import pandas as pd
 import os
 from ..config import cfg
-from .parse import split_into_non_overlapping_chunks
+from .parse import split_into_non_overlapping_chunks, create_mask_from_bounds
 from scipy.stats import skew, skewtest, kurtosis, kurtosistest
+from multiprocessing import Queue
 
 def groupby_dtdm_between(df, args):
     for index, group in df.groupby(df.index.name):
@@ -69,8 +70,10 @@ def groupby_save_pairwise(df, kwargs):
     if not os.path.exists(output_fpath):
         with open(output_fpath, 'w') as file:
             file.write(','.join([kwargs['ID'],'dt','dm','de','dsid']) + '\n')
+    else:
+        raise Exception(f'File already exists: {output_fpath}')
     
-    n_chunks = len(df)//40000 + 1 # May need to reduce this down to, say, 30,000 if the memory usage is too large.
+    n_chunks = len(df)//30000 + 1 # May need to reduce this down to, say, 30,000 if the memory usage is too large.
     for i, chunk in enumerate(split_into_non_overlapping_chunks(df, n_chunks)):
         # If multiple bands are provided, iterate through them.
         s = chunk.groupby(kwargs['ID']).apply(calculate_dtdm, mjd_key)
@@ -133,25 +136,17 @@ def calculate_stats_looped(df, kwargs):
     if inner:
         df = df[np.sqrt(df['dsid'])%1==0]
 
-    df = df.dropna()
-
+    mask1 = df['dm'].notna().values & df['de'].notna().values
+    mask2 = create_mask_from_bounds(df, cfg.PREPROC.dtdm_bounds[kwargs['obj']])
+    df = df[mask1 & mask2]
     for j, edges in enumerate(zip(mjd_edges[:-1], mjd_edges[1:])):
         mjd_lower, mjd_upper = edges
         boolean = ((mjd_lower < df['dt']) & (df['dt']<mjd_upper)).values# & (df['dm2_de2']>0) # include last condition to remove negative SF values
-        # print('number of points in {:.1f} < ∆t < {:.1f}: {}'.format(mjd_lower, mjd_upper, boolean.sum()))
         subset = df[boolean]
-        # subset = subset[subset['dm2_de2']<1]
-        # subset.loc[(subset['dm2_de2']<0).values,'dm2_de2'] = 0 # Include for setting negative SF values to zero. Need .values for mask to prevent pandas warning
         n = len(subset)
         results['n'][j] = n
-        
+        # print('\t\tnumber of points in {:.1f} < ∆t < {:.1f}: {}'.format(mjd_lower, mjd_upper, boolean.sum()))
         if n>0:
-            # results['mean'][i,j, (0,1)] = subset['dm'].mean(), subset['dm'].std()
-            # results['SF'][i,j,(0,1)] = (subset['dm']**2).mean(), (subset['de']**2).sum()/n
-            # results['SF corrected'][i,j,(0,1)] = subset['dm2_de2'].mean(), subset['dm2_de2'].var()
-            # results['SF a'][i,j,(0,1)] = (subset['dm']**2).mean(), 1/weights.sum()
-            # results['SF b'][i,j,(0,1)] = (subset['dm']**2).mean(), (subset['dm']**2).var()
-
             weights = subset['de']**-2
             results['mean weighted a'][j,(0,1)] = np.average(subset['dm'], weights = weights), 1/weights.sum()
             results['mean weighted b'][j,(0,1)] = np.average(subset['dm'], weights = weights), subset['dm'].var() 
@@ -163,15 +158,12 @@ def calculate_stats_looped(df, kwargs):
             weights = 0.5*subset['de']**-4
 
             dm2_de2 = subset['dm']**2 - subset['de']**2
-            SF = np.average(dm2_de2, weights = weights)
 
-            if SF < 0:
-                SF = 0
-            results['SF cwf a'][j, 0] = SF
+            results['SF cwf a'][j, 0] = np.average(dm2_de2, weights = weights)
             results['SF cwf a'][j, 1] = 1/weights.sum()
 
-            results['SF cwf b'][j, 0] = SF
-            results['SF cwf b'][j, 1] = dm2_de2.var() #we should square root this, but then it's too large
+            results['SF cwf b'][j, 0] = np.nanmedian(dm2_de2)
+            results['SF cwf b'][j, 1] = dm2_de2.var()
             
             mask_p = (subset['dm']>0).values
             mask_n = (subset['dm']<0).values
@@ -191,12 +183,9 @@ def calculate_stats_looped(df, kwargs):
                     results['SF cwf n'][j,0] = SF_n
                     results['SF cwf n'][j,1] = 1/weights[mask_n].sum()
             except:
-                # pass
-                print('weights cannot be normalized')
+                print(f'weights cannot be normalized, no points in bin: {mjd_lower:.1f} < ∆t < {mjd_upper:.1f}', flush=True)
             
-        # else:
-            # print('number of points in bin:',n)
-    
+    del df
     return results
 
 def calculate_stats_looped_key(df, kwargs):
@@ -217,7 +206,6 @@ def calculate_stats_looped_key(df, kwargs):
     -------
     results : dict of nd_arrays, shape (n_chunk, n_points)
     """
-
     features = kwargs['features']
     n_points = kwargs['n_points'] # number of points to plot
     mjd_edges = kwargs['mjd_edges']
@@ -227,30 +215,22 @@ def calculate_stats_looped_key(df, kwargs):
     results = {feature:np.zeros(shape=(n_points, n_groups, 2)) for feature in features}
     results['n'] = np.zeros(shape=(n_points, n_groups), dtype='uint64')
 
-    df = df.dropna()
-
+    mask1 = df['dm'].notna().values & df['de'].notna().values
+    mask2 = create_mask_from_bounds(df, cfg.PREPROC.dtdm_bounds[kwargs['obj']])
+    df = df[mask1 & mask2]
     for group_idx in range(n_groups):
         subgroup = df[df.index.isin(groups[group_idx])]
-        # print('subgroup: {}'.format(group_idx))
-        # print('\tmax ∆t: {:.2f}'.format(subgroup['dt'].max()))
-        
         for j, edges in enumerate(zip(mjd_edges[group_idx][:-1], mjd_edges[group_idx][1:])):
             mjd_lower, mjd_upper = edges
             boolean = ((mjd_lower < subgroup['dt']) & (subgroup['dt'] < mjd_upper)).values# & (subgroup['dm2_de2']>0) # include last condition to remove negative SF values
             subset = subgroup[boolean]
-            # subset.loc[(subset['dm2_de2']<0).values,'dm2_de2'] = 0 # Include for setting negative SF values to zero. Need .values for mask to prevent pandas warning
             n = len(subset)
             results['n'][j, group_idx] = n
             # print('\t\tnumber of points in {:.1f} < ∆t < {:.1f}: {}'.format(mjd_lower, mjd_upper, boolean.sum()))
-
             if n>0:
-                # results['mean'][i,j, (0,1)] = subset['dm'].mean(), subset['dm'].std()
-                # results['SF'][i,j,(0,1)] = (subset['dm']**2).mean(), (subset['de']**2).sum()/n
-                # results['SF corrected'][i,j,(0,1)] = subset['dm2_de2'].mean(), subset['dm2_de2'].var()
-                # results['SF a'][i,j,(0,1)] = (subset['dm']**2).mean(), 1/weights.sum()
-                # results['SF b'][i,j,(0,1)] = (subset['dm']**2).mean(), (subset['dm']**2).var()
 
                 weights = subset['de']**-2
+
                 results['mean weighted a'][j,group_idx,(0,1)] = np.average(subset['dm'], weights = weights), 1/weights.sum()
                 results['mean weighted b'][j,group_idx,(0,1)] = np.average(subset['dm'], weights = weights), subset['dm'].var() 
                 if n>8:
@@ -261,12 +241,12 @@ def calculate_stats_looped_key(df, kwargs):
                 weights = 0.5*subset['de']**-4
 
                 dm2_de2 = subset['dm']**2 - subset['de']**2
-                SF = np.average(dm2_de2, weights = weights)
 
-                if SF < 0:
-                    SF = 0
-                results['SF cwf a'][j,group_idx,(0,1)] = SF, 1/weights.sum()
-                results['SF cwf b'][j,group_idx,(0,1)] = SF, dm2_de2.var() #we should square root this, but then it's too large
+                results['SF cwf a'][j,group_idx,0] = np.average(dm2_de2, weights = weights)
+                results['SF cwf a'][j,group_idx,1] = 1/weights.sum()
+
+                results['SF cwf b'][j,group_idx,0] = np.nanmedian(dm2_de2)
+                results['SF cwf b'][j,group_idx,1] = dm2_de2.var()
                 
                 mask_p = (subset['dm']>0).values
                 mask_n = (subset['dm']<0).values
@@ -276,18 +256,65 @@ def calculate_stats_looped_key(df, kwargs):
                         SF_p = np.average(dm2_de2[mask_p], weights = weights[mask_p])
                         if SF_p < 0:
                             SF_p = 0
-                        results['SF cwf p'][j,group_idx,(0,1)] = SF_p, 1/weights[mask_p].sum()
+                        results['SF cwf p'][j,group_idx,0] = SF_p
+                        results['SF cwf p'][j,group_idx,1] = 1/weights[mask_p].sum()
                     
                     if mask_n.sum()>0:
                         SF_n = np.average(dm2_de2[mask_n], weights = weights[mask_n])
                         if SF_n < 0:
                             SF_n = 0
-                        results['SF cwf n'][j,group_idx,(0,1)] = SF_n, 1/weights[mask_n].sum()
+                        results['SF cwf n'][j,group_idx,0] = SF_n
+                        results['SF cwf n'][j,group_idx,1] = 1/weights[mask_n].sum()
                 except:
-                    # pass
-                    print('weights cannot be normalized')
+                    print(f'weights cannot be normalized, no points in bin: {mjd_lower:.1f} < ∆t < {mjd_upper:.1f}', flush=True)
                 
-            # else:
-                # print('number of points in bin:',n)
-
+    del df
     return results
+
+# calculate pooled statistics
+def calculate_pooled_statistics(results, n_points, n_groups=None):
+    """
+    Calculate pooled statistics from the results of calculate_stats... functions above
+    """
+    if n_groups is None:
+        shape = (n_points, 2)
+    else:
+        shape = (n_points, n_groups, 2)
+
+    pooled_results = {key:np.zeros(shape=shape) for key in results.keys()}
+    pooled_results['n'] = np.zeros(shape=shape[:-1], dtype='uint64')
+
+    for key in results.keys():
+        if key == 'n':
+            # Simply sum the bin counts
+            pooled_results[key] = results[key].sum(axis=0)
+        else:
+            # Pooling statistics: see below.
+            # https://en.wikipedia.org/wiki/Law_of_total_variance
+            # https://arxiv.org/pdf/1007.1012.pdf
+            # https://stats.stackexchange.com/questions/25848/how-to-sum-a-standard-deviation
+            
+            mask = results['n'].sum(axis=0) == 0
+            if mask.sum()>0:
+                print(f'Warning: {mask.sum()} bins have zero points', flush=True)
+                results['n'][..., mask] = 1 # Avoid ZeroDivisionError in np.average
+            
+            # Pooled mean is the weighted average of the means
+            pooled_mean = np.average(results[key][...,0], weights=results['n'], axis=0)
+            # Pooled variance is the mean of the variances plus the variance of the means
+            pooled_var  = np.average(results[key][...,1], weights=results['n'], axis=0) + np.average((results[key][...,0]-pooled_mean)**2, weights=results['n'], axis=0)
+            
+            if mask.sum()>0:
+                # Set the bins with zero points to NaN 
+                pooled_mean[mask] = np.nan
+                pooled_var[mask]  = np.nan
+            
+            if key.startswith('SF'):
+                pooled_results[key][...,0] = np.sign(pooled_mean) * (abs(pooled_mean) ** 0.5) # Square root to get SF instead of SF^2
+                pooled_results[key][...,1] = np.sign(pooled_var ) * (abs(pooled_var ) ** 0.5) # Square root to get sig instead of var
+            else:
+                pooled_results[key][...,0] = pooled_mean
+                pooled_results[key][...,1] = pooled_var
+
+            
+    return pooled_results
