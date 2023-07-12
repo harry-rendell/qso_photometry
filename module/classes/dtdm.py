@@ -23,7 +23,7 @@ class dtdm_raw_analysis():
 		self.name = name
 		# sort based on filesize, then do ordered shuffle so that each core recieves the same number of large files
 		if os.path.exists(self.data_path):
-			fnames = [a for a in os.listdir(self.data_path) if re.match('dtdm_[0-9]{5,7}_[0-9]{5,7}.csv',os.listdir(self.data_path)[0])]
+			fnames = [a for a in os.listdir(self.data_path) if re.match('dtdm_[0-9]{5,7}_[0-9]{5,7}.csv', a)]
 			size=[]
 			for file in fnames:
 				size.append(os.path.getsize(self.data_path+file))
@@ -200,35 +200,56 @@ class dtdm_raw_analysis():
 	def read_pooled_stats(self, log_or_lin, key=None):
 		self.log_or_lin = log_or_lin
 		self.key = key
-		if key == 'all':
-			fpath = cfg.D_DIR + f'computed/{self.obj}/dtdm_stats/all/{self.log_or_lin}/{self.band}/'
-			names = os.listdir(fpath)
-			self.pooled_stats = {name[7:-4].replace('_',' '):np.loadtxt(fpath+name) for name in names if name.startswith('pooled')}
-		else:
-			fpath = cfg.D_DIR + f'computed/{self.obj}/dtdm_stats/{key}/{self.log_or_lin}/{self.band}/'
-			self.bounds_values = np.loadtxt(fpath + 'bounds_values.csv'.format(self.obj, self.key))
-			self.n_groups = len(self.bounds_values)-1
-			self.label_range_val = {i:'{:.1f} < {} < {:.1f}'.format(self.bounds_values[i],self.key,self.bounds_values[i+1]) for i in range(len(self.bounds_values)-1)}
-			
-			names = os.listdir(fpath)
-			self.pooled_stats = {name[7:-6].replace('_',' '):np.array([np.loadtxt('{}{}_{}.csv'.format(fpath,name[:-6],i)) for i in range(self.n_groups)]) for name in names if name.startswith('pooled')}
-		
-		self.mjd_edges = np.loadtxt(fpath+'mjd_edges.csv')
-		self.mjd_centres = (self.mjd_edges[:-1] + self.mjd_edges[1:])/2
+		fpath = cfg.D_DIR + f'computed/{self.obj}/dtdm_stats/{key}/{self.log_or_lin}/{self.band}/'
+		names = os.listdir(fpath)
 
-	def plot_stats(self, keys, figax, macleod=False, fit=False, color='b', **kwargs):
+		if key == 'all':
+			self.pooled_stats = ({name[7:-4].replace('_',' '):np.loadtxt(fpath+name) 
+								  for name in names if name.startswith('pooled')})
+			self.mjd_edges = np.loadtxt(fpath + 'mjd_edges.csv')
+			self.mjd_centres = (self.mjd_edges[:-1] + self.mjd_edges[1:])/2
+		else:
+			self.bounds_values = np.loadtxt(fpath + 'bounds_values.csv')
+			self.n_groups = len(self.bounds_values)-1
+			self.pooled_stats = ({name[7:-6].replace('_',' '):np.array([np.loadtxt('{}{}_{}.csv'.format(fpath,name[:-6],i)) 
+							      for i in range(self.n_groups)])
+								  for name in names if name.startswith('pooled')})
+			self.label_range_val = {i:'{:.1f} < {} < {:.1f}'.format(self.bounds_values[i],self.key,self.bounds_values[i+1]) for i in range(self.n_groups)}
+			self.mjd_edges = np.array([np.loadtxt(fpath + f'mjd_edges_{i}.csv') for i in range(self.n_groups)])
+			self.mjd_centres = (self.mjd_edges[:, :-1] + self.mjd_edges[:, 1:])/2
+
+	def plot_stats(self, keys, figax, macleod=False, fit=False, **kwargs):
 		if figax is None:
-			fig, ax = plt.subplots(1,1, figsize=(18,8))
+			fig, ax = plt.subplots(1,1, figsize=(12,8))
 		else:
 			fig, ax = figax
 		if keys=='all':
 			keys = list(self.pooled_stats.keys())[1:]
+		
+		# Norm by log
+		# normalised_bin_counts = np.log(self.pooled_stats['n']) + 50
+		# Norm by total max
+		# normalised_bin_counts = self.pooled_stats['n']/np.max(self.pooled_stats['n'])*1e4
+		# Norm per time bin
+		normalised_bin_counts = self.pooled_stats['n']/self.pooled_stats['n'].sum(axis=0)*1e3
 
-		for key, color in zip(keys,colors):
+		for key in keys:
 			y = self.pooled_stats[key]
+			if key.startswith('SF') & (self.log_or_lin=='log'):
+				y[y<0] = np.nan
+			if 'label' in kwargs:
+				label = kwargs['label']
+			else:
+				label = '{}, {}'.format(self.name,key)
 			# ax.errorbar(self.mjd_centres, y[:,0], yerr=y[:,1]**0.5, label='{}, {}'.format(key,self.name), color=color, lw=2.5) # square root this
-			ax.errorbar(self.mjd_centres, y[:,0], yerr=y[:,1], label='{}, {}'.format(self.name,key), color=color, lw=2.5, capsize=10)
-			ax.scatter(self.mjd_centres, y[:,0], color=color, s=80)
+			ax.errorbar(self.mjd_centres, y[:,0], yerr=y[:,1],
+						capsize=5,
+						lw=0.6,
+						elinewidth=0.5,
+						markeredgecolor=0.2)
+			ax.scatter(self.mjd_centres, y[:,0], s=normalised_bin_counts,
+	      			   label=label)
+	
 			ax.set(xlabel='Rest frame time lag (days)')
 
 		if macleod:
@@ -244,37 +265,81 @@ class dtdm_raw_analysis():
 				return a*x**b
 			for key in keys:
 				y, err = self.pooled_stats[key].T
-				popt, pcov = curve_fit(power_law, self.mjd_centres[10:], y[10:])
-				x = np.logspace(-1,5,100)
+				popt, pcov = curve_fit(power_law, self.mjd_centres, y)
+				x = np.logspace(0,5,100)
 				ax.plot(x, power_law(x, *popt), lw=2, ls='-.', label=r'$\Delta t^{\beta}, \beta='+'{:.2f}'.format(popt[1])+'$') #fix this
 				print('Slope for {}: {:.2f}'.format(key, popt[1]))
+		
 		ax.set(**kwargs)
 		ax.legend()
+		for handle in plt.legend().legend_handles:
+			try:
+				handle.set_sizes([70])
+			except:
+				pass
 		# ax.set(xlabel='$(m_i-m_j)^2 - \sigma_i^2 - \sigma_j^2$', title='Distribution of individual corrected SF values', **kwargs)
 		return (fig,ax)
 
-	def plot_stats_property(self, keys, figax, macleod=False, fit=False, **kwargs):
+	def plot_stats_property(self, keys, figax, macleod=False, fill_between=False, **kwargs):
 		if figax is None:
-			fig, ax = plt.subplots(1,1, figsize=(18,12))
+			fig, ax = plt.subplots(1,1, figsize=(12,8))
 		else:
 			fig, ax = figax
 		if keys=='all':
 			keys = list(self.pooled_stats.keys())[1:]
+		
+		# Norm by log
+		# normalised_bin_counts = np.log(self.pooled_stats['n']) + 50
+		# Norm by total max
+		# normalised_bin_counts = self.pooled_stats['n']/np.max(self.pooled_stats['n'])*1e4
+		# Norm per group
+		normalised_bin_counts = self.pooled_stats['n']/self.pooled_stats['n'].sum(axis=0)*1e3
+		# Norm per time bin
+		# normalised_bin_counts = self.pooled_stats['n']/(self.pooled_stats['n'].sum(axis=1).reshape(-1,1))*2e3
+		
+		if fill_between:
+			for key in keys:
+				max_ = self.pooled_stats[key].max(axis=0)
+				min_ = self.pooled_stats[key].min(axis=0)
+				ax.fill_between(self.mjd_centres.max(axis=0), min_[:,0]-min_[:,1], max_[:,0]+max_[:,1], color='#ff7f0e', alpha=0.2,
+						edgecolor='#C3610C', lw=2)
+			# Don't show errorbars if we are showing the fill_between
+			elinewdith = 0
+			markeredgewidth = 0
+		else:
+			elinewdith = 0.2
+			markeredgewidth = 0.2
 
 		for group_idx in range(self.n_groups):
 			for key in keys:
 				y = self.pooled_stats[key][group_idx]
-				color = cmap.jet(group_idx/self.n_groups)
-				ax.errorbar(self.mjd_centres, y[:,0], yerr=y[:,1], label=self.label_range_val[group_idx], color=color, capsize=10) # square root this
-				ax.scatter(self.mjd_centres, y[:,0], color=color)
+				mask = abs(y[:,0]-y[:,0].mean()) > 10*y[:,0].std() # Note this is a hack to remove the large values from the plot
+				y[mask, :] = np.nan,np.nan 
+				color = cmap.gist_earth(group_idx/self.n_groups)
+				ax.errorbar(self.mjd_centres[group_idx], y[:,0], yerr=y[:,1],
+							capsize=5,
+							lw=0.5,
+							elinewidth=elinewdith,
+							markeredgewidth=markeredgewidth)#, color=color) # square root this
+				# make the size of the scatter points proportional to the number of points in the bin
+				ax.scatter(self.mjd_centres[group_idx], y[:,0], s=normalised_bin_counts[group_idx],
+	       				   alpha=0.6,
+						   label=self.label_range_val[group_idx])#, color=color)
 
 		if macleod:
 			f = lambda x: 0.01*(x**0.443)
-			ax.plot(self.mjd_centres, f(self.mjd_centres), lw=0.5, ls='--', color='b', label='MacLeod 2012')
+			ax.plot(self.mjd_centres.mean(), f(self.mjd_centres.mean()), lw=0.1, ls='--', color='b', label='MacLeod 2012')
 			x,y = np.loadtxt(cfg.D_DIR + 'Macleod2012/SF/macleod2012.csv', delimiter=',').T
 			ax.scatter(x, y, label = 'macleod 2012')
 
 		ax.legend()
+
+		for handle in plt.legend().legend_handles:
+			try:
+				handle.set_sizes([70])
+			except:
+				pass
+
 		ax.set(xlabel='Rest frame time lag (days)', title='{}, {}'.format(keys[0], self.obj), **kwargs)
 
 		return (fig,ax)
