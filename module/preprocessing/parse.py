@@ -113,3 +113,9 @@ def split_into_non_overlapping_chunks(df, n_chunks, bin_size=None, return_bin_ed
         return uid_ranges, chunks
     else:
         return chunks
+
+def create_mask_from_bounds(df, bounds):
+    """
+    Create a boolean mask for a dataframe based on bounds provided.
+    """
+    return np.all([df[key].between(bound[0], bound[1]).values for key, bound in bounds.items()], axis=0)
