@@ -2,12 +2,11 @@ import pandas as pd
 from multiprocessing import Pool
 import os
 from .import parse
-from ..config import cfg
-from astropy.table import Table
-from astropy.io import ascii
-from tqdm import tqdm
 
 def to_ipac(df, save_as, columns):
+	from astropy.table import Table
+	from astropy.io import ascii
+
 	t = Table.from_pandas(df[columns], index=True)
 	ascii.write(t, save_as, format='ipac', overwrite=True)
 
