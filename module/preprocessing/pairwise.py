@@ -4,7 +4,6 @@ import os
 from ..config import cfg
 from .parse import split_into_non_overlapping_chunks, create_mask_from_bounds
 from scipy.stats import skew, skewtest, kurtosis, kurtosistest
-from multiprocessing import Queue
 
 def groupby_dtdm_between(df, args):
     for index, group in df.groupby(df.index.name):
