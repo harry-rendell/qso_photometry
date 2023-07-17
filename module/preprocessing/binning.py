@@ -80,7 +80,7 @@ def bin_data(dtdm, kwargs):
     
     return dts_binned, dms_binned, des_binned, dm2_de2_binned, dsid
 
-def create_binned_data_from_dtdm(dtdm, kwargs):
+def create_binned_data_from_dtdm(df, kwargs):
     """
     TODO: This could be put in the function above
     """
@@ -90,10 +90,13 @@ def create_binned_data_from_dtdm(dtdm, kwargs):
     # If a subset of objects has been provided, restrict our DataFrame to that subset.
     if 'subset' in kwargs:
         df = df[df.index.isin(kwargs['subset'])]
+    if 'inner' in kwargs:
+        if kwargs['inner']:
+            df = df[(np.sqrt(df['dsid'])%1==0).values]
 
-    dtdm['dm2_de2'] = dtdm['dm']**2 - dtdm['de']**2
+    df['dm2_de2'] = df['dm']**2 - df['de']**2
 
-    return bin_data(dtdm[['dt','dm','de','dm2_de2','dsid']].values, kwargs)
+    return bin_data(df[['dt','dm','de','dm2_de2','dsid']].values, kwargs)
 
 def calculate_groups(x, bounds):
     """
