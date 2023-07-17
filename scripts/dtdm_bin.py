@@ -13,10 +13,12 @@ if __name__ == "__main__":
     parser.add_argument("--object",  type=str, required=True, help ="qsos or calibStars")
     parser.add_argument("--band",    type=str, required=True, help="one or more filterbands for analysis")
     parser.add_argument("--n_cores", type=int, required=True, help="Number of cores to use. If left blank, then this value is taken from N_CORES in the config file.")
+    parser.add_argument("--name",    type=str, required=True, help="name for folder of output files")
     parser.add_argument("--n_bins_T",  type=int, required=True, help="Number of time bins to use. Default is 19")
     parser.add_argument("--n_rows",  type=int, help="Number of rows to read in from the photometric data")
     parser.add_argument("--frame",   type=str, help=("OBS or REST to specify rest frame or observer frame time. \n"
                                                    "Defaults to rest frame for Quasars and observer time for Stars.\n"))
+    parser.add_argument("--inner", action='store_true', default=False, help="Apply pairwise analysis to points only within a survey")
     args = parser.parse_args()
     # Print the arguments for the log
     print(time.strftime('%H:%M:%S %d/%m/%y'))
@@ -49,7 +51,7 @@ if __name__ == "__main__":
               'usecols': [ID,'dt','dm','de','dsid'],
               'ID':ID,
               'mjd_key':mjd_key,
-              'inner':False}
+              'inner':args.inner}
 
     for band in args.band:
         # set the maximum time to use for this band
@@ -64,7 +66,7 @@ if __name__ == "__main__":
         bin_dict2 = binning.create_bins(bin_dict1)
 
         # create output directories
-        output_dir = os.path.join(cfg.D_DIR, f'computed/{OBJ}/dtdm_binned/')
+        output_dir = os.path.join(cfg.D_DIR, f'computed/{OBJ}/dtdm_binned/{args.name}/')
         print(f'creating output directory if it does not exist: {output_dir}')
         os.makedirs(output_dir, exist_ok=True)
 
