@@ -200,7 +200,7 @@ class dtdm_raw_analysis():
 
 	def plot_stats(self, keys, figax, macleod=False, fit=False, **kwargs):
 		if figax is None:
-			fig, ax = plt.subplots(1,1, figsize=(12,8))
+			fig, ax = plt.subplots(1,1, figsize=(10,6))
 		else:
 			fig, ax = figax
 		if keys=='all':
@@ -262,7 +262,7 @@ class dtdm_raw_analysis():
 
 	def plot_stats_property(self, keys, figax, macleod=False, fill_between=False, **kwargs):
 		if figax is None:
-			fig, ax = plt.subplots(1,1, figsize=(12,8))
+			fig, ax = plt.subplots(1,1, figsize=(10,7))
 		else:
 			fig, ax = figax
 		if keys=='all':
