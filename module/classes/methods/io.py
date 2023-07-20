@@ -79,6 +79,7 @@ def read_vac(self, catalogue_name='dr16q_vac'):
                           'Lbol':(44,48)}
 
     elif catalogue_name == 'dr16q_vac':
+        # https://arxiv.org/abs/2209.03987
         # cols = ra, dec, redshift_vac, Lbol, Lbol_err, MBH_HB, MBH_HB_err, MBH_MgII, MBH_MgII_err, MBH_CIV, MBH_CIV_err, MBH, MBH_err, nEdd, nEdd_err
         fpath = 'catalogues/qsos/dr16q/dr16q_vac_shen_matched.csv'
 
