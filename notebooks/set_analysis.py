@@ -1,0 +1,25 @@
+# ---
+# jupyter:
+#   jupytext:
+#     text_representation:
+#       extension: .py
+#       format_name: light
+#       format_version: '1.5'
+#       jupytext_version: 1.14.5
+#   kernelspec:
+#     display_name: astro
+#     language: python
+#     name: python3
+# ---
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+import os
+import sys
+sys.path.insert(0, os.path.join(os.getcwd(), ".."))
+from module.config import cfg
+from module.preprocessing import colour_transform, parse, data_io, lightcurve_statistics, binning
+
+
