@@ -13,7 +13,7 @@
 # source ~/.bashrc_old
 
 # use same number of cores as cpus-per-task above
-n_cores=38
+n_cores=32
 surveys="supercosmos sdss ps ztf"
 bands='gri'
 
@@ -73,10 +73,18 @@ bands='gri'
 #------------------------------------------------------------------------------
 # Extract and save features from grouped dtdm (only applied to qsos)
 # ------------------------------------------------------------------------------
-python scripts/extract_features_from_dtdm_group.py --object='qsos' --band=$bands --property='Lbol' --n_cores=$n_cores --name='log_30' --n_bins=30 >& batch_scripts/logs/log_extract_features_from_dtdm_group_qsos_lbol.log
-python scripts/extract_features_from_dtdm_group.py --object='qsos' --band=$bands --property='MBH' --n_cores=$n_cores --name='log_30' --n_bins=30 >& batch_scripts/logs/log_extract_features_from_dtdm_group_qsos_mbh.log
-python scripts/extract_features_from_dtdm_group.py --object='qsos' --band=$bands --property='nEdd' --n_cores=$n_cores --name='log_30' --n_bins=30 >& batch_scripts/logs/log_extract_features_from_dtdm_group_qsos_nedd.log
+# python scripts/extract_features_from_dtdm_group.py --object='qsos' --band=$bands --property='Lbol' --n_cores=$n_cores --name='log_30' --n_bins=30 >& batch_scripts/logs/log_extract_features_from_dtdm_group_qsos_lbol.log
+# python scripts/extract_features_from_dtdm_group.py --object='qsos' --band=$bands --property='MBH' --n_cores=$n_cores --name='log_30' --n_bins=30 >& batch_scripts/logs/log_extract_features_from_dtdm_group_qsos_mbh.log
+# python scripts/extract_features_from_dtdm_group.py --object='qsos' --band=$bands --property='nEdd' --n_cores=$n_cores --name='log_30' --n_bins=30 >& batch_scripts/logs/log_extract_features_from_dtdm_group_qsos_nedd.log
 
+#------------------------------------------------------------------------------
+# Bin dtdm data
+# TODO: Rerun with inner in kwargs
+# ------------------------------------------------------------------------------
+# python scripts/dtdm_bin.py --object='calibStars' --band=$bands --n_cores=10 --n_bins_T=25  >& batch_scripts/logs/log_dtdm_bin_calibStars.log
+# python scripts/dtdm_bin.py --object='qsos'       --band=$bands --n_cores=10 --n_bins_T=25  >& batch_scripts/logs/log_dtdm_bin_qsos.log
+python scripts/dtdm_bin.py --object='calibStars' --band=$bands --n_cores=20 --n_bins_T=20 --inner --name='inner'  >& batch_scripts/logs/log_dtdm_bin_calibStars_inner.log
+python scripts/dtdm_bin.py --object='qsos'       --band=$bands --n_cores=20 --n_bins_T=20 --inner --name='inner'  >& batch_scripts/logs/log_dtdm_bin_qsos_inner.log
 
 #------------------------------------------------------------------------------
 # Extract and save features from light curves
