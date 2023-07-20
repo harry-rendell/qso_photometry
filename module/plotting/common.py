@@ -30,19 +30,23 @@ def plot_series(df, uids, axes=None, grouped=None, **kwargs):
         axes=axes[0]
         
     plt.subplots_adjust(hspace=0)
+    if axes is None:
+        return fig, axes
     return axes
 
 def savefigs(fig, imgname, dirname, dpi=100, noaxis=False, **kwargs):
     """
     Save a low-res png and high-res pdf for fast compiling of thesis
 
+    Example: savefigs(fig, 'survey/SURVEY-DATA-venn_diagram', 'chap2')
+    or
     Example: savefigs(fig, 'SURVEY-DATA-venn_diagram', 'chap2')
 
     Parameters
     ----------
     fig : matplotlib figure handle
     imgname : str
-        name for plot without extension
+        name for plot without extension. Prefix with a folder to create a subdirectory.
     dirname : str
         Absolute or relative (to cfg.FIG.THESIS_PLOT_DIR) directory for saving.
         Creates directories if output path does not exist.
@@ -55,13 +59,13 @@ def savefigs(fig, imgname, dirname, dpi=100, noaxis=False, **kwargs):
     if not os.path.exists(dirname):
         # If we provide a relative path, assume that we're plotting straight to our overleaf project
         dirname = os.path.join(cfg.THESIS_DIR, dirname)
-        assert os.path.exists(dirname), "Relative path does not exist"
+        assert os.path.exists(dirname), f"Relative path {dirname} does not exist"
         pdf_path = os.path.join(dirname, 'graphics')
         png_path = os.path.join(dirname, 'draft_graphics')
     else:
+        # If we provide an absolute path that exists, save both png and pdf to the same provided directory
         pdf_path = dirname
         png_path = dirname
-        os.makedirs(dirname, exist_ok=True)
 
     if noaxis:
         #https://stackoverflow.com/questions/11837979/removing-white-space-around-a-saved-image - Richard Yu Liu
@@ -71,6 +75,11 @@ def savefigs(fig, imgname, dirname, dpi=100, noaxis=False, **kwargs):
         kwargs['pad_inches'] = 0
 
     kwargs['bbox_inches'] = 'tight'
+    if "/" in imgname:
+        # create subdirectories if they don't exist
+        os.makedirs(os.path.join(png_path, os.path.dirname(imgname)), exist_ok=True)
+        os.makedirs(os.path.join(pdf_path, os.path.dirname(imgname)), exist_ok=True)
+
     fig.savefig(os.path.join(png_path,imgname)+'.png',dpi=dpi, **kwargs)
     fig.savefig(os.path.join(pdf_path,imgname)+'.pdf', **kwargs)
 
