@@ -22,4 +22,13 @@ sys.path.insert(0, os.path.join(os.getcwd(), ".."))
 from module.config import cfg
 from module.preprocessing import colour_transform, parse, data_io, lightcurve_statistics, binning
 
+obj = 'qsos'
+band = 'r'
+ID = 'uid' if obj == 'qsos' else 'uid_s'
+sets = pd.read_csv(cfg.D_DIR + f'catalogues/{obj}/sets/clean_{band}.csv', comment='#', index_col=ID)
+
+sets
+
+sets['vac'].sum()
+
 

@@ -22,7 +22,7 @@ sys.path.insert(0, os.path.join(os.getcwd(), ".."))
 from module.config import cfg
 from module.preprocessing import data_io, parse, lightcurve_statistics, pairwise
 # from module.classes.analysis import analysis
-from module.classes.plotting_common import plot_series
+from module.plotting.common import plot_series
 
 # +
 OBJ    = 'qsos'
@@ -39,7 +39,7 @@ kwargs = {'dtypes': cfg.PREPROC.lc_dtypes,
           'basepath': cfg.D_DIR + 'surveys/{}/{}/clean/{}_band'.format(SURVEY, OBJ, BAND), # we should make this path more general so it is consistent between surveys
           'ID':ID}
 
-df = data_io.dispatch_reader(kwargs, multiproc=True)
+df = data_io.dispatch_reader(kwargs, multiproc=False, i=2)
 # -
 
 redshifts = pd.read_csv(cfg.D_DIR + 'catalogues/qsos/dr14q/dr14q_redshift.csv').set_index('uid')

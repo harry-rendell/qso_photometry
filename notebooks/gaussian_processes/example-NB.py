@@ -12,49 +12,37 @@
 #     name: python3
 # ---
 
-# +
-import sys
-sys.path.append('../')
-import pandas as pd 
-pd.options.mode.chained_assignment = None
+import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-from multiprocessing import Pool
-from module.classes.analysis import analysis
+import os
+import sys
+sys.path.insert(0, os.path.join(os.getcwd(), "..", ".."))
+from module.config import cfg
+from module.preprocessing import colour_transform, parse, data_io
 import celerite
 from celerite import terms
-# %matplotlib inline
-
-wdir = cfg.W_DIR
-
-def reader(n_subarray):
-    return pd.read_csv(cfg.D_DIR + 'merged/{}/r_band/with_ssa/lc_{}.csv'.format(obj,n_subarray), nrows=1000, comment='#', index_col = ID, dtype = {'catalogue': np.uint8, 'mag': np.float32, 'magerr': np.float32, 'mjd': np.float64, ID: np.uint32})
-
 
 
 # +
 obj = 'qsos'
-ID  = 'uid'
-band = 'r'
-redshift_bool = True
+ID = 'uid' if obj == 'qsos' else 'uid_s'
+nrows = None
+skiprows = None
 
-# obj = 'calibStars'
-# ID  = 'uid_s'
-# band = 'r'
-# redshift_bool = False
+kwargs = {'dtypes': cfg.PREPROC.lc_dtypes,
+          'nrows': nrows,
+          'skiprows': skiprows,
+          'basepath': cfg.D_DIR + f'merged/{obj}/clean',
+          'ID':ID}
 
-# Here we load the analysis class. This has various attibutes and methods outlined in /module.classes.py
-# Examples:
-# Photometry is in dr.df
-
-# Grouped statistics is in dr.grouped
-# DR12 VAC properties are in dr.properties
-dr = analysis(ID, obj)
-dr.read_in(reader, redshift=redshift_bool)
-dr.band = band
+df = data_io.dispatch_reader(kwargs, multiproc=False, i=0)
 # -
 
-t, y, yerr = dr.df.loc[1].query('catalogue==11')[['mjd','mag', 'magerr']].values.T
+df_r_ztf = df[(df['band'] == 'r') & (df['sid'] == 11)]
+df_r_ztf
+
+t, y, yerr = df_r_ztf.loc[4,['mjd','mag', 'magerr']].values.T
 # t -= t[0]
 # y -= y.mean()
 
@@ -64,7 +52,7 @@ t, y, yerr = dr.df.loc[1].query('catalogue==11')[['mjd','mag', 'magerr']].values
 # np.random.seed(42)
 
 # t = np.sort(np.append(
-#     np.random.uniform(0, 3.8, 57),
+#     np.random.uniform(0, 3.8, 57),|
 #     np.random.uniform(5.5, 10, 68),
 # ))  # The input coordinates must be sorted
 # yerr = np.random.uniform(0.08, 0.22, len(t))
@@ -84,8 +72,8 @@ import celerite
 from celerite import terms
 
 # A non-periodic component
-Q = 1.0 / np.sqrt(2.0)
-w0 = 3.0
+Q = 1e3 / np.sqrt(2.0)
+w0 = 1
 S0 = np.var(y) / (w0 * Q)
 bounds = dict(log_S0=(-15, 15), log_Q=(-15, 15), log_omega0=(-15, 15))
 kernel = terms.SHOTerm(log_S0=np.log(S0), log_Q=np.log(Q), log_omega0=np.log(w0),
@@ -116,9 +104,15 @@ x = np.linspace(t[0], t[-1], 5000)
 pred_mean, pred_var = gp.predict(y, x, return_var=True)
 pred_std = np.sqrt(pred_var)
 
+# +
 color = "#ff7f0e"
 fig, ax = plt.subplots(1,1, figsize=(18, 5))
 ax.errorbar(t, y, yerr=yerr, fmt=".k", capsize=0)
 ax.plot(x, pred_mean, color=color)
 ax.fill_between(x, pred_mean+pred_std, pred_mean-pred_std, color=color, alpha=0.3,
                  edgecolor="none")
+
+ax.set(xlim=[58300, 58500])
+# -
+
+

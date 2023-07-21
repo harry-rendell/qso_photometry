@@ -133,7 +133,7 @@ class AR():
             ax.axvline(x=0, lw=0.5, ls='--')
             ax.legend()
 
-    
+
 # -
 
 dts_binned_tot = np.zeros((21, 100), dtype = 'int64')

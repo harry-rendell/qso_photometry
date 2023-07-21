@@ -81,7 +81,6 @@ def mock_lc_flux(n_obj, flux_mean=1e-4, flux_std=6e-5):
     return df
 
 
-# +
 class simulation():
     
     def __init__(self, n_obj, mag_mean=18.9, mag_std=2):
@@ -124,9 +123,6 @@ class simulation():
         
         self.dtdm.hist('dm', ax=ax[0], bins=200, range=(-1,1))
         self.dtdm.hist('de', ax=ax[1], bins=100, range=(0,0.4))
-        
-
-# -
 
 sim = simulation(500)
 

@@ -12,9 +12,17 @@
 #     name: python3
 # ---
 
-import numpy as np
 import pandas as pd
+import numpy as np
 import matplotlib.pyplot as plt
+import os
+import sys
+sys.path.insert(0, os.path.join(os.getcwd(), "..", ".."))
+from module.config import cfg
+from module.preprocessing import parse, data_io, binning
+from module.classes.dtdm import dtdm_raw_analysis
+from module.classes.analysis import analysis
+from module.plotting.common import savefigs
 from scipy import signal
 
 

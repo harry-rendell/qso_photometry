@@ -44,6 +44,10 @@ display(pd.read_csv(cfg.D_DIR + 'surveys/supercosmos/survey_table.csv', usecols=
 
 ssa_secondary = {'calibStars':pd.read_csv(cfg.D_DIR + 'surveys/supercosmos/{}/ssa_secondary.csv'.format('calibStars')).set_index('uid_s'),
                  'qsos':      pd.read_csv(cfg.D_DIR + 'surveys/supercosmos/{}/ssa_secondary.csv'.format('qsos'))      .set_index('uid')}
+# -
+
+print(pd.read_csv(cfg.D_DIR + 'surveys/supercosmos/survey_table.csv', usecols= ['surveyID', 'surveyName', 'decMin', 'decMax',
+                                                                                       'telescope', 'colour', 'epochMin', 'epochMax']).set_index('surveyID').to_latex(caption='yes', label='yes', float_format='%.2f'))
 
 # + active=""
 # Note: surveyID = 4 has only 1 datapoint for qsos and none for stars, so we leave it out.
@@ -60,8 +64,6 @@ ssa_secondary = {'calibStars':pd.read_csv(cfg.D_DIR + 'surveys/supercosmos/{}/ss
 # i band (near-infrared)
 # * 3 SERC-I (south)
 # * 8 POSSII-I (north)
-#
-#
 # -
 
 # ---
