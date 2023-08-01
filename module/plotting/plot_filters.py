@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
+from ..config import cfg
 
 def plot_filters(**kwargs):
 	"""
@@ -18,6 +18,10 @@ def plot_filters(**kwargs):
 	ztf_i = pd.read_csv(wdir + 'raw/ztf/ztf_i.csv')
 	ps    = pd.read_csv(wdir + 'ps.csv')
 
+
+	# Colors
+	colors = [cfg.FIG.COLOURS.BANDS[c] for c in 'gri']
+
 	# Getting everything into the same units
 	ztf_g.loc[:, 'g'] /= 100
 	ztf_r.loc[:, 'r'] /= 100
@@ -28,12 +32,12 @@ def plot_filters(**kwargs):
 	ps.loc[:,'lambda'] *= 10
 
 	fig, ax = plt.subplots(1,1, figsize=(10,5))
-	ztf_g.plot(x='lambda', y='g', ax=ax, ls='-', ms=10, label='ztf_g', color = 'g')
-	ztf_r.plot(x='lambda', y='r', ax=ax, ls='-', ms=10, label='ztf_r', color = 'r')
-	ztf_i.plot(x='lambda', y='i', ax=ax, ls='-', ms=10, label='ztf_i', color = 'b')
+	ztf_g.plot(x='lambda', y='g', ax=ax, ls='-', ms=10, label='ztf_g', color = cfg.FIG.COLOURS.BANDS['g'])
+	ztf_r.plot(x='lambda', y='r', ax=ax, ls='-', ms=10, label='ztf_r', color = cfg.FIG.COLOURS.BANDS['r'])
+	ztf_i.plot(x='lambda', y='i', ax=ax, ls='-', ms=10, label='ztf_i', color = cfg.FIG.COLOURS.BANDS['i'])
 
-	sdss.plot(x='lambda', y=['g','r','i'], ax=ax, ls='--' , ms=10, label=['sdss_'+b for b in 'gri'], color = list('grb'))
-	ps  .plot(x='lambda', y=['g','r','i'], ax=ax, ls='-.', ms=10, label=['ps_' + b for b in 'gri'], color = list('grb'))
+	sdss.plot(x='lambda', y=['g','r','i'], ax=ax, ls='--' , ms=10, label=['sdss_'+b for b in 'gri'], color = colors)
+	ps  .plot(x='lambda', y=['g','r','i'], ax=ax, ls='-.', ms=10, label=['ps_' + b for b in 'gri'], color = colors)
 # 	sdss.plot(x='lambda', y=['g','r','i','z'], ax=ax, ls='-' , ms=10, label=['sdss_'+b for b in 'griz'], color = list('grbk'))
 # 	ps  .plot(x='lambda', y=['g','r','i','z'], ax=ax, ls='-.', ms=10, label=['ps_' + b for b in 'griz'], color = list('grbk'))
 
