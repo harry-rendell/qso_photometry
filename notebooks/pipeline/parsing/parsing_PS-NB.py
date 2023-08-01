@@ -12,6 +12,11 @@
 #     name: python3
 # ---
 
+# + language="bash"
+# jupytext --to py parsing_PS-NB.ipynb # Only run this if the notebook is more up-to-date than -NB.py
+# # jupytext --to --update ipynb parsing_PS-NB.ipynb # Run this to update the notebook if changes have been made to -NB.py
+# -
+
 import pandas as pd
 import numpy as np
 import os
@@ -27,9 +32,14 @@ wdir = cfg.W_DIR
 ddir = cfg.D_DIR
 
 cols = [ID, 'objID_ps', 'filter', 'obsTime', 'psfFlux', 'psfFluxErr']
-ps_secondary = pd.read_csv(cfg.D_DIR + 'surveys/ps/{}/ps_secondary.csv'.format(OBJ), dtype=cfg.COLLECTION.PS.dtypes, nrows=None, usecols=cols).set_index(ID).rename({'filter':'filtercode'})
-ps_neighbours = pd.read_csv(cfg.D_DIR + 'surveys/ps/{}/ps_neighbours.csv'.format(OBJ), dtype=cfg.COLLECTION.PS.dtypes).set_index(ID)
+# ps_secondary = pd.read_csv(cfg.D_DIR + 'surveys/ps/{}/ps_secondary.csv'.format(OBJ), dtype=cfg.COLLECTION.PS.dtypes, nrows=None, usecols=cols).set_index(ID).rename({'filter':'filtercode'})
+ps_neighbours = pd.read_csv(cfg.D_DIR + 'surveys/ps/{}/ps_neighbours_2arcsec.csv'.format(OBJ), dtype=cfg.COLLECTION.PS.dtypes).set_index(ID)
 ps_neighbours['sep'] *= 60
+
+ps_neighbours['sep'].max()
+
+# Save distance column
+ps_neighbours['sep'].to_csv(os.path.join(cfg.RES_DIR, 'plot_data', f'distances_ps_{OBJ}.csv'))
 
 valid_uids = pd.read_csv(ddir+'catalogues/{}/{}_subsample_coords.csv'.format(OBJ,OBJ), usecols=[ID], index_col=ID, comment='#')
 ps_secondary = parse.filter_data(ps_secondary, valid_uids=valid_uids)

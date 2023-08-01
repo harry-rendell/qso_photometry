@@ -1,17 +1,19 @@
 # ---
 # jupyter:
 #   jupytext:
+#     custom_cell_magics: kql
 #     text_representation:
 #       extension: .py
-#       format_name: light
-#       format_version: '1.5'
-#       jupytext_version: 1.14.5
+#       format_name: percent
+#       format_version: '1.3'
+#       jupytext_version: 1.11.2
 #   kernelspec:
 #     display_name: astro
 #     language: python
 #     name: python3
 # ---
 
+# %%
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -24,7 +26,7 @@ from module.classes.dtdm import dtdm_raw_analysis
 from module.classes.analysis import analysis
 from module.plotting.common import savefigs
 
-# +
+# %%
 band = 'i'
 OBJ = 'qsos'
 survey = 'ztf'
@@ -37,6 +39,6 @@ kwargs = {'dtypes': cfg.PREPROC.lc_dtypes,
             'usecols':[ID,'mjd','mag','magerr']}
 
 df = data_io.dispatch_reader(kwargs, multiproc=True)
-# -
 
+# %%
 a = df.sort_values('magerr')

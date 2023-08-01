@@ -13,6 +13,11 @@
 #     name: python3
 # ---
 
+# + language="bash"
+# jupytext --to py parsing_SDSS-NB.ipynb # Only run this if the notebook is more up-to-date than -NB.py
+# # jupytext --to --update ipynb parsing_SDSS-NB.ipynb # Run this to update the notebook if changes have been made to -NB.py
+# -
+
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -23,7 +28,7 @@ from module.config import cfg
 from module.preprocessing import colour_transform, parse, data_io
 
 OBJ    = 'qsos'
-ID     = 'uid'
+ID     = 'uid' if OBJ == 'qsos' else 'uid_s'
 wdir = cfg.W_DIR
 
 # Query used to obtain data (context = DR16):
@@ -117,12 +122,33 @@ wdir = cfg.W_DIR
 
 # +
 cols = [ID, 'objID'] + [x for y in zip(['mag_'+b for b in 'griz'], ['magerr_'+b for b in 'griz']) for x in y] + ['mjd','get_nearby_distance']
-sdss_unmelted = pd.read_csv(cfg.D_DIR + 'surveys/sdss/{}/sdss_secondary.csv'.format(OBJ), usecols=cols, dtype = cfg.COLLECTION.SDSS.dtypes)
+sdss_unmelted = pd.read_csv(cfg.D_DIR + 'surveys/sdss/{}/sdss_secondary_2arcsec.csv'.format(OBJ), usecols=cols, dtype = cfg.COLLECTION.SDSS.dtypes)
 
 n = len(sdss_unmelted)
 sdss_unmelted = sdss_unmelted.drop_duplicates(subset=[ID,'objID','mjd']).set_index(ID)
 print('number of duplicates removed:',n-len(sdss_unmelted))
 sdss_unmelted['get_nearby_distance'] *= 60
+
+sdss_unmelted['get_nearby_distance'].max()
+# -
+
+# Save distance column
+sdss_unmelted['get_nearby_distance'].to_csv(os.path.join(cfg.RES_DIR, 'plot_data', f'distances_sdss_{OBJ}.csv'))
+
+# +
+
+
+# Remove observations outside 1 arcsec
+# Note, a better method might be:
+
+# If average(distance) < 1", keep observations within 1"
+# else, throw out all observations.
+
+# This eliminates the possibility of keep observations that happen to be close to the coords
+#   but are actually from another source.
+
+# This case is not likely because the coords are from SDSS anyway, so all qsos should be present.
+sdss_unmelted = sdss_unmelted[sdss_unmelted['get_nearby_distance'] < 1]
 
 valid_uids = pd.read_csv(cfg.D_DIR + 'catalogues/{}/{}_subsample_coords.csv'.format(OBJ,OBJ), usecols=[ID], index_col=ID, comment='#')
 sdss_unmelted = parse.filter_data(sdss_unmelted, valid_uids=valid_uids)
@@ -134,7 +160,7 @@ for b1, b2 in zip('gri','riz'):
 SAVE_COLORS = False
 if SAVE_COLORS:
     colors = sdss_unmelted[['g-r','r-i','i-z']].groupby(ID).agg('mean')
-    colors.to_csv(cfg.D_DIR + 'computed/{}/colors_sdss.csv'.format(OBJ))
+    colors.to_csv(cfg.D_DIR + 'computed/{}/colors_sdss.csv'.format(OBJ), float_format='%.7f')
 
 df_sdss_unpivot1 = pd.melt(sdss_unmelted, id_vars = 'objID', value_vars = ['mag_'   +b for b in 'griz'], var_name = 'filtercode', value_name = 'mag')
 df_sdss_unpivot2 = pd.melt(sdss_unmelted, id_vars = 'objID', value_vars = ['magerr_'+b for b in 'griz'], var_name = 'filtercode', value_name = 'magerr')
@@ -155,9 +181,7 @@ sdss_transformed.isna().sum()
 # # Basic stats
 # ---
 
-for band in 'griz':
-    print(band)
-    (sdss_transformed.loc[pd.IndexSlice[:, band],:]).describe()
+print(sdss_transformed.head(20).to_latex(caption='caption', float_format='%.3f'))
 
 # # Save data
 # ---

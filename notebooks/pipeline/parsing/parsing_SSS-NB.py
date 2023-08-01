@@ -12,6 +12,10 @@
 #     name: python3
 # ---
 
+# + language="bash"
+# jupytext --to py parsing_SSS-NB.ipynb # Only run this if the notebook is more up-to-date than -NB.py
+# # jupytext --to --update ipynb parsing_SSS-NB.ipynb # Run this to update the notebook if changes have been made to -NB.py
+
 # +
 import pandas as pd
 import numpy as np
@@ -31,7 +35,7 @@ from module.preprocessing.colour_transform import ssa_transform
 # -
 
 PLOT_AND_EVALUATE_TRANSFORMATIONS = True
-SAVE_TRANSFORMED_DATA = True
+SAVE_TRANSFORMED_DATA = False
 
 # +
 pd.set_option('max_colwidth', 100)
@@ -70,14 +74,14 @@ print(pd.read_csv(cfg.D_DIR + 'surveys/supercosmos/survey_table.csv', usecols= [
 # # Cell below is for acquiring SSA data
 
 # +
-PARSE_SECONDARY = False
+PARSE_SECONDARY = True
 SAVE_COORDS_IN_CHUNKS = False
 SAVE_SECONDARY = False
 
-# ID = 'uid_s'
-# OBJ = 'calibStars'
-ID = 'uid'
-OBJ = 'qsos'
+ID = 'uid_s'
+OBJ = 'calibStars'
+# ID = 'uid'
+# OBJ = 'qsos'
 
 if PARSE_SECONDARY:
     def remove_nonmatches(df):
@@ -93,38 +97,60 @@ if PARSE_SECONDARY:
         for i, chunk in enumerate(np.array_split(coords,5)):
             chunk.to_csv(cfg.D_DIR + 'surveys/supercosmos/{}/coord_chunks/chunk_{}.csv'.format(OBJ, i+1), index=False, header=False, columns=[ID, 'ra', 'dec'], sep=' ')
     
+    # Note that surveyID in detection and plate match up completely
+    results_path = cfg.D_DIR + 'surveys/supercosmos/{}/results/'.format(OBJ)
+    n_files = len([f for f in os.listdir(results_path) if f.endswith('_results.csv')])
+    detection = pd.concat([pd.read_csv(results_path + 'chunk_{}_results.csv'.format(i+1)) for i in range(n_files)])
+
+    # The query to generate the table below is in queries/ssa.sql
+    plate = pd.read_csv(cfg.D_DIR + 'surveys/supercosmos/plate_table.csv', usecols = ['plateID','fieldID','filterID','utDateObs'])
+    merged = detection.merge(plate, on='plateID').sort_values('up_name')
+
+    # Convert arcmin to arcsec
+    merged['distance'] *= 60
+
+    # Remove rows with no matches
+    merged = merged[merged['objID'] != 0]
+
+    # Convert YYYY-MM-DD HH:MM:SS to MJD
+    times = merged['utDateObs'].to_list()
+    merged['mjd'] = Time(times).mjd
+
+    merged['filterID'] = merged['filterID'].str.strip()
+    merged = merged.rename(columns={'up_name':ID})
+    merged = merged[[ID,'distance','smag','surveyID','filterID','mjd']].set_index(ID)
+    merged = remove_nonmatches(merged)
+
+    # Save distance column for plotting with other surveys in ...
+    merged['distance'].to_csv(os.path.join(cfg.RES_DIR, 'plot_data', f'distances_ssa_{OBJ}.csv'))
+    
+    # Plot out distance matching
+    fig, ax = plt.subplots(1,1, figsize=(15,5))
+    ax.hist(merged['distance'], bins=100)
+    
+    merged = merged[merged['distance']<1.5]
+    
+    # Plot out distance matching
+    fig, ax = plt.subplots(1,1, figsize=(15,5))
+    ax.hist(merged['distance'], bins=100)
+
     if SAVE_SECONDARY:
-        # Note that surveyID in detection and plate match up completely
-        results_path = cfg.D_DIR + 'surveys/supercosmos/{}/results/'.format(OBJ)
-        n_files = len([f for f in os.listdir(results_path) if f.endswith('_results.csv')])
-        detection = pd.concat([pd.read_csv(results_path + 'chunk_{}_results.csv'.format(i+1)) for i in range(n_files)])
-
-        # The query to generate the table below is in queries/ssa.sql
-        plate = pd.read_csv(cfg.D_DIR + 'surveys/supercosmos/plate_table.csv', usecols = ['plateID','fieldID','filterID','utDateObs'])
-        merged = detection.merge(plate, on='plateID').sort_values('up_name')
-
-        # Convert arcmin to arcsec
-        merged['distance'] *= 60
-
-        # Remove rows with no matches
-        merged = merged[merged['objID'] != 0]
-
-        # Convert YYYY-MM-DD HH:MM:SS to MJD
-        times = merged['utDateObs'].to_list()
-        merged['mjd'] = Time(times).mjd
-
-        merged['filterID'] = merged['filterID'].str.strip()
-        merged = merged.rename(columns={'up_name':ID})
-        merged = merged[[ID,'distance','smag','surveyID','filterID','mjd']].set_index(ID)
-        merged = remove_nonmatches(merged)
-        merged = merged[merged['distance']<1.5]
-
-        # Plot out distance matching
-        fig, ax = plt.subplots(1,1, figsize=(15,5))
-        ax.hist(merged['distance'], bins=100);
-
         merged.astype({'smag':np.float32, 'surveyID':np.uint8, 'mjd':np.uint32}).to_csv(cfg.D_DIR + 'surveys/supercosmos/{}/ssa_secondary.csv'.format(OBJ))
 # -
+
+merged['filterID'].value_counts()
+
+# GG385/395 are B more accurately Bj.
+#
+# 590/610/630 are R
+#
+# 715 is I.
+#
+# Not sure about RG9.
+#
+# The survey table contains wavelength information, there should also be a paper linked from the site.
+#
+# The GG RG etc is the filter which defines one and of the pass band and the emulsion the other.
 
 # # Plot and evaluate transformations
 # ---

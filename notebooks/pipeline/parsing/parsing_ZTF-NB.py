@@ -12,6 +12,11 @@
 #     name: python3
 # ---
 
+# + language="bash"
+# jupytext --to py parsing_ZTF-NB.ipynb # Only run this if the notebook is more up-to-date than -NB.py
+# # jupytext --to --update ipynb parsing_ZTF-NB.ipynb # Run this to update the notebook if changes have been made to -NB.py
+# -
+
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -22,19 +27,28 @@ sys.path.insert(0, os.path.join(os.getcwd(), "..", "..", ".."))
 from module.config import cfg
 from module.preprocessing import parse, data_io
 
-OBJ    = 'calibStars'
-ID     = 'uid_s'
+OBJ    = 'qsos'
+ID     = 'uid' if OBJ=='qsos' else 'uid_s'
 wdir = cfg.W_DIR
 ddir = cfg.D_DIR
 SAVE_OIDS = False
 
 read_cols = [ID+'_01','dist_x','ra_01','dec_01','ra','dec','oid','filtercode','ngoodobsrel','medianmag','medianmagerr','minmag','maxmag']
 meta_data = Table.read(ddir+'surveys/ztf/{}/ztf_meta_ipac.txt'.format(OBJ), format='ipac', include_names=read_cols).to_pandas().set_index(ID+'_01')
-# meta_data = pd.read_csv(ddir+'surveys/ztf/{}/ztf_meta.csv'.format(OBJ), usecols=read_cols).set_index(ID+'_01') # for qsos
+# meta_data = pd.read_csv(ddir+'surveys/ztf/{}/ztf_meta_data.csv'.format(OBJ), usecols=read_cols).set_index(ID+'_01') # for qsos
+meta_data.index.name = ID
+
+meta_data = Table.read(ddir+'surveys/ztf/{}/ztf_meta_ipac_2arcsec.txt'.format(OBJ), format='ipac').to_pandas().set_index(ID+'_01')
+# meta_data = pd.read_csv(ddir+'surveys/ztf/{}/ztf_meta_data.csv'.format(OBJ), usecols=read_cols).set_index(ID+'_01') # for qsos
 meta_data.index.name = ID
 
 # ---
 # ### Plot pairing distance and magnitude distribution
+
+meta_data['dist_x'].max()
+
+# Save distance column
+meta_data['dist_x'].to_csv(os.path.join(cfg.RES_DIR, 'plot_data', f'distances_ztf_{OBJ}.csv'))
 
 fig, ax = plt.subplots(2,1, figsize=(25,14))
 meta_data['dist_x'].hist(bins=200, ax=ax[0])
