@@ -3,10 +3,11 @@ from multiprocessing import Pool
 import os
 from .import parse
 
-def to_ipac(df, save_as, columns):
+def to_ipac(df, save_as, columns=None):
 	from astropy.table import Table
 	from astropy.io import ascii
-
+	if columns is None:
+		columns = df.columns
 	t = Table.from_pandas(df[columns], index=True)
 	ascii.write(t, save_as, format='ipac', overwrite=True)
 
@@ -54,20 +55,24 @@ def reader(fname, kwargs):
 						   delimiter=delimiter,
 						   na_filter=na_filter).set_index(ID)
 
-def dispatch_reader(kwargs, multiproc=True, i=0, max_processes=64):
+def dispatch_reader(kwargs, multiproc=True, i=0, max_processes=64, concat=True, fnames=None):
 	"""
 	Dispatching function for reader
 	"""
-	fnames = sorted([f for f in os.listdir(kwargs['basepath']) if (f.startswith('lc_') and f.endswith('.csv'))])
+	if fnames is None:
+		fnames = sorted([f for f in os.listdir(kwargs['basepath']) if (f.startswith('lc_') and f.endswith('.csv'))])
 	n_files = len(fnames)
 	if multiproc:
 		if __name__ == 'module.preprocessing.data_io':
 			# Make as many tasks as there are files, unless we have set max_processes
 			n_tasks = min(n_files, max_processes)
 			with Pool(n_tasks) as pool:
-				df = pool.starmap(reader, [(fname, kwargs) for fname in fnames])
+				df_list = pool.starmap(reader, [(fname, kwargs) for fname in fnames])
 			# sorting is required as we cannot guarantee that starmap returns dataframes in the order we expect.
-			return pd.concat(df, sort=True)
+			if concat:
+				return pd.concat(df_list, sort=True)
+			else:
+				return df_list
 	else: 
 		return reader(fnames[i], kwargs)
 
