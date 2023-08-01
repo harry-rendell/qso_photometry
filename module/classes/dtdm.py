@@ -1,15 +1,12 @@
 import numpy as np
 import pandas as pd
 import os
+import sys
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from ..config import cfg
 import re
 import matplotlib.pyplot as plt
-from module.preprocessing.binning import bin_data
-from scipy.stats import binned_statistic, skew, skewtest, iqr, kurtosis, kurtosistest
-from time import time
 import matplotlib.cm as cmap
-from scipy.optimize import curve_fit
-from scipy.stats import linregress, chisquare
 
 class dtdm_raw_analysis():
 	"""
@@ -198,7 +195,7 @@ class dtdm_raw_analysis():
 			self.mjd_edges = np.array([np.loadtxt(fpath + f'mjd_edges_{i}.csv') for i in range(self.n_groups)])
 			self.mjd_centres = (self.mjd_edges[:, :-1] + self.mjd_edges[:, 1:])/2
 
-	def plot_stats(self, keys, figax, macleod=False, fit=False, **kwargs):
+	def plot_stats(self, keys, figax, label=None, **kwargs):
 		if figax is None:
 			fig, ax = plt.subplots(1,1, figsize=(10,6))
 		else:
@@ -217,9 +214,8 @@ class dtdm_raw_analysis():
 			y = self.pooled_stats[key]
 			if key.startswith('SF') & (self.log_or_lin=='log'):
 				y[y<0] = np.nan
-			if 'label' in kwargs:
-				label = kwargs['label']
-			else:
+			
+			if label is None:
 				label = '{}, {}'.format(self.name,key)
 			# ax.errorbar(self.mjd_centres, y[:,0], yerr=y[:,1]**0.5, label='{}, {}'.format(key,self.name), color=color, lw=2.5) # square root this
 			ax.errorbar(self.mjd_centres, y[:,0], yerr=y[:,1],
@@ -232,24 +228,6 @@ class dtdm_raw_analysis():
 	
 			ax.set(xlabel='Rest frame time lag (days)')
 
-		if macleod:
-			# f = lambda x: 0.01*(x**0.443)
-			# ax.plot(self.mjd_centres, f(self.mjd_centres), lw=0.5, ls='--', color='b', label='MacLeod 2012')
-			x,y = np.loadtxt(cfg.D_DIR + 'archive/Macleod2012/SF/macleod2012.csv', delimiter=',').T
-			ax.scatter(x, y, color='k')
-			ax.plot(x, y, label = 'Macleod 2012', lw=2, ls='--', color='k')
-
-		if fit:
-			from scipy.optimize import curve_fit
-			def power_law(x,a,b):
-				return a*x**b
-			for key in keys:
-				y, err = self.pooled_stats[key].T
-				popt, pcov = curve_fit(power_law, self.mjd_centres, y)
-				x = np.logspace(0,5,100)
-				ax.plot(x, power_law(x, *popt), lw=2, ls='-.', label=r'$\Delta t^{\beta}, \beta='+'{:.2f}'.format(popt[1])+'$') #fix this
-				print('Slope for {}: {:.2f}'.format(key, popt[1]))
-		
 		ax.set(**kwargs)
 		ax.legend()
 		for handle in plt.legend().legend_handles:
@@ -259,6 +237,45 @@ class dtdm_raw_analysis():
 				pass
 		# ax.set(xlabel='$(m_i-m_j)^2 - \sigma_i^2 - \sigma_j^2$', title='Distribution of individual corrected SF values', **kwargs)
 		return (fig,ax)
+	
+	def fit_stats(self, key, model_name, ax=None, least_sq_kwargs={}, **kwargs):
+		if model_name == 'power_law':
+			from module.modelling.fitting import fit_power_law
+			y, yerr = self.pooled_stats[key].T
+			# yerr = 10*np.ones(y.shape) # to fit without errors
+			coefficient, exponent, pcov, model_values = fit_power_law(self.mjd_centres, y, yerr, **kwargs)
+			label = r'$\Delta t^{\beta}, \beta='+'{:.2f}'.format(exponent)+'$'
+			fitted_params = (coefficient, exponent)			
+		elif model_name == 'broken_power_law':
+			from module.modelling.fitting import fit_broken_power_law
+			y, yerr = self.pooled_stats[key].T
+			# yerr = 10*np.ones(y.shape) # to fit without errors
+			amplitude, break_point, index_1, index_2, pcov, model_values = fit_broken_power_law(self.mjd_centres, y, yerr, least_sq_kwargs=least_sq_kwargs, **kwargs)
+			print(f'fitted broken power law:\ny = {amplitude:.2f}*x^{index_1:.2f} for x < {break_point:.2f}\ny = {amplitude:.2f}*x^{index_2:.2f} for x > {break_point:.2f}')
+			label = 'broken power law'
+			fitted_params = (amplitude, break_point, index_1, index_2)
+		elif model_name == 'broken_power_law_minimize':
+			from module.modelling.fitting import fit_minimize, cost_function
+			from module.modelling.models import bkn_pow_smooth
+			y, yerr = self.pooled_stats[key].T
+			fitted_params, _, model_values = fit_minimize(bkn_pow_smooth, cost_function, self.mjd_centres, y, yerr, **kwargs)
+			print(f'fitted broken power law:\ny = {fitted_params[0]:.2f}*x^{fitted_params[2]:.2f} for x < {fitted_params[1]:.2f}\ny = {fitted_params[0]:.2f}*x^{fitted_params[3]:.2f} for x > {fitted_params[1]:.2f}')
+			label = 'broken power law'
+
+		if ax is not None:
+			ax.plot(*model_values, lw=2, ls='-.', label=label)		
+		
+		return fitted_params
+
+	def plot_comparison_data(self, ax, name='macleod'):
+		# f = lambda x: 0.01*(x**0.443)
+		# ax.plot(self.mjd_centres, f(self.mjd_centres), lw=0.5, ls='--', color='b', label='MacLeod 2012')
+		if name=='macleod':
+			x,y = np.loadtxt(cfg.D_DIR + 'archive/Macleod2012/SF/macleod2012.csv', delimiter=',').T
+		# elif name=='morganson':
+
+		ax.scatter(x, y, color='k')
+		ax.plot(x, y, label = 'Macleod 2012', lw=2, ls='--', color='k')
 
 	def plot_stats_property(self, keys, figax, macleod=False, fill_between=False, **kwargs):
 		if figax is None:
