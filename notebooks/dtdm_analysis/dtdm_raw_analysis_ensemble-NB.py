@@ -12,6 +12,11 @@
 #     name: python3
 # ---
 
+# + language="bash"
+# jupytext --to py dtdm_raw_analysis_ensemble-NB.ipynb # Only run this if the notebook is more up-to-date than -NB.py
+# # jupytext --to --update ipynb dtdm_raw_analysis_ensemble-NB.ipynb # Run this to update the notebook if changes have been made to -NB.py
+# -
+
 import matplotlib.pyplot as plt
 import numpy as np
 import os
@@ -20,26 +25,7 @@ sys.path.insert(0, os.path.join(os.getcwd(), "..", ".."))
 from module.config import cfg
 from module.classes.dtdm import dtdm_raw_analysis
 from module.plotting.common import savefigs
-
-# +
-from modelling.models import bkn_pow, bkn_pow_smooth
-
-xbounds = (0,1) # log of x bounds
-num_points = 1000
-x = np.logspace(*xbounds,num_points)
-breaks = [3]
-alphas = [0.5,0.1]
-
-y1 = bkn_pow(x,breaks,alphas)
-y2 = bkn_pow_smooth(x, 2, breaks[0], alphas[0], alphas[1], delta=0.1)
-
-plt.plot(x,y1)
-plt.plot(x,y2)
-plt.xscale('log')
-plt.yscale('log')
-# -
-
-#
+from module.modelling.models import bkn_pow, bkn_pow_smooth
 
 # from module.modelling.models import broken_power_law
 
@@ -89,80 +75,104 @@ kwargs = {'xscale':'log',
 # ## $r$ band
 
 # +
-kwargs['yscale'] = 'linear'
-kwargs['ylim'] = (-0.25,1.2)
+fig, ax = dtdm_qsos_r.plot_stats(plotting_keys, figax=None, label='Quasars', yscale='linear', ylim=(-0.25,1.2), **kwargs)
 
-kwargs['label'] = 'Quasars'
-fig, ax = dtdm_qsos_r.plot_stats(plotting_keys, figax=None, **kwargs)
-kwargs['label'] = 'Stars'
-coefficient, exponent = dtdm_qsos_r.fit_stats(plotting_keys[0], 'power_law', ax=ax)
-fig, ax = dtdm_star_r.plot_stats(plotting_keys, figax=(fig, ax), **kwargs)
+# Fit power law
+coefficient, exponent = dtdm_qsos_r.fit_stats(plotting_keys[0], 'power_law', ax=ax, value_range=[0,4], x_fit_bounds=[1,4], n_model_points=100)
+
+# Fit broken power law
+e=0.2
+fit_kwargs = {'bounds':[(0.3-e, 0.3+e), (1e2, 1e4), (0.2, 0.8), (0.2, 0.8)],
+          'x0':[0.3, 1e2, 0.3, 0.3]}
+least_sq_kwargs = {'loss':'cauchy'}
+dtdm_qsos_r.fit_stats(plotting_keys[0], 'broken_power_law_minimize', ax=ax, least_sq_kwargs=least_sq_kwargs, **fit_kwargs)
+
+fig, ax = dtdm_star_r.plot_stats(plotting_keys, figax=(fig, ax), label='Stars', yscale='linear', ylim=(-0.25,1.2), **kwargs)
 if SAVE_FIGS:
     savefigs(fig, 'ensemble/SF-ENSEMBLE-qsos_and_stars_r', 'chap4')
 
 # +
-kwargs['yscale'] = 'log'
-kwargs['ylim'] = (1e-2,1.5)
+fig, ax = dtdm_qsos_r.plot_stats(plotting_keys, figax=None, label='Quasars', yscale='log', ylim=(1e-2,1.5), **kwargs)
 
-kwargs['label'] = 'Quasars'
-fig, ax = dtdm_qsos_r.plot_stats(plotting_keys, figax=None, **kwargs)
-coefficient, exponent = dtdm_qsos_r.fit_stats(plotting_keys[0], 'power_law', ax=ax)
-kwargs['label'] = 'Stars'
+# Fit power law
+coefficient, exponent = dtdm_qsos_r.fit_stats(plotting_keys[0], 'power_law', ax=ax, value_range=[0,4], x_fit_bounds=[1,4], n_model_points=100)
+
+# Fit broken power law
+e=0.2
+fit_kwargs = {'bounds':[(0.3-e, 0.3+e), (1e2, 1e4), (0.2, 0.8), (0.2, 0.8)],
+          'x0':[0.3, 1e2, 0.3, 0.3]}
+least_sq_kwargs = {'loss':'cauchy'}
+dtdm_qsos_r.fit_stats(plotting_keys[0], 'broken_power_law_minimize', ax=ax, least_sq_kwargs=least_sq_kwargs, **fit_kwargs)
+
 fig, ax = dtdm_star_r.plot_stats(plotting_keys, figax=(fig, ax), **kwargs)
 # -
 
 # ## $g$ band
 
 # +
-kwargs['yscale'] = 'linear'
-kwargs['ylim'] = (-0.25,1.2)
+fig, ax = dtdm_qsos_g.plot_stats(plotting_keys, figax=None, label='Quasars', yscale='linear', ylim=(-0.25,1.2), **kwargs)
 
-kwargs['label'] = 'Quasars'
-fig, ax = dtdm_qsos_g.plot_stats(plotting_keys, figax=None, **kwargs)
-coefficient, exponent = dtdm_qsos_g.fit_stats(plotting_keys[0], 'power_law', ax=ax)
+# Fit power law
+coefficient, exponent = dtdm_qsos_r.fit_stats(plotting_keys[0], 'power_law', ax=ax, value_range=[0,4], x_fit_bounds=[1,4], n_model_points=100)
 
-kwargs['label'] = 'Stars'
-fig, ax = dtdm_star_g.plot_stats(plotting_keys, figax=(fig, ax), **kwargs)
+# Fit broken power law
+e=0.2
+fit_kwargs = {'bounds':[(0.3-e, 0.3+e), (1e2, 1e4), (0.2, 0.8), (0.2, 0.8)],
+              'x0':[0.3, 1e2, 0.3, 0.3]}
+least_sq_kwargs = {'loss':'cauchy'}
+dtdm_qsos_g.fit_stats(plotting_keys[0], 'broken_power_law_minimize', ax=ax, least_sq_kwargs=least_sq_kwargs, **fit_kwargs)
+
+fig, ax = dtdm_star_g.plot_stats(plotting_keys, figax=(fig, ax), label='Stars', yscale='linear', ylim=(-0.25,1.2),**kwargs)
 if SAVE_FIGS:
     savefigs(fig, 'ensemble/SF-ENSEMBLE-qsos_and_stars_g', 'chap4')
 
 # +
-kwargs['yscale'] = 'log'
-kwargs['ylim'] = (1e-2,1.5)
+fig, ax = dtdm_qsos_g.plot_stats(plotting_keys, figax=None, label='Quasars', yscale='log', ylim=(1e-2,1.5), **kwargs)
+# Fit power law
+coefficient, exponent = dtdm_qsos_g.fit_stats(plotting_keys[0], 'power_law', ax=ax, value_range=[0,4], x_fit_bounds=[1,4], n_model_points=100) # value_range and x_fit_bounds are log(mjd)
 
-kwargs['label'] = 'Quasars'
-fig, ax = dtdm_qsos_g.plot_stats(plotting_keys, figax=None, **kwargs)
-coefficient, exponent = dtdm_qsos_g.fit_stats(plotting_keys[0], 'power_law', ax=ax)
+# Fit broken power law
+e=0.2
+fit_kwargs = {'bounds':[(0.3-e, 0.3+e), (1e2, 1e4), (0.2, 0.8), (0.2, 0.8)],
+              'x0':[0.3, 1e2, 0.3, 0.3]}
+least_sq_kwargs = {'loss':'cauchy'}
+dtdm_qsos_g.fit_stats(plotting_keys[0], 'broken_power_law_minimize', ax=ax, least_sq_kwargs=least_sq_kwargs, **fit_kwargs)
 
-kwargs['label'] = 'Stars'
-fig, ax = dtdm_star_g.plot_stats(plotting_keys, figax=(fig, ax), **kwargs)
+# Plot stars
+fig, ax = dtdm_star_g.plot_stats(plotting_keys, figax=(fig, ax), label='Stars', yscale='log', ylim=(1e-2,1.5))
 # -
 
 # ## $i$ band
 
 # +
-kwargs['yscale'] = 'linear'
-kwargs['ylim'] = (-0.25,1.2)
+fig, ax = dtdm_qsos_i.plot_stats(plotting_keys, figax=None, label='Quasars', yscale='linear', ylim=(-0.25,1.2), **kwargs)
+# Fit power law
+coefficient, exponent = dtdm_qsos_g.fit_stats(plotting_keys[0], 'power_law', ax=ax, value_range=[0,4], x_fit_bounds=[1,4], n_model_points=100) # value_range and x_fit_bounds are log(mjd)
 
-kwargs['label'] = 'Quasars'
-fig, ax = dtdm_qsos_i.plot_stats(plotting_keys, figax=None, **kwargs)
-coefficient, exponent = dtdm_qsos_i.fit_stats(plotting_keys[0], 'power_law', ax=ax)
+# Fit broken power law
+e=0.2
+fit_kwargs = {'bounds':[(0.3-e, 0.3+e), (1e2, 1e4), (0.2, 0.8), (0.2, 0.8)],
+              'x0':[0.3, 1e2, 0.3, 0.3]}
+least_sq_kwargs = {'loss':'cauchy'}
+dtdm_qsos_i.fit_stats(plotting_keys[0], 'broken_power_law_minimize', ax=ax, least_sq_kwargs=least_sq_kwargs, **fit_kwargs)
 
-kwargs['label'] = 'Stars'
-fig, ax = dtdm_star_i.plot_stats(plotting_keys, figax=(fig, ax), **kwargs)
+fig, ax = dtdm_star_i.plot_stats(plotting_keys, figax=(fig, ax), label='Stars', yscale='linear', ylim=(-0.25,1.2), **kwargs)
 if SAVE_FIGS:
     savefigs(fig, 'ensemble/SF-ENSEMBLE-qsos_and_stars_i', 'chap4')
 
 # +
-kwargs['yscale'] = 'log'
-kwargs['ylim'] = (1e-2,1.5)
+fig, ax = dtdm_qsos_i.plot_stats(plotting_keys, figax=None, label='Quasars', yscale='log', ylim=(1e-2,1.5), **kwargs)
+# Fit power law
+coefficient, exponent = dtdm_qsos_g.fit_stats(plotting_keys[0], 'power_law', ax=ax, value_range=[0,4], x_fit_bounds=[1,4], n_model_points=100) # value_range and x_fit_bounds are log(mjd)
 
-kwargs['label'] = 'Quasars'
-fig, ax = dtdm_qsos_i.plot_stats(plotting_keys, figax=None, **kwargs)
-coefficient, exponent = dtdm_qsos_i.fit_stats(plotting_keys[0], 'power_law', ax=ax)
+# Fit broken power law
+e=0.2
+fit_kwargs = {'bounds':[(0.3-e, 0.3+e), (1e2, 1e4), (0.2, 0.8), (0.2, 0.8)],
+              'x0':[0.3, 1e2, 0.3, 0.3]}
+least_sq_kwargs = {'loss':'cauchy'}
+dtdm_qsos_i.fit_stats(plotting_keys[0], 'broken_power_law_minimize', ax=ax, least_sq_kwargs=least_sq_kwargs, **fit_kwargs)
 
-kwargs['label'] = 'Stars'
-fig, ax = dtdm_star_i.plot_stats(plotting_keys, figax=(fig, ax), **kwargs)
+fig, ax = dtdm_star_i.plot_stats(plotting_keys, figax=(fig, ax), label='Stars', yscale='log', ylim=(1e-2,1.5), **kwargs)
 # -
 
 # # Plot SF asymmetry
