@@ -22,15 +22,21 @@ def linear(x, a, b):
 
 def bkn_pow_smooth(x, A, x_b, a_1, a_2, delta=1):
     """
-    https://gist.github.com/cgobat/12595d4e242576d4d84b1b682476317d
+    Smooth broken power law
+    https://docs.astropy.org/en/stable/api/astropy.modeling.powerlaws.SmoothlyBrokenPowerLaw1D.html
+    x : x-values
+    A : amplitude
+    x_b : break point
+    a_1 : power law index for x < x_b
+    a_2 : power law index for x > x_b
+    delta : smoothness parameter
     """
-    a_1 *= -1
-    a_2 *= -1
-    return A*(x/x_b)**(-a_1) * (0.5*(1+(x/x_b)**(1/delta)))**((a_1-a_2)*delta)
+    return A*(x/x_b)**(a_1) * (0.5*(1+(x/x_b)**(1/delta)))**((a_2-a_1)*delta)
 
 def bkn_pow(xvals,breaks,alphas):
     """
-    https://gist.github.com/cgobat/12595d4e242576d4d84b1b682476317d
+    Broken power law for multiple breaks. Takes a list of break points and a list of alphas.
+    Note, the derivative of this function is not continuous at the break points.
     """
     try:
         if len(breaks) != len(alphas) - 1:
