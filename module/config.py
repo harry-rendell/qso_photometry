@@ -49,6 +49,11 @@ __C.COLLECTION = edict()
 # float32 - float
 # float64 - double
 
+__C.SURVEY_LABELS = {'sdss':'SDSS',
+                     'ps':'Pan-STARRS',
+                     'ztf':'ZTF',
+                     'supercosmos':'SuperCOSMOS'}
+
 __C.COLLECTION.SDSS = edict()
 # Datatypes
 # mag converted from real[4] with similar precision
@@ -304,4 +309,13 @@ __C.FIG = edict()
 # Path to style files. Empty string at end ensures trailing slash
 __C.FIG.STYLE_DIR = os.path.join(__C.RES_DIR, 'styles', '')
 
+__C.FIG.COLOURS = edict()
 
+# Colour palettes for plots
+__C.FIG.COLOURS.PAIRED_BANDS = {'g':('#b2df8a', '#33a02c'),
+                                'r':('#f98583', '#e31a1c'),
+                                'i':('#c299D6', '#6a3d9a')}
+
+__C.FIG.COLOURS.BANDS = {'g':'#33a02c',
+						 'r':'#e31a1c',
+						 'i':'#6a3d9a'}
