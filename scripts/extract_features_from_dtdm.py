@@ -1,4 +1,3 @@
-import pandas as pd
 import numpy as np
 import time
 import argparse
@@ -7,6 +6,7 @@ import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from module.config import cfg
 from module.preprocessing import data_io, pairwise
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -19,6 +19,7 @@ if __name__ == "__main__":
     parser.add_argument("--dry_run", action='store_true', help="Whether to do a dry run (i.e. don't save the output)")
     parser.add_argument("--frame",   type=str, help=("OBS or REST to specify rest frame or observer frame time. \n"
                                                    "Defaults to rest frame for Quasars and observer time for Stars.\n"))
+    
     args = parser.parse_args()
     # Print the arguments for the log
     print(time.strftime('%H:%M:%S %d/%m/%y'))
@@ -39,6 +40,10 @@ if __name__ == "__main__":
     n_points = args.n_bins
     log_or_lin = args.name
 
+    
+    
+    
+    
     # keyword arguments to pass to our reading function
     kwargs = {'obj':OBJ,
               'dtypes': cfg.PREPROC.dtdm_dtypes,
@@ -51,6 +56,8 @@ if __name__ == "__main__":
               'features':['n', 'mean weighted a', 'mean weighted b', 'SF cwf a', 'SF cwf b', 'SF cwf p', 'SF cwf n', 'skewness', 'kurtosis'],
               'n_points':n_points}
 
+    
+    
     for band in args.band:
         # set the maximum time to use for this band
         if args.frame:
