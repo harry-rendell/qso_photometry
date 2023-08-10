@@ -203,28 +203,34 @@ class dtdm_raw_analysis():
 		if keys=='all':
 			keys = list(self.pooled_stats.keys())[1:]
 		
+		color = kwargs.pop('color') if 'color' in kwargs else None
+
 		# Norm by log
 		# normalised_bin_counts = np.log(self.pooled_stats['n']) + 50
 		# Norm by total max
 		# normalised_bin_counts = self.pooled_stats['n']/np.max(self.pooled_stats['n'])*1e4
 		# Norm per time bin
 		normalised_bin_counts = self.pooled_stats['n']/self.pooled_stats['n'].sum(axis=0)*1e3
-
+		error_norm = (2/self.pooled_stats['n'])**0.2
 		for key in keys:
 			y = self.pooled_stats[key]
-			if key.startswith('SF') & (self.log_or_lin=='log'):
+			if key.startswith('SF'):
 				y[y<0] = np.nan
+			else:
+				y[:,1] = y[:,1]**0.5 # NOTE: Non SF errors are actually variances as of 08/08/23. If extract_features is run since then, remove this line.
 			
 			if label is None:
 				label = '{}, {}'.format(self.name,key)
 			# ax.errorbar(self.mjd_centres, y[:,0], yerr=y[:,1]**0.5, label='{}, {}'.format(key,self.name), color=color, lw=2.5) # square root this
-			ax.errorbar(self.mjd_centres, y[:,0], yerr=y[:,1],
+			ax.errorbar(self.mjd_centres, y[:,0], yerr=y[:,1]*error_norm,
 						capsize=5,
 						lw=0.6,
 						elinewidth=0.5,
-						markeredgecolor=0.2)
+						markeredgecolor=0.2,
+						color=color)
 			ax.scatter(self.mjd_centres, y[:,0], s=normalised_bin_counts,
-	      			   label=label)
+	      			   label=label,
+					   color=color)
 	
 			ax.set(xlabel='Rest frame time lag (days)')
 
@@ -263,8 +269,9 @@ class dtdm_raw_analysis():
 			label = 'broken power law'
 
 		if ax is not None:
-			ax.plot(*model_values, lw=2, ls='-.', label=label)		
-		
+			ax.plot(*model_values, lw=1.5, ls='-.', label=label)		
+			ax.legend()
+
 		return fitted_params
 
 	def plot_comparison_data(self, ax, name='macleod'):
