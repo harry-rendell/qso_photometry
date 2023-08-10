@@ -52,7 +52,7 @@ if __name__ == "__main__":
               'ID':ID,
               'mjd_key':mjd_key,
               'log_or_lin':log_or_lin,
-              'inner':False,
+              'inner':False, # too few observations per bin if we try this
               'features':['n', 'mean weighted a', 'mean weighted b', 'SF cwf a', 'SF cwf b', 'SF cwf p', 'SF cwf n', 'skewness', 'kurtosis'],
               'n_points':n_points,
               'groups':groups,
