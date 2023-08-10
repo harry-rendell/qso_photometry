@@ -35,7 +35,7 @@ def create_bins(bin_dict):
     #compute edges of bins
     m_bin_edges = calc_m_edges(n_bins_m, steepness, width)
     m2_bin_edges = calc_m_edges(n_bins_m2, steepness, width, leftmost_bin)
-    T_bin_edges = calc_t_bins(n_bins_T, t_max, t_steepness = 1000)
+    T_bin_edges = np.logspace(0, np.log10(t_max), n_bins_T+1)
     t_bin_edges = np.linspace(0,t_max,(n_bins_t+1))
     e_bin_edges = np.linspace(0,0.75,201) # This assumes that the max error pair is sqrt(0.5**2+0.5**2)
 
