@@ -133,7 +133,7 @@ def calculate_stats_looped(df, kwargs):
     results['n'] = np.zeros(shape=(n_points), dtype='uint64')
 
     if inner:
-        df = df[np.sqrt(df['dsid'])%1==0]
+        df = df[(np.sqrt(df['dsid'])%1==0).values]
 
     mask1 = df['dm'].notna().values & df['de'].notna().values
     mask2 = create_mask_from_bounds(df, cfg.PREPROC.dtdm_bounds[kwargs['obj']])
@@ -161,8 +161,11 @@ def calculate_stats_looped(df, kwargs):
             results['SF cwf a'][j, 0] = np.average(dm2_de2, weights = weights)
             results['SF cwf a'][j, 1] = 1/weights.sum()
 
-            results['SF cwf b'][j, 0] = np.nanmedian(dm2_de2)
-            results['SF cwf b'][j, 1] = dm2_de2.var()
+            results['SF c'][j, 0] = np.average(dm2_de2)
+            results['SF c'][j, 1] = dm2_de2.var()
+
+            results['SF'][j, 0] = np.average(subset['dm']**2)
+            results['SF'][j, 1] = subset['dm'].var()
             
             mask_p = (subset['dm']>0).values
             mask_n = (subset['dm']<0).values
@@ -244,7 +247,7 @@ def calculate_stats_looped_key(df, kwargs):
                 results['SF cwf a'][j,group_idx,0] = np.average(dm2_de2, weights = weights)
                 results['SF cwf a'][j,group_idx,1] = 1/weights.sum()
 
-                results['SF cwf b'][j,group_idx,0] = np.nanmedian(dm2_de2)
+                results['SF cwf b'][j,group_idx,0] = np.average(dm2_de2, weights = weights)
                 results['SF cwf b'][j,group_idx,1] = dm2_de2.var()
                 
                 mask_p = (subset['dm']>0).values
@@ -310,10 +313,10 @@ def calculate_pooled_statistics(results, n_points, n_groups=None):
             
             if key.startswith('SF'):
                 pooled_results[key][...,0] = np.sign(pooled_mean) * (abs(pooled_mean) ** 0.5) # Square root to get SF instead of SF^2
-                pooled_results[key][...,1] = np.sign(pooled_var ) * (abs(pooled_var ) ** 0.5) # Square root to get sig instead of var
             else:
                 pooled_results[key][...,0] = pooled_mean
-                pooled_results[key][...,1] = pooled_var
+            
+            pooled_results[key][...,1] = np.sign(pooled_var ) * (abs(pooled_var ) ** 0.5) # Square root to get sig instead of var
 
             
     return pooled_results
