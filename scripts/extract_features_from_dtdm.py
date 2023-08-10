@@ -19,7 +19,7 @@ if __name__ == "__main__":
     parser.add_argument("--dry_run", action='store_true', help="Whether to do a dry run (i.e. don't save the output)")
     parser.add_argument("--frame",   type=str, help=("OBS or REST to specify rest frame or observer frame time. \n"
                                                    "Defaults to rest frame for Quasars and observer time for Stars.\n"))
-    
+    parser.add_argument("--inner", action='store_true', default=False, help="Apply pairwise analysis to points only within a survey")
     args = parser.parse_args()
     # Print the arguments for the log
     print(time.strftime('%H:%M:%S %d/%m/%y'))
@@ -40,10 +40,10 @@ if __name__ == "__main__":
     n_points = args.n_bins
     log_or_lin = args.name
 
-    
-    
-    
-    
+    if args.inner:
+        MAX_DTS = cfg.PREPROC.MAX_DT_INNER
+    else:
+        MAX_DTS = cfg.PREPROC.MAX_DT
     # keyword arguments to pass to our reading function
     kwargs = {'obj':OBJ,
               'dtypes': cfg.PREPROC.dtdm_dtypes,
@@ -52,8 +52,8 @@ if __name__ == "__main__":
               'ID':ID,
               'mjd_key':mjd_key,
               'log_or_lin':log_or_lin,
-              'inner':False,
-              'features':['n', 'mean weighted a', 'mean weighted b', 'SF cwf a', 'SF cwf b', 'SF cwf p', 'SF cwf n', 'skewness', 'kurtosis'],
+              'inner':args.inner,
+              'features':['n', 'mean weighted a', 'mean weighted b', 'SF cwf a', 'SF c', 'SF', 'SF cwf p', 'SF cwf n', 'skewness', 'kurtosis'],
               'n_points':n_points}
 
     
@@ -61,12 +61,12 @@ if __name__ == "__main__":
     for band in args.band:
         # set the maximum time to use for this band
         if args.frame:
-            max_t = cfg.PREPROC.MAX_DT[args.frame][OBJ][band]
+            max_t = MAX_DTS[args.frame][OBJ][band]
         elif OBJ == 'qsos':
-            max_t = cfg.PREPROC.MAX_DT['REST']['qsos'][band]
+            max_t = MAX_DTS['REST']['qsos'][band]
         elif OBJ == 'calibStars':
-            max_t = cfg.PREPROC.MAX_DT['OBS']['calibStars'][band]
-        
+            max_t = MAX_DTS['OBS']['calibStars'][band]
+
         # create time bins given the maximum time
         if log_or_lin.startswith('log'):
             mjd_edges = np.logspace(0, np.log10(max_t), n_points+1)
@@ -82,7 +82,7 @@ if __name__ == "__main__":
 
         start = time.time()
         print('band:',band)
-    
+        print('max_t',max_t)
         # create output directories
         output_dir = os.path.join(cfg.D_DIR, f'computed/{OBJ}/dtdm_stats/all/{log_or_lin}/{band}')
         print(f'creating output directory if it does not exist: {output_dir}')
