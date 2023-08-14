@@ -6,6 +6,7 @@ import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from module.config import cfg
 from module.preprocessing import data_io, pairwise
+from module.preprocessing.binning import construct_T_edges
 
 
 if __name__ == "__main__":
@@ -69,7 +70,7 @@ if __name__ == "__main__":
 
         # create time bins given the maximum time
         if log_or_lin.startswith('log'):
-            mjd_edges = np.logspace(0, np.log10(max_t), n_points+1)
+            mjd_edges = construct_T_edges(t_max=max_t, n_edges=n_points+1)
         elif log_or_lin.startswith('lin'):
             mjd_edges = np.linspace(0, max_t, n_points+1)
         else:

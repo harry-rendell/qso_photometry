@@ -297,9 +297,21 @@ class dtdm_binned_class():
                 text_height -= 0.1
 
             r2s_tot.append(r2s)
-            ax.text(0.05, 0.9, 'mean = {:.5f}'.format(self.means[i]), transform=ax.transAxes)
-            ax.text(0.05, 0.8, 'mode = {:.5f}'.format(self.modes[i]), transform=ax.transAxes)
-            ax.text(0.05, 0.7, 'skew  = {:.5f}'.format(self.skew_1[i]), transform=ax.transAxes)
+            from itertools import combinations_with_replacement
+            a = {f'{b[0]}-{b[1]}':a[0]*a[1] for a,b in zip(combinations_with_replacement([3,5,7,11],2),combinations_with_replacement(['ssa','sdss','ps','ztf'],2 ))}
+            survey_fractions = ''
+            for name, index in a.items():
+                frac = self.dcs_binned[i][index]/self.dcs_binned[i].sum()
+                if frac > 0.005:
+                    survey_fractions += f'{name}: {frac*100:.0f}%\n'
+
+            if self.obj=='qsos':
+                survey_fractions = 'qsos:\n' + survey_fractions
+                ax.text(0.02, 0.96, survey_fractions, transform=ax.transAxes, verticalalignment='top')
+            else:
+                survey_fractions = 'stars:\n' + survey_fractions
+                ax.text(0.78, 0.66, survey_fractions, transform=ax.transAxes, verticalalignment='top')
+
             # ax.axvline(x=self.means[i], lw=0.4, ls='-', color='b')
             # ax.axvline(x=self.modes[i], lw=0.4, ls='-', color='r')
             # ax.axvline(x=self.m_bin_centres[m.argmax()], lw=0.6, ls='-', color='r')
