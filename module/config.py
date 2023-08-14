@@ -263,6 +263,9 @@ __C.PREPROC.MAX_DT_INNER['REST']  = {'qsos':     {'g': 5108, 'r': 16141, 'i': 63
 __C.PREPROC.MAX_DT_INNER['OBS']  = {'qsos':      {'g': 6181, 'r': 18010, 'i': 7721},
 							  		'calibStars':{'g': 4377, 'r': 17504, 'i': 6942}}
 
+__C.PREPROC.MAX_DT_COMBINED = {'outer':{'g': 15122, 'r': 26062, 'i': 13056},
+                      		   'inner':{'g': 5108,  'r': 17504, 'i': 6942}}
+
 # Max ∆t for quasars when splitting by black hole property, rounded up to the nearest integer
 __C.PREPROC.MAX_DT_VAC = {'Lbol': {'g': [12896, 12735, 13077, 12919, 11698, 11964, 11268, 10467],
                                    'r': [23444, 22841, 23992, 22168, 22488, 21900, 19946, 18295],
