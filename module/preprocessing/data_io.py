@@ -60,7 +60,7 @@ def dispatch_reader(kwargs, multiproc=True, i=0, max_processes=64, concat=True, 
 	Dispatching function for reader
 	"""
 	if fnames is None:
-		fnames = sorted([f for f in os.listdir(kwargs['basepath']) if (f.startswith('lc_') and f.endswith('.csv'))])
+		fnames = sorted([f for f in os.listdir(kwargs['basepath']) if ((f.startswith('lc_') or f.startswith('dtdm_')) and f.endswith('.csv'))])
 	n_files = len(fnames)
 	if multiproc:
 		if __name__ == 'module.preprocessing.data_io':
@@ -73,7 +73,7 @@ def dispatch_reader(kwargs, multiproc=True, i=0, max_processes=64, concat=True, 
 				return pd.concat(df_list, sort=True)
 			else:
 				return df_list
-	else: 
+	else:
 		return reader(fnames[i], kwargs)
 
 def writer(i, chunk, kwargs):
