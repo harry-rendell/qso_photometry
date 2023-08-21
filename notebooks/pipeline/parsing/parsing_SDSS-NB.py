@@ -25,7 +25,7 @@ import os
 import sys
 sys.path.insert(0, os.path.join(os.getcwd(), "..", "..", ".."))
 from module.config import cfg
-from module.preprocessing import colour_transform, parse, data_io
+from module.preprocessing import color_transform, parse, data_io
 
 OBJ    = 'qsos'
 ID     = 'uid' if OBJ == 'qsos' else 'uid_s'
@@ -174,7 +174,7 @@ sdss_melted = pd.merge(sdss_unmelted.reset_index()[[ID,'objID','mjd']], pd.merge
 # # Transform to PanSTARRS
 # ---
 
-sdss_transformed = colour_transform.transform_sdss_to_ps(sdss_melted, color='g-r', system='tonry').sort_values([ID,'mjd']).astype(np.float32)
+sdss_transformed = color_transform.transform_sdss_to_ps(sdss_melted, color='g-r', system='tonry').sort_values([ID,'mjd']).astype(np.float32)
 
 sdss_transformed.isna().sum()
 

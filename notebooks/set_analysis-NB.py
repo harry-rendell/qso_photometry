@@ -20,7 +20,7 @@ import os
 import sys
 sys.path.insert(0, os.path.join(os.getcwd(), ".."))
 from module.config import cfg
-from module.preprocessing import colour_transform, parse, data_io, lightcurve_statistics, binning
+from module.preprocessing import color_transform, parse, data_io, lightcurve_statistics, binning
 
 obj = 'qsos'
 band = 'r'

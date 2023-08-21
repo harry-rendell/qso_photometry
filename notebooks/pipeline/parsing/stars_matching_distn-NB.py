@@ -19,7 +19,7 @@ import os
 import sys
 sys.path.insert(0, os.path.join(os.getcwd(), "..", "..", ".."))
 from module.config import cfg
-from module.preprocessing import colour_transform, parse, data_io, lightcurve_statistics
+from module.preprocessing import color_transform, parse, data_io, lightcurve_statistics
 from module.plotting.common import savefigs
 
 ddir = cfg.D_DIR

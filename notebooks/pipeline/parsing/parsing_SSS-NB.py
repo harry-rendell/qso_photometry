@@ -28,7 +28,7 @@ import sys
 sys.path.insert(0, os.path.join(os.getcwd(), "..", "..", ".."))
 from module.config import cfg
 from module.preprocessing import parse, data_io
-from module.preprocessing.colour_transform import ssa_transform
+from module.preprocessing.color_transform import ssa_transform
 # import matplotlib
 # font = {'size' : 18}
 # matplotlib.rc('font', **font)

@@ -93,7 +93,7 @@ import os
 import sys
 sys.path.insert(0, os.path.join(os.getcwd(), "..", "..", ".."))
 from module.config import cfg
-from module.preprocessing import parse, data_io, colour_transform
+from module.preprocessing import parse, data_io, color_transform
 
 OBJ    = 'calibStars'
 ID     = 'uid_s'
@@ -120,7 +120,7 @@ for band in 'gri':
         raw_data.append(df)
         
     raw_data = pd.concat(raw_data).sort_values([ID,'mjd'])
-    raw_data = colour_transform.transform_ztf_to_ps(raw_data, OBJ, band)
+    raw_data = color_transform.transform_ztf_to_ps(raw_data, OBJ, band)
     
     print('No. NA entries:',raw_data.isna().sum())
     
