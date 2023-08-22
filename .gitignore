@@ -4,6 +4,8 @@ plots/
 .obsidian
 archive/
 logs/
+tex.cache/
+res/*.json
 **/computed/
 **/.ipynb_checkpoints
 **.DS_Store

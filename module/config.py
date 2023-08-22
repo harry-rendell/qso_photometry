@@ -30,6 +30,13 @@ __C.RES_DIR = os.path.join(__C.W_DIR, 'res', '')
 __C.THESIS_DIR = os.path.join(__C.ROOT_DIR, 'thesis_hrb', '')
 
 #------------------------------------------------------------------------------
+# Configure environment variables
+#------------------------------------------------------------------------------
+os.environ['MPLCONFIGDIR'] = __C.RES_DIR
+# Note, style sheets:
+# https://matplotlib.org/stable/gallery/style_sheets/style_sheets_reference.html
+
+#------------------------------------------------------------------------------
 # User settings
 #------------------------------------------------------------------------------
 __C.USER = edict()
@@ -318,15 +325,16 @@ __C.RES = edict()
 __C.FIG = edict()
 
 # Path to style files. Empty string at end ensures trailing slash
-__C.FIG.STYLE_DIR = os.path.join(__C.RES_DIR, 'styles', '')
+# This is no longer needed now that we have configured the MPLCONFIGDIR at the top of this file
+# __C.FIG.STYLE_DIR = os.path.join(__C.RES_DIR, 'styles', '')
 
-__C.FIG.COLOURS = edict()
+__C.FIG.COLORS = edict()
 
 # Colour palettes for plots
-__C.FIG.COLOURS.PAIRED_BANDS = {'g':('#b2df8a', '#33a02c'),
-                                'r':('#f98583', '#e31a1c'),
-                                'i':('#c299D6', '#6a3d9a')}
+__C.FIG.COLORS.PAIRED_BANDS = {'g':('#b2df8a', '#33a02c'),
+                               'r':('#f98583', '#e31a1c'),
+                               'i':('#c299D6', '#6a3d9a')}
 
-__C.FIG.COLOURS.BANDS = {'g':'#33a02c',
-						 'r':'#e31a1c',
-						 'i':'#6a3d9a'}
+__C.FIG.COLORS.BANDS = {'g':'#33a02c',
+						'r':'#e31a1c',
+						'i':'#6a3d9a'}
