@@ -20,6 +20,18 @@ def linear(x, a, b):
     """
     return a + b*x
 
+def DRW_SF(t, tau, SF_inf):
+    """
+    Damped random walk structure function
+    """
+    return SF_inf*((1 - np.exp(-t/tau))**0.5)
+
+def mod_DRW_SF(t, tau, SF_inf, beta):
+    """
+    Modified damped random walk structure function
+    """
+    return SF_inf*(1 - np.exp(-t/tau))**beta
+
 def bkn_pow_smooth(x, A, x_b, a_1, a_2, delta=1):
     """
     Smooth broken power law

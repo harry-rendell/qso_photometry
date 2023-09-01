@@ -104,6 +104,22 @@ def fit_broken_power_law(x, y, yerr, least_sq_kwargs={}, **kwargs):
     amplitude, break_point, index_1, index_2 = popt
     return amplitude, break_point, index_1, index_2, pcov, model_values
 
+def fit_DRW_SF(x, y, yerr, **kwargs):
+    """
+    Fit a damped random walk structure function to the data
+    """
+    popt, pcov, model_values = fit(models.DRW_SF, x, y, yerr, **kwargs)
+    tau, SF_inf = popt
+    return tau, SF_inf, pcov, model_values
+
+def fit_mod_DRW_SF(x, y, yerr, **kwargs):
+    """
+    Fit a damped random walk structure function to the data
+    """
+    popt, pcov, model_values = fit(models.mod_DRW_SF, x, y, yerr, **kwargs)
+    tau, SF_inf, beta = popt
+    return tau, SF_inf, beta, pcov, model_values
+
 def chi(x, y, function, popt):
     """
     Calculate the chi^2 value for the fit
