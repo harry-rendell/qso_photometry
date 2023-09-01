@@ -82,7 +82,7 @@ df_inner, df_outer = groupby_and_concat_distances()
 
 # plt.style.use(cfg.FIG.STYLE_DIR + 'style.mplstyle')
 plt.style.use('default')
-def distance_histplot(df):
+def distance_histplot(df, save=False):
     n_bins = 50
     alpha = 0.7
     binrange = (0,2)
@@ -93,6 +93,8 @@ def distance_histplot(df):
         ax = sns.histplot(data=df, x=survey+'_mean', stat=stat, bins=n_bins, label=survey.upper(), alpha=alpha, binrange=binrange, **line_kws)
     ax.set(yscale='log', xlabel='Pairing radius (arcsec)')
     ax.legend()
+    if save:
+        savefigs(fig, 'SURVEY-pairing_radius_comparison', 'chap2')
 
 
 distance_histplot(df_inner)
