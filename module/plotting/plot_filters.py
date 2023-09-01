@@ -20,7 +20,7 @@ def plot_filters(**kwargs):
 
 
 	# Colors
-	colors = [cfg.FIG.COLOURS.BANDS[c] for c in 'gri']
+	colors = [cfg.FIG.COLORS.BANDS[c] for c in 'gri']
 
 	# Getting everything into the same units
 	ztf_g.loc[:, 'g'] /= 100
@@ -32,9 +32,9 @@ def plot_filters(**kwargs):
 	ps.loc[:,'lambda'] *= 10
 
 	fig, ax = plt.subplots(1,1, figsize=(10,5))
-	ztf_g.plot(x='lambda', y='g', ax=ax, ls='-', ms=10, label='ztf_g', color = cfg.FIG.COLOURS.BANDS['g'])
-	ztf_r.plot(x='lambda', y='r', ax=ax, ls='-', ms=10, label='ztf_r', color = cfg.FIG.COLOURS.BANDS['r'])
-	ztf_i.plot(x='lambda', y='i', ax=ax, ls='-', ms=10, label='ztf_i', color = cfg.FIG.COLOURS.BANDS['i'])
+	ztf_g.plot(x='lambda', y='g', ax=ax, ls='-', ms=10, label='ztf_g', color = cfg.FIG.COLORS.BANDS['g'])
+	ztf_r.plot(x='lambda', y='r', ax=ax, ls='-', ms=10, label='ztf_r', color = cfg.FIG.COLORS.BANDS['r'])
+	ztf_i.plot(x='lambda', y='i', ax=ax, ls='-', ms=10, label='ztf_i', color = cfg.FIG.COLORS.BANDS['i'])
 
 	sdss.plot(x='lambda', y=['g','r','i'], ax=ax, ls='--' , ms=10, label=['sdss_'+b for b in 'gri'], color = colors)
 	ps  .plot(x='lambda', y=['g','r','i'], ax=ax, ls='-.', ms=10, label=['ps_' + b for b in 'gri'], color = colors)
