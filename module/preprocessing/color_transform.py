@@ -90,7 +90,7 @@ class ssa_transform():
             self.transf_name = transf_name
 
         if p is None:
-            p, res, _, _, _ = np.polyfit(color[mask].flatten(), offset[mask].flatten(), deg=poly_deg, full=True)
+            p, res, _, _, _ = np.polyfit(color[self.mask].flatten(), self.offset[self.mask].flatten(), deg=poly_deg, full=True)
         else:
             poly_deg = len(p)-1
         self.mag_ssa = mag_ssa
