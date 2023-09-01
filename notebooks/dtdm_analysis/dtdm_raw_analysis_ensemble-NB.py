@@ -178,7 +178,7 @@ fig, ax = dtdm_star_i.plot_stats(plotting_keys, figax=(fig, ax), label='Stars', 
 # # Plot SF asymmetry
 
 # Set plotting style
-plt.style.use(cfg.FIG.STYLE_DIR + 'dtdm_raw_analysis_paired.mplstyle')
+plt.style.use(cfg.FIG.STYLE_DIR + 'paired.mplstyle')
 # Available keys:
 # ['SF cwf p', 'mean weighted b', 'n', 'SF cwf a', 'kurtosis', 'skewness', 'SF cwf b', 'mean weighted a', 'SF cwf n']
 plotting_keys = ['SF cwf p', 'SF cwf n']

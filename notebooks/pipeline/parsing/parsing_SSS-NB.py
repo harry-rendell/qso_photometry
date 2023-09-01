@@ -12,7 +12,7 @@
 #     name: python3
 # ---
 
-# + language="bash"
+# + vscode={"languageId": "shellscript"} language="bash"
 # jupytext --to py parsing_SSS-NB.ipynb # Only run this if the notebook is more up-to-date than -NB.py
 # # jupytext --to --update ipynb parsing_SSS-NB.ipynb # Run this to update the notebook if changes have been made to -NB.py
 
@@ -78,10 +78,9 @@ PARSE_SECONDARY = True
 SAVE_COORDS_IN_CHUNKS = False
 SAVE_SECONDARY = False
 
-ID = 'uid_s'
-OBJ = 'calibStars'
-# ID = 'uid'
-# OBJ = 'qsos'
+OBJ = 'qsos'
+# OBJ = 'calibStars'
+ID = 'uid' if OBJ == 'qsos' else 'uid_s'
 
 if PARSE_SECONDARY:
     def remove_nonmatches(df):
@@ -138,7 +137,7 @@ if PARSE_SECONDARY:
         merged.astype({'smag':np.float32, 'surveyID':np.uint8, 'mjd':np.uint32}).to_csv(cfg.D_DIR + 'surveys/supercosmos/{}/ssa_secondary.csv'.format(OBJ))
 # -
 
-merged['filterID'].value_counts()
+print(merged[['surveyID','filterID']].value_counts().sort_index())
 
 # GG385/395 are B more accurately Bj.
 #
