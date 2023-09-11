@@ -196,3 +196,13 @@ def dispatch_function(function, chunks=None, max_processes=64, concat_output=Tru
 				return output.astype(dtypes)
 			else:
 				return output
+
+def groupby_apply_dispatcher(func, df, kwargs, args=()):
+    if 'fname' in kwargs:
+        print(f"processing file: {kwargs['fname']}", flush=True)
+
+    if ('band' in kwargs) & ('band' in df.columns):
+        s = df[df['band'] == kwargs['band']].groupby(df.index.name).apply(func, *args)
+    else:
+        s = df.groupby(df.index.name).apply(func, *args)
+    return pd.DataFrame(s.values.tolist(), index=s.index, dtype='float32')

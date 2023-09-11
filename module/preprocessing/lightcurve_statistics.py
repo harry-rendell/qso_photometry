@@ -1,27 +1,65 @@
 import numpy as np
 import pandas as pd
-from ..config import cfg
-
-def groupby_apply_features(df, kwargs):
-    if ('band' in kwargs) & ('band' in df.columns):
-        s = df[df['band'] == kwargs['band']].groupby(df.index.name).apply(calculate_features)
-    else:
-        s = df.groupby(df.index.name).apply(calculate_features)
-    return pd.DataFrame(s.values.tolist(), index=s.index, dtype='float32')
+from .data_io import groupby_apply_dispatcher
 
 def groupby_apply_average(df, kwargs):
     s = df.groupby([df.index.name, 'mjd_floor']).apply(average_nightly_obs)
     return pd.DataFrame(s.values.tolist(), index=s.index, dtype='float32').reset_index('mjd_floor', drop=True)
 
 def groupby_apply_stats(df, kwargs):
-    if ('band' in kwargs) & ('band' in df.columns):
-        s = df[df['band'] == kwargs['band']].groupby(df.index.name).apply(stats)
-    else:
-        s = df.groupby(df.index.name).apply(stats)
-    return pd.DataFrame(s.values.tolist(), index=s.index, dtype='float32')
+    return groupby_apply_dispatcher(stats, df, kwargs)
 
-def calculate_features(group):
-    mjd, mag, magerr = group[['mjd','mag','magerr']].values.T
+def groupby_apply_welch_stetson(df, kwargs):
+    return groupby_apply_dispatcher(welch_stetson_JK, df, kwargs)
+
+def groupby_apply_features(df, kwargs):
+    args = (kwargs['mjd_edges'], kwargs['n_points'])
+    return groupby_apply_dispatcher(calculate_sf_per_qso, df, kwargs, args=args)
+
+def welch_stetson_JK(group):
+    """
+    Welch-Stetson variability index J and K (Stetson 1996)
+    
+    Might be better to make this a function of ∆m, ∆t
+
+    mag : array of magnitudes
+    magerr : array of magnitude errors
+    mag_mean : float of magnitude mean
+    n : int of number of observations
+    """
+    n = len(group)
+    if n==1:
+        J, K = np.nan, np.nan
+    else:
+        mag = group['mag'].values
+        mag_mean = np.mean(mag)
+        delta = (n/(n-1)) ** 0.5 * (mag-mag_mean)/np.std(mag)
+
+        K = n**-0.5 * np.abs(delta).sum() / ((delta**2).sum()**0.5)
+
+        p = delta * delta[:, np.newaxis]
+        k = int((n*(n-1))/2)
+        unique_pair_indicies = np.triu_indices(n,1)
+        p = p[unique_pair_indicies]
+
+        J = ( np.sign(p)*(np.abs(p)**0.5) ).sum()/k
+
+    return {'welch_stetson_j':J, 'welch_stetson_k':K}
+
+def calculate_sf_per_qso(group, mjd_edges, n_points):
+    dm, dt, de = group[['dm','dt','de']].values.T
+    n_features = 3
+    a = np.zeros(shape=(n_points, n_features), dtype=np.float32)
+    for i in range(n_points):
+        mask = (mjd_edges[i] < dt) & (dt < mjd_edges[i+1])
+        if mask.sum()==0:
+            a[i,:] = np.nan
+        else:
+            a[i,0] = np.average(dm[mask]**2 - de[mask]**2, weights=de[mask]**-2)
+            a[i,1] = np.average(dm[mask]**2, weights=de[mask]**-2)
+            a[i,2] = dm[mask].var()
+
+    return {f'f{j}_{i}':a[i,0] for j in range(n_features) for i in range(n_points)}
 
 def average_nightly_obs(group):
     """
