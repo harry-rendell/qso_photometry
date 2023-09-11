@@ -24,7 +24,7 @@ def intersection(*args):
     print('---------------------------------')
     return surveys
 
-def filter_data(df, bounds={}, dropna=True, valid_uids=None):
+def filter_data(df, bounds={}, dropna=True, valid_uids=None, percentiles=[], verbose=False):
     """
     Remove data that lies outside ranges specified in bounds.
     Note, using inplace=True is approx ~30% more memory efficient and prevents additional dataframes being stored.
@@ -35,7 +35,9 @@ def filter_data(df, bounds={}, dropna=True, valid_uids=None):
     # Restrict the keys in bounds to those that are in df.columns
     if bounds:
         bounds = {k:v for k,v in bounds.items() if k in df.columns}
-
+    elif percentiles:
+        # If no bounds are provided, but percentiles are, then calculate bounds from percentiles
+        bounds={col:df[col].quantile(percentiles).values for col in df.columns}
     # Restrict our dataframe rows with indices contained in valid_uids, if provided.
     df = df.copy()
     n = len(df.index)
@@ -46,7 +48,8 @@ def filter_data(df, bounds={}, dropna=True, valid_uids=None):
     # Create set of boolean numpy arrays which are true if the key is within the bounds.
     for key, bound in bounds.items():
         boolean = df[key].between(bound[0], bound[1])
-        print('Enforcing {:.2f} <= {} <= {:.2f}'.format(bound[0],key,bound[1]).ljust(50,' ') + 'No. points outside bounds: {:,}'.format((~boolean).sum()))
+        if verbose:
+            print('Enforcing {:.2f} <= {} <= {:.2f}'.format(bound[0],key,bound[1]).ljust(50,' ') + 'No. points outside bounds: {:,}'.format((~boolean).sum()))
         df[key] = df[key].where(boolean, np.nan, inplace=False)
     
     # Drop rows with no observations in any band

@@ -45,7 +45,7 @@ if __name__ == "__main__":
     for band in args.band:
         kwargs['band'] = band
         grouped = data_io.dispatch_function(lightcurve_statistics.groupby_apply_stats, chunks=None, max_processes=cfg.USER.N_CORES, **kwargs)
-        output_fpath = cfg.D_DIR + 'merged/{}/clean/'.format(OBJ) + 'grouped_{}.csv'.format(band)
+        output_fpath = cfg.D_DIR + f'merged/{OBJ}/clean/grouped_{band}.csv'
         
         if args.dry_run:
             print(grouped)
