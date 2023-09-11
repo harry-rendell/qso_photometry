@@ -55,11 +55,6 @@ class dtdm_binned_class():
         """
         Read in binned data
         """
-        # self.dts_binned = np.loadtxt(cfg.D_DIR + 'computed/archive/{}/binned/{}/dt/dts_binned_{}_{}.csv'.format(self.obj, self.subset, self.obj, self.name),  delimiter=',', dtype='uint64')
-        # self.dms_binned = np.loadtxt(cfg.D_DIR + 'computed/archive/{}/binned/{}/dm/dms_binned_{}_{}.csv'.format(self.obj, self.subset, self.obj, self.name),  delimiter=',', dtype='uint64')
-        # self.des_binned = np.loadtxt(cfg.D_DIR + 'computed/archive/{}/binned/{}/de/des_binned_{}_{}.csv'.format(self.obj, self.subset, self.obj, self.name),  delimiter=',', dtype='uint64') # could get away with uint32, as the largest number we expect is ~2^29
-        # self.dcs_binned = np.loadtxt(cfg.D_DIR + 'computed/archive/{}/binned/{}/dc/dcs_binned_{}_{}.csv'.format(self.obj, self.subset, self.obj, self.name),  delimiter=',', dtype='uint16')
-        # self.dm2_de2_binned = np.loadtxt(cfg.D_DIR + 'computed/archive/{}/binned/{}/dm2_de2/dm2_de2_binned_{}_{}.csv'.format(self.obj, self.subset, self.obj, self.name),  delimiter=',', dtype='uint16')   
 
         with np.load(cfg.D_DIR + f'computed/{self.obj}/dtdm_binned/{self.subset}/binned_{self.band}.npz', allow_pickle=True, mmap_mode='r') as data:
             self.dts_binned = data['dts_binned']
@@ -68,13 +63,6 @@ class dtdm_binned_class():
             self.dcs_binned = data['dsids_binned']
             self.dm2_de2_binned = data['dm2_de2_binned']
             bin_dict = data['bin_dict'].item()
-
-        # self.dts_binned = np.loadtxt(cfg.D_DIR + f'computed/{self.obj}/dtdm_binned/{self.band}/dts.csv', delimiter=',', dtype='uint64')
-        # self.dms_binned = np.loadtxt(cfg.D_DIR + f'computed/{self.obj}/dtdm_binned/{self.band}/dms.csv', delimiter=',', dtype='uint64')
-        # self.des_binned = np.loadtxt(cfg.D_DIR + f'computed/{self.obj}/dtdm_binned/{self.band}/des.csv', delimiter=',', dtype='uint64')
-        # self.dcs_binned = np.loadtxt(cfg.D_DIR + f'computed/{self.obj}/dtdm_binned/{self.band}/dcs.csv', delimiter=',', dtype='uint64')
-        # self.dm2_de2_binned = np.loadtxt(cfg.D_DIR + f'computed/{self.obj}/dtdm_binned/{self.band}/dm2_de2.csv', delimiter=',', dtype='uint64')
-        # bin_dict = np.load(cfg.D_DIR + f'computed/{self.obj}/dtdm_binned/{self.band}/bin_dict.npy', allow_pickle=True).item()
 
         def centres(edges):
             return (edges[1:] + edges[:-1])/2
@@ -94,6 +82,9 @@ class dtdm_binned_class():
         self.m2_bin_widths = widths(self.m2_bin_edges)
         self.m2_bin_centres = centres(self.m2_bin_edges)
         self.width = bin_dict['width']
+
+        # temporary hack to reformat dictionary.
+        # self.t_dict = {key:f'{float(value.split("<t<")[0]):.0f}<∆t<{float(value.split("<t<")[1]):.0f}' for key, value in self.t_dict.items()}
 
     def stats(self, verbose=False):
         if verbose:
@@ -190,7 +181,7 @@ class dtdm_binned_class():
 
         return figax, SF_n, SF_p
     
-    def hist_dm(self, window_width, figax=None, overlay_gaussian=False, overlay_lorentzian=False, overlay_exponential=False, overlay_diff=False, cmap=plt.cm.cool, colors=['r','b','g'], alpha=1, save=False):
+    def hist_dm(self, window_width, figax=None, overlay_gaussian=False, overlay_lorentzian=False, overlay_exponential=False, overlay_diff=False, cmap=plt.cm.cool, colors=['r','b','g','m'], alpha=1, save=False):
 
         def gaussian(x,peak,x0):
             sigma = (2*np.pi)**-0.5*1/peak
@@ -217,86 +208,102 @@ class dtdm_binned_class():
             return updated_bin_edges, updated_bin_counts
         
         if figax is None:
-            fig, axes = plt.subplots(self.n_bins_T,1,figsize = (15,3*self.n_bins_T))
+            fig, axes = plt.subplots(self.n_bins_T//2,2,figsize = (15,3.1*self.n_bins_T//2))
+            plt.subplots_adjust(wspace=0.1)
         else:
             fig, axes = figax
         n=1
         stds     = np.zeros(self.n_bins_T)
         r2s_tot = []
-        for i, ax in enumerate(axes):
+        for i, ax in enumerate(axes.T.ravel()):
             r2s = []
 
-            # ax.set_title(self.t_dict[i])
+            ax.set_title(self.t_dict[i])
             edges = self.m_bin_edges
             counts = self.dms_binned[i]
-            edges, counts = double_bin_size(edges, counts, 2**(i//5))
-            m,_,_= ax.hist(edges[:-1], edges, weights = counts, alpha = alpha, density=True, label = self.t_dict[i], color = cmap(0.2+i/20*0.5))
-            ax.set(xlim=[-window_width,window_width], xlabel='∆m')
+            if counts.sum() == 0:
+                continue
+            # edges, counts = double_bin_size(edges, counts, 2**(i//8))
+            m,_,_= ax.hist(edges[:-1], edges, weights = counts, alpha = alpha, density=True, label = self.obj, color = cmap(0.2+i/20*0.5), range=[-window_width,window_width])
+            ax.set(xlim=[-window_width,window_width], xlabel='∆m', yticks=[])
             # ax.axvline(x=modes[i], lw=0.5, ls='--', color='k')
             # ax.axvline(x=m_bin_centres[m.argmax()], lw=0.5, ls='--', color='r')
             text_height = 0.6
             if overlay_gaussian:
-                #Also make sure that bins returned from .hist match m_bin_edges : it is
-                x = np.linspace(-2,2,1000)
+                try:
+                    #Also make sure that bins returned from .hist match m_bin_edges : it is
+                    x = np.linspace(-2,2,1000)
 
-                popt, _ = curve_fit(gaussian, self.m_bin_edges[:-1:n], m, p0 = [m.max(),self.m_bin_edges[:-1:n][m.argmax()]])
-                # ax.plot(x,gaussian(x, m.max(), self.m_bin_edges[:-1:n][m.argmax()]), label = 'gaussian') what is this for
-                ax.plot(x,gaussian(x, *popt), color=colors[1], label = 'gaussian', lw=1.5)
+                    popt, _ = curve_fit(gaussian, self.m_bin_edges[:-1:n], m, p0 = [m.max(),self.m_bin_edges[:-1:n][m.argmax()]])
+                    # ax.plot(x,gaussian(x, m.max(), self.m_bin_edges[:-1:n][m.argmax()]), label = 'gaussian') what is this for
+                    ax.plot(x,gaussian(x, *popt), color=colors[1], label = 'gaussian', lw=1.5)
 
-                # popt, _ = curve_fit(gaussian, self.m_bin_edges[:-1:n], m, p0 = [m.max(),self.m_bin_edges[:-1:n][m.argmax()]], sigma = 1/self.m_bin_widths)
-                # ax.plot(x,gaussian(x, *popt), label = 'gaussian_weighted')
-                
-                slope, intercept, r, p, stderr = linregress(m, gaussian(self.m_bin_centres, *popt))
-                chisq, p = chisquare(m, gaussian(self.m_bin_centres, *popt), ddof=0)
-                diff    = m - gaussian(self.m_bin_centres, *popt)
-                r2_gaussian = 1 -  (diff**2).sum() / ( (m - m.mean())**2).sum()
-                r2s.append(r2_gaussian)
-                if overlay_diff:
-                    ax.plot(self.m_bin_centres, diff, label = 'diff')
-                ax.text(0.05, text_height, r'Gaussian     $r^2$ = {:.5f}'.format(r2_gaussian), transform=ax.transAxes)
-                # ax.text(0.05, text_height-0.1, r'Gaussian linreg $r^2$ = {:.5f}'.format(r**2), transform=ax.transAxes)
-                ax.text(0.05, text_height-0.2, r'Gaussian $\chi^2$ = {:.5f}'.format(chisq/m.sum()), transform=ax.transAxes)
-######################### something wrong with chi squared
-                text_height -= 0.1
+                    # popt, _ = curve_fit(gaussian, self.m_bin_edges[:-1:n], m, p0 = [m.max(),self.m_bin_edges[:-1:n][m.argmax()]], sigma = 1/self.m_bin_widths)
+                    # ax.plot(x,gaussian(x, *popt), label = 'gaussian_weighted')
+                    
+                    slope, intercept, r, p, stderr = linregress(m, gaussian(self.m_bin_centres, *popt))
+                    chisq, p = chisquare(m, gaussian(self.m_bin_centres, *popt), ddof=0)
+                    diff    = m - gaussian(self.m_bin_centres, *popt)
+                    r2_gaussian = 1 -  (diff**2).sum() / ( (m - m.mean())**2).sum()
+                    r2s.append(r2_gaussian)
+                    if overlay_diff:
+                        ax.plot(self.m_bin_centres, diff, label = 'diff')
+                    # ax.text(0.05, text_height, r'Gaussian     $r^2$ = {:.5f}'.format(r2_gaussian), transform=ax.transAxes)
+                    # ax.text(0.05, text_height-0.1, r'Gaussian linreg $r^2$ = {:.5f}'.format(r**2), transform=ax.transAxes)
+                    # ax.text(0.05, text_height-0.2, r'Gaussian $\chi^2$ = {:.5f}'.format(chisq/m.sum()), transform=ax.transAxes)
+    ######################### something wrong with chi squared
+                    text_height -= 0.1
+                except Exception as e:
+                    print('unable to fit gaussian due to error:',e)
 
             if overlay_lorentzian:
-                x = np.linspace(-2,2,1000)
+                try:
+                    x = np.linspace(-2,2,1000)
 
-                popt, _ = curve_fit(lorentzian, self.m_bin_edges[:-1:n], m, p0 = [1/m.max(),self.m_bin_edges[:-1:n][m.argmax()]])
-                ax.plot(x,lorentzian(x,popt[0],popt[1]), color = colors[2], label = 'lorentzian', lw=2)
-                
-                # popt, _ = curve_fit(lorentzian, self.m_bin_edges[:-1:n], m, p0 = [1/m.max(),self.m_bin_edges[:-1:n][m.argmax()]], sigma = 1/self.m_bin_widths)
-                # ax.plot(x,lorentzian(x,popt[0],popt[1]), label = 'lorentzian weighted')
-                
-                diff    = m - lorentzian(self.m_bin_centres, *popt)
-                r2_lorentzian = 1 -  (diff**2).sum() / ( (m - m.mean())**2).sum() 
-                r2s.append(r2_lorentzian)
-                if overlay_diff:
-                    ax.plot(self.m_bin_centres, diff, label = 'diff')
-                ax.text(0.05, text_height, r'Lorentzian  $r^2$ = {:.5f}'.format(r2_lorentzian), transform=ax.transAxes)
-                text_height -= 0.1
+                    popt, _ = curve_fit(lorentzian, self.m_bin_edges[:-1:n], m, p0 = [1/m.max(),self.m_bin_edges[:-1:n][m.argmax()]])
+                    ax.plot(x,lorentzian(x,popt[0],popt[1]), color = colors[2], label = 'lorentzian', lw=2)
+                    
+                    # popt, _ = curve_fit(lorentzian, self.m_bin_edges[:-1:n], m, p0 = [1/m.max(),self.m_bin_edges[:-1:n][m.argmax()]], sigma = 1/self.m_bin_widths)
+                    # ax.plot(x,lorentzian(x,popt[0],popt[1]), label = 'lorentzian weighted')
+                    
+                    diff    = m - lorentzian(self.m_bin_centres, *popt)
+                    r2_lorentzian = 1 -  (diff**2).sum() / ( (m - m.mean())**2).sum() 
+                    r2s.append(r2_lorentzian)
+                    if overlay_diff:
+                        ax.plot(self.m_bin_centres, diff, label = 'diff')
+                    # ax.text(0.05, text_height, r'Lorentzian  $r^2$ = {:.5f}'.format(r2_lorentzian), transform=ax.transAxes)
+                    text_height -= 0.1
+                except Exception as e:
+                    print('unable to fit lorentzian due to error:',e)
 
 
             if overlay_exponential:
-                # Also make sure that bins returned from .hist match m_bin_edges : it is
-                x = np.linspace(-2,2,1000)
+                try:
+                    # Also make sure that bins returned from .hist match m_bin_edges : it is
+                    x = np.linspace(-2,2,1000)
 
-                popt, _ = curve_fit(exponential, self.m_bin_edges[:-1:n], m, p0 = [m.max(),self.m_bin_edges[:-1:n][m.argmax()], 1])
-                # ax.plot(x,exponential(x, m.max(), self.m_bin_edges[:-1:n][m.argmax()]), label = 'exponential') what is this for
-                ax.plot(x,exponential(x, *popt), color=colors[3], label = 'exponential', lw=2)
+                    popt, _ = curve_fit(exponential, self.m_bin_edges[:-1:n], m, p0 = [m.max(),self.m_bin_edges[:-1:n][m.argmax()], 1])
+                    # ax.plot(x,exponential(x, m.max(), self.m_bin_edges[:-1:n][m.argmax()]), label = 'exponential') what is this for
+                    ax.plot(x,exponential(x, *popt), color=colors[3], label = 'exponential', lw=2)
 
-                # popt, _ = curve_fit(exponential, self.m_bin_edges[:-1:n], m, p0 = [m.max(),self.m_bin_edges[:-1:n][m.argmax()], 1], sigma = 1/self.m_bin_widths)
-                # ax.plot(x,exponential(x, *popt), label = 'exponential_weighted')
-                
-                diff    = m - exponential(self.m_bin_centres, *popt)
-                r2_exponential = 1 -  (diff**2).sum() / ( (m - m.mean())**2).sum() 
-                r2s.append(r2_exponential)
-                if overlay_diff:
-                    ax.plot(self.m_bin_centres, diff, label = 'diff')
-                ax.text(0.05, text_height, r'Exponential $r^2$ = {:.5f}'.format(r2_exponential), transform=ax.transAxes)
-                text_height -= 0.1
+                    # popt, _ = curve_fit(exponential, self.m_bin_edges[:-1:n], m, p0 = [m.max(),self.m_bin_edges[:-1:n][m.argmax()], 1], sigma = 1/self.m_bin_widths)
+                    # ax.plot(x,exponential(x, *popt), label = 'exponential_weighted')
+                    
+                    diff    = m - exponential(self.m_bin_centres, *popt)
+                    r2_exponential = 1 -  (diff**2).sum() / ( (m - m.mean())**2).sum() 
+                    r2s.append(r2_exponential)
+                    if overlay_diff:
+                        ax.plot(self.m_bin_centres, diff, label = 'diff')
+                    # ax.text(0.05, text_height, r'Expoxwnential $r^2$ = {:.5f}'.format(r2_exponential), transform=ax.transAxes)
+                    text_height -= 0.1
+                except Exception as e:
+                    print('unable to fit exponential due to error:',e)
 
             r2s_tot.append(r2s)
+            # ax.text(0.05, 0.9, 'mean = {:.5f}'.format(self.means[i]), transform=ax.transAxes)
+            # ax.text(0.05, 0.8, 'mode = {:.5f}'.format(self.modes[i]), transform=ax.transAxes)
+            # ax.text(0.05, 0.7, 'skew  = {:.5f}'.format(self.skew_1[i]), transform=ax.transAxes)
+
             from itertools import combinations_with_replacement
             a = {f'{b[0]}-{b[1]}':a[0]*a[1] for a,b in zip(combinations_with_replacement([3,5,7,11],2),combinations_with_replacement(['ssa','sdss','ps','ztf'],2 ))}
             survey_fractions = ''
