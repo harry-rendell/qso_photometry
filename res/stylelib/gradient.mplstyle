@@ -1,4 +1,3 @@
-
-font.size: 10
-legend.fontsize: small
+# To generate a color gradient with N colors:
+# print([c.replace('#','').upper() for c in sns.color_palette("husl", N).as_hex()])
 axes.prop_cycle: cycler('color', ['ffa800','eb7600','eb1e00','d500ff','6f00eb','006EFF','00aceb','12c26e'])

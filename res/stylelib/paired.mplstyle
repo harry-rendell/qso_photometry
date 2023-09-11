@@ -1,5 +1,18 @@
+axes.grid: True
+axes.grid.which: both
+axes.axisbelow: True
 
-font.size: 10
-legend.fontsize: small
-# axes.prop_cycle: cycler('color', ['A6CEE3', '1f78b4', 'b2df8a', '33a02c', 'fb9a99', 'e31a1c', 'fdbf6f', 'ff7f00', 'cab2d6', '6a3d9a', 'ffff99', 'b15928'])
-axes.prop_cycle: cycler('color', ['fb9a99', 'e31a1c','cab2d6', '6a3d9a', 'ffff99', 'b15928'])
+grid.alpha : 0.5
+grid.linewidth : 0.6
+grid.linestyle : -
+
+# Pastel
+# axes.prop_cycle: cycler('color', ['FBBEAB','F06C9B','5AADC0','9C6AD2','33A02C','B2DF8A','1F78B4','A6CEE3'])
+
+# Muted:
+axes.prop_cycle: cycler('color', ['FBC599','DB5375','75B2E3','9C6AD2','5DC0C1','8ADF91','1F78B4','A6CEE3'])
+# First 4 inverted
+# axes.prop_cycle: cycler('color', ['9C6AD2','75B2E3','DB5375','FBC599','5DC0C1','8ADF91','1F78B4','A6CEE3'])
+
+# Bright
+# axes.prop_cycle: cycler('color', ['FED18C','DB5375','66C1D6','9C6AD2','33A02C','B2DF8A','1F78B4','A6CEE3']) 

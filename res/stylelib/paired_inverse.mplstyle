@@ -1,0 +1,3 @@
+font.size: 10
+legend.fontsize: small
+axes.prop_cycle: cycler('color', ['fb9a99', 'e31a1c','cab2d6', '6a3d9a', 'b2df8a', '33a02c',  'A6CEE3', '1f78b4'])

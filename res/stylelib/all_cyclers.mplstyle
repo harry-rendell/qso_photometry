@@ -1,78 +1,10 @@
 ## ***************************************************************************
-## * FONT                                                                    *
-## ***************************************************************************
-## The font properties used by `text.Text`.
-## See https://matplotlib.org/api/font_manager_api.html for more information
-## on font properties.  The 6 font properties used for font matching are
-## given below with their default values.
-##
-## The font.family property has five values:
-##     - 'serif' (e.g., Times),
-##     - 'sans-serif' (e.g., Helvetica),
-##     - 'cursive' (e.g., Zapf-Chancery),
-##     - 'fantasy' (e.g., Western), and
-##     - 'monospace' (e.g., Courier).
-## Each of these font families has a default list of font names in decreasing
-## order of priority associated with them.  When text.usetex is False,
-## font.family may also be one or more concrete font names.
-##
-## The font.style property has three values: normal (or roman), italic
-## or oblique.  The oblique style will be used for italic, if it is not
-## present.
-##
-## The font.variant property has two values: normal or small-caps.  For
-## TrueType fonts, which are scalable fonts, small-caps is equivalent
-## to using a font size of 'smaller', or about 83%% of the current font
-## size.
-##
-## The font.weight property has effectively 13 values: normal, bold,
-## bolder, lighter, 100, 200, 300, ..., 900.  Normal is the same as
-## 400, and bold is 700.  bolder and lighter are relative values with
-## respect to the current weight.
-##
-## The font.stretch property has 11 values: ultra-condensed,
-## extra-condensed, condensed, semi-condensed, normal, semi-expanded,
-## expanded, extra-expanded, ultra-expanded, wider, and narrower.  This
-## property is not currently implemented.
-##
-## The font.size property is the default font size for text, given in pts.
-## 10 pt is the standard value.
-##
-## Note that font.size controls default text sizes.  To configure
-## special text sizes tick labels, axes, labels, title, etc, see the rc
-## settings for axes and ticks.  Special text sizes can be defined
-## relative to font.size, using the following values: xx-small, x-small,
-## small, medium, large, x-large, xx-large, larger, or smaller
-## xx-small 5.79
-## x-small 6.94
-## small 8.33
-## medium 10.0
-## large 12.0
-## x-large 14.4
-## xx-large 17.28
-
-# NOTE: figsize should be (10, x) for fontsize 10 to be medium size
-font.size: 10
-
-# font.family:  sans-serif
-#font.style:   normal
-#font.variant: normal
-#font.weight:  normal
-#font.stretch: normal
-
-#font.serif:      DejaVu Serif, Bitstream Vera Serif, Computer Modern Roman, New Century Schoolbook, Century Schoolbook L, Utopia, ITC Bookman, Bookman, Nimbus Roman No9 L, Times New Roman, Times, Palatino, Charter, serif
-#font.sans-serif: DejaVu Sans, Bitstream Vera Sans, Computer Modern Sans Serif, Lucida Grande, Verdana, Geneva, Lucid, Arial, Helvetica, Avant Garde, sans-serif
-#font.cursive:    Apple Chancery, Textile, Zapf Chancery, Sand, Script MT, Felipa, cursive
-#font.fantasy:    Comic Neue, Comic Sans MS, Chicago, Charcoal, ImpactWestern, Humor Sans, xkcd, fantasy
-#font.monospace:  DejaVu Sans Mono, Bitstream Vera Sans Mono, Computer Modern Typewriter, Andale Mono, Nimbus Mono L, Courier New, Courier, Fixed, Terminal, monospace
-
-## ***************************************************************************
-## * AXES                                                                    *
+## * CYCLER                                                                  *
 ## ***************************************************************************
 
 # To generate the list below, run:
 # for cmap in ['tab10', 'deep', 'muted', 'pastel', 'colorblind', 'bright', 'dark', 'Pastel1', 'Pastel2', 'Paired', 'Accent', 'Dark2', 'Set1', 'Set2', 'Set3', 'tab20', 'tab20b', 'tab20c']:
-#     color_list = [c.replace('#','') for c in sns.color_palette(cmap).as_hex()]
+#     color_list = [c.replace('#','').upper() for c in sns.color_palette(cmap).as_hex()]
 #     print(f"# {cmap}\n# axes.prop_cycle: cycler('color', {color_list})")
 
 # See 
@@ -83,7 +15,7 @@ font.size: 10
 # # deep
 # axes.prop_cycle: cycler('color', ['4c72b0', 'dd8452', '55a868', 'c44e52', '8172b3', '937860', 'da8bc3', '8c8c8c', 'ccb974', '64b5cd'])
 # # muted
-# axes.prop_cycle: cycler('color', ['4878d0', 'ee854a', '6acc64', 'd65f5f', '956cb4', '8c613c', 'dc7ec0', '797979', 'd5bb67', '82c6e2'])
+axes.prop_cycle: cycler('color', ['4878d0', 'ee854a', '6acc64', 'd65f5f', '956cb4', '8c613c', 'dc7ec0', '797979', 'd5bb67', '82c6e2'])
 # # pastel
 # axes.prop_cycle: cycler('color', ['a1c9f4', 'ffb482', '8de5a1', 'ff9f9b', 'd0bbff', 'debb9b', 'fab0e4', 'cfcfcf', 'fffea3', 'b9f2f0'])
 # # colorblind
@@ -122,6 +54,6 @@ font.size: 10
 
 # Tighter spacing
 # axes.prop_cycle: cycler('color', ['ffa800','eb7600','eb1e00','d500ff','6f00eb','006EFF','00aceb','12c26e'])
-
+ 
 # Custom
-axes.prop_cycle: cycler('color', ['780bd9','0c9be8','00AF83','066B12','456D00'])
+# axes.prop_cycle: cycler('color', ['780bd9','0c9be8','00AF83','066B12','456D00'])
