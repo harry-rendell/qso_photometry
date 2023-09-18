@@ -66,49 +66,49 @@ __C.COLLECTION.SDSS = edict()
 # mag converted from real[4] with similar precision
 # magerr converted from real[4] with similar precision
 __C.COLLECTION.SDSS.dtypes = {
-							 **{'uid'    : np.uint32,  'uid_s'  : np.uint32,
-								'objID'  : np.uint64,  'mjd'    : np.float32,
-								'ra'     : np.float64, 'ra_ref' : np.float64,
-								'dec'    : np.float64, 'dec_ref': np.float64,
-								'get_nearby_distance': np.float32},
-							 **{band + 'psf'   : np.float64 for band in 'ugriz'},
-							 **{band + 'psferr': np.float64 for band in 'ugriz'},
-						 }
+                             **{'uid'    : np.uint32,  'uid_s'  : np.uint32,
+                                'objID'  : np.uint64,  'mjd'    : np.float32,
+                                'ra'     : np.float64, 'ra_ref' : np.float64,
+                                'dec'    : np.float64, 'dec_ref': np.float64,
+                                'get_nearby_distance': np.float32},
+                             **{band + 'psf'   : np.float64 for band in 'ugriz'},
+                             **{band + 'psferr': np.float64 for band in 'ugriz'},
+                         }
 
 __C.COLLECTION.PS = edict()
 # Datatypes
 __C.COLLECTION.PS.dtypes = {
-					'objID'     : np.uint64, 
-					'obsTime'   : np.float32, # converted from float[8] with reduced precision
-					'psfFlux'   : np.float64, # converted from float[8] with similar precision. Since this is flux we use double precision.
-					'psfFluxErr': np.float64, # converted from float[8] with similar precision.
-					'mjd'       : np.float32,
-					'mag'       : np.float32,
-					'magerr'    : np.float32,
-					'uid'       : np.uint32,
-					'uid_s'     : np.uint32
-						 }
+                    'objID'     : np.uint64, 
+                    'obsTime'   : np.float32, # converted from float[8] with reduced precision
+                    'psfFlux'   : np.float64, # converted from float[8] with similar precision. Since this is flux we use double precision.
+                    'psfFluxErr': np.float64, # converted from float[8] with similar precision.
+                    'mjd'       : np.float32,
+                    'mag'       : np.float32,
+                    'magerr'    : np.float32,
+                    'uid'       : np.uint32,
+                    'uid_s'     : np.uint32
+                         }
 
 __C.COLLECTION.ZTF = edict()
 # Datatypes
 __C.COLLECTION.ZTF.dtypes = {
-					'oid'     : np.uint64, # note, uint32 is not large enough for ztf oids
-					'clrcoeff': np.float32,
-					'limitmag': np.float32,
-					'mjd'     : np.float32, # reduced from float64
-					'mag'     : np.float32,
-					'magerr'  : np.float32, 
-					'uid'     : np.uint32,
-					'uid_s'   : np.uint32
-						 }
+                    'oid'     : np.uint64, # note, uint32 is not large enough for ztf oids
+                    'clrcoeff': np.float32,
+                    'limitmag': np.float32,
+                    'mjd'     : np.float32, # reduced from float64
+                    'mag'     : np.float32,
+                    'magerr'  : np.float32, 
+                    'uid'     : np.uint32,
+                    'uid_s'   : np.uint32
+                         }
 
 __C.COLLECTION.CALIBSTAR_dtypes = {
-							'ra'      : np.float64,
-							'dec'     : np.float64,
-							'n_epochs': np.uint32,
-							**{'mag_mean_'+b    : np.float32 for b in 'gri'},
-							**{'mag_mean_err_'+b: np.float32 for b in 'gri'}
-								}
+                            'ra'      : np.float64,
+                            'dec'     : np.float64,
+                            'n_epochs': np.uint32,
+                            **{'mag_mean_'+b    : np.float32 for b in 'gri'},
+                            **{'mag_mean_err_'+b: np.float32 for b in 'gri'}
+                                }
 
 
 # 'uid': np.uint32,
@@ -121,39 +121,40 @@ __C.PREPROC = edict()
 
 # Datatypes
 __C.PREPROC.lc_dtypes = {'mjd'     : np.float32,
-						 'mag'     : np.float32,
-						 'mag_orig': np.float32,
-						 'magerr'  : np.float32,
-						 'uid'     : np.uint32,
-						 'uid_s'   : np.uint32,
-						 'sid'     : np.uint8}
+                         'mag'     : np.float32,
+                         'mag_orig': np.float32,
+                         'magerr'  : np.float32,
+                         'uid'     : np.uint32,
+                         'uid_s'   : np.uint32,
+                         'sid'     : np.uint8}
 
 __C.PREPROC.stats_dtypes = {'n_tot': np.uint16, # Increase this to uint32 if we think we will have more than 2^16 (65,536) observations for a single object
-						    **{x:np.float32 for x in ['mjd_min','mjd_max','mjd_ptp',
-													  'mag_min','mag_max','mag_mean','mag_med',
-													  'mag_std',
-													  'mag_mean_native','mag_med_native',
-													  'mag_opt_mean','mag_opt_mean_flux','magerr_opt_std',
-													  'magerr_max','magerr_mean','magerr_med']}}
+                            **{x:np.float32 for x in ['mjd_min','mjd_max','mjd_ptp',
+                                                      'mag_min','mag_max','mag_mean','mag_med',
+                                                      'mag_std',
+                                                      'mag_mean_native','mag_med_native',
+                                                      'mag_opt_mean','mag_opt_mean_flux','magerr_opt_std',
+                                                      'magerr_max','magerr_mean','magerr_med']}}
 
 __C.PREPROC.dtdm_dtypes = {'uid'	: np.uint32,
-						   'uid_s' 	: np.uint32,
-						   'dm' 	: np.float32,
-						   'dm' 	: np.float32,
-						   'de'		: np.float32,
-						   'dm2_de2': np.float32,
-						   'dsid'	: np.uint8}
+                           'uid_s' 	: np.uint32,
+                           'dm' 	: np.float32,
+                           'dm' 	: np.float32,
+                           'de'		: np.float32,
+                           'dm2_de2': np.float32,
+                           'dsid'	: np.uint8}
 
 # maybe not needed as the types stay consistent
 __C.PREPROC.pairwise_dtypes = {'uid': np.uint32,
-							   'dt' :np.float32,
-							   'dm' :np.float32,
-							   'de' :np.float32
-							   }
+                               'dt' :np.float32,
+                               'dm' :np.float32,
+                               'de' :np.float32
+                               }
 
 # Bounds to be applied in when running calculate_stats_looped
 __C.PREPROC.dtdm_bounds = {'qsos':       {'dm': (-5, 5), 'de': (1e-10, 2)},
-                           'calibStars': {'dm': (-0.75, 0.75), 'de': (0, 1)}}
+                           'calibStars': {'dm': (-0.75, 0.75), 'de': (0, 1)},
+                           'sim':        {'dm': (-5, 5), 'de': (1e-10, 2)}}
 
 # Limiting magnitudes
 __C.PREPROC.LIMIT_MAG = edict()
@@ -161,31 +162,31 @@ __C.PREPROC.LIMIT_MAG = edict()
 # https://www.sdss4.org/dr16/imaging/other_info/
 # 5σ limiting magnitudes
 __C.PREPROC.LIMIT_MAG.SDSS = {
-							'u': 22.15,
-							'g': 23.13,
-							'r': 22.70,
-							'i': 22.20,
-							'z': 20.71
-							}
+                            'u': 22.15,
+                            'g': 23.13,
+                            'r': 22.70,
+                            'i': 22.20,
+                            'z': 20.71
+                            }
 
 # https://outerspace.stsci.edu/display/PANSTARRS/PS1+FAQ+-+Frequently+asked+questions
 # 5σ limiting magnitudes
 # Note, these are actually the 3pi stacked 5σ depths... Should really be using single epoch 5σ depths
 __C.PREPROC.LIMIT_MAG.PS = {
-							'g': 23.3,
-							'r': 23.2,
-							'i': 23.1,
-							'z': 22.3,
-							'y': 21.4
+                            'g': 23.3,
+                            'r': 23.2,
+                            'i': 23.1,
+                            'z': 22.3,
+                            'y': 21.4
 
-							# Below are the single epoch 5σ depths
-							# 'g': 22.0,
-							# 'r': 21.8,
-							# 'i': 21.5,
-							# 'z': 20.9,
-							# 'y': 19.7
+                            # Below are the single epoch 5σ depths
+                            # 'g': 22.0,
+                            # 'r': 21.8,
+                            # 'i': 21.5,
+                            # 'z': 20.9,
+                            # 'y': 19.7
 
-							}
+                            }
 
 
 
@@ -194,23 +195,23 @@ __C.PREPROC.LIMIT_MAG.PS = {
 # 	dimmer observations.
 # 5σ limiting magnitudes
 __C.PREPROC.LIMIT_MAG.ZTF = {
-							'g': 20.8,
-							'r': 20.6,
-							'i': 19.9
-							}
+                            'g': 20.8,
+                            'r': 20.6,
+                            'i': 19.9
+                            }
 
 # https://arxiv.org/abs/1607.01189, peacock_ssa
 # 4σ limiting magnitudes, using the smaller of the two between UKST and POSS2.
 __C.PREPROC.LIMIT_MAG.SUPERCOSMOS = {
-									# 4σ
-									'g': 21.17,
-									'r': 20.30,
-									'i': 18.90
-									}
-									# 5σ
-									# 'g': 20.26,
-									# 'r': 19.78,
-									# 'i': 18.38
+                                    # 4σ
+                                    'g': 21.17,
+                                    'r': 20.30,
+                                    'i': 18.90
+                                    }
+                                    # 5σ
+                                    # 'g': 20.26,
+                                    # 'r': 19.78,
+                                    # 'i': 18.38
 # Table from paper above.
 # Band    | 5σ    | 4σ    |
 # --------|-------|-------|
@@ -227,51 +228,53 @@ __C.PREPROC.MAG_ERR_THRESHOLD = 0.198
 # Bounds to use on parse.filter_data in average_nightly_observations.py when removing bad data.
 __C.PREPROC.FILTER_BOUNDS = {'mag':(15,25),'magerr':(1e-10,2)}
 
-__C.PREPROC.SURVEY_IDS =   {'supercosmos':3,
-						 	'sdss': 5,
-							'ps': 7,
-						 	'ztf': 11}
+__C.PREPROC.SURVEY_IDS =   {'ssa':3,
+                             'sdss': 5,
+                            'ps': 7,
+                             'ztf': 11}
 
 __C.PREPROC.VAC_BOUNDS = {'z':(0,5),
-						  'redshift':(0,5),
-						  'Lbol':(44,48),
-						  'Lbol_err':(0,1),
-						  'MBH_HB':(6,12),
-						  'MBH_HB_err':(0,1),
-						  'MBH_MgII':(6,12),
-						  'MBH_MgII_err':(0,1),
-						  'MBH_CIV':(6,12),
-						  'MBH_CIV_err':(0,1),
-						  'MBH':(6,12),
-						  'MBH_err':(0,1),
-						  'nEdd':(-3,1),
-						  'nEdd_err':(0,2),
-						  'Mi:':(-30,-20),
-						  'mag_mean':(15,23.5)}
+                          'redshift':(0,5),
+                          'Lbol':(44,48),
+                          'Lbol_err':(0,1),
+                          'MBH_HB':(6,12),
+                          'MBH_HB_err':(0,1),
+                          'MBH_MgII':(6,12),
+                          'MBH_MgII_err':(0,1),
+                          'MBH_CIV':(6,12),
+                          'MBH_CIV_err':(0,1),
+                          'MBH':(6,12),
+                          'MBH_err':(0,1),
+                          'nEdd':(-3,1),
+                          'nEdd_err':(0,2),
+                          'Mi:':(-30,-20),
+                          'mag_mean':(15,23.5)}
 
 __C.PREPROC.MAX_DT = edict()
 # Max ∆t for quasars and stars in rest frame, rounded up to the nearest integer.
 # Calculated from mjd_ptp_rf.max() from clean/grouped_{band}.csv
 __C.PREPROC.MAX_DT['REST'] = {'qsos':      {'g': 13794, 'r': 24765, 'i': 13056},
-							  'calibStars':{'g':np.nan, 'r':np.nan, 'i':np.nan}}
+                              'calibStars':{'g':np.nan, 'r':np.nan, 'i':np.nan}}
 
 # Do the same except with each black hole property
 
 # Max ∆t for quasars and stars in observer frame frame, rounded up to the nearest integer
 # Calculated from mjd_ptp.max() from clean/grouped_{band}.csv in grouped_analysis-NB.py
 __C.PREPROC.MAX_DT['OBS']  = {'qsos':      {'g': 16513, 'r': 26702, 'i': 14698},
-							  'calibStars':{'g': 15122, 'r': 26062, 'i': 12440}}
-
+                              'calibStars':{'g': 15122, 'r': 26062, 'i': 12440},
+                              'sim':       {'g': 25550, 'r': 25550, 'i': 25550}}
+    
+# Inner: using ∆m, ∆t pairs within surveys only.
 __C.PREPROC.MAX_DT_INNER = edict()
 
 __C.PREPROC.MAX_DT_INNER['REST']  = {'qsos':     {'g': 5108, 'r': 16141, 'i': 6320},
-							  		'calibStars':{'g':np.nan, 'r':np.nan, 'i':np.nan}}
+                                      'calibStars':{'g':np.nan, 'r':np.nan, 'i':np.nan}}
 
 __C.PREPROC.MAX_DT_INNER['OBS']  = {'qsos':      {'g': 6181, 'r': 18010, 'i': 7721},
-							  		'calibStars':{'g': 4377, 'r': 17504, 'i': 6942}}
+                                      'calibStars':{'g': 4377, 'r': 17504, 'i': 6942}}
 
 __C.PREPROC.MAX_DT_COMBINED = {'outer':{'g': 15122, 'r': 26062, 'i': 13056},
-                      		   'inner':{'g': 5108,  'r': 17504, 'i': 6942}}
+                               'inner':{'g': 5108,  'r': 17504, 'i': 6942}}
 
 # Max ∆t for quasars when splitting by black hole property, rounded up to the nearest integer
 __C.PREPROC.MAX_DT_VAC = {'Lbol': {'g': [12896, 12735, 13077, 12919, 11698, 11964, 11268, 10467],
@@ -292,22 +295,29 @@ __C.TRANSF.SSA = edict()
 
 # https://arxiv.org/abs/1607.01189, peacock_ssa
 __C.TRANSF.SSA.PEACOCK = {'g_north': ('g-r',[-0.078, +0.134]),
-		                  'g_south': ('g-r',[-0.058, +0.102]),
-		                  'r2_north':('g-r',[+0.012, -0.054]),
-		                  'r2_south':('g-r',[-0.002, -0.022]),
-		                  'i_north': ('r-i',[+0.008, -0.024]),
-		                  'i_south': ('r-i',[+0.022, -0.092])}
+                          'g_south': ('g-r',[-0.058, +0.102]),
+                          'r2_north':('g-r',[+0.012, -0.054]),
+                          'r2_south':('g-r',[-0.002, -0.022]),
+                          'i_north': ('r-i',[+0.008, -0.024]),
+                          'i_south': ('r-i',[+0.022, -0.092])}
+
+__C.TRANSF.SSA.PEACOCK = {'g_north': ('g-r',[+0.078, -0.134]),
+                          'g_south': ('g-r',[+0.058, -0.102]),
+                          'r2_north':('g-r',[-0.012, +0.054]),
+                          'r2_south':('g-r',[+0.002, +0.022]),
+                          'i_north': ('r-i',[-0.008, +0.024]),
+                          'i_south': ('r-i',[-0.022, +0.092])}
 
 # https://arxiv.org/abs/astro-ph/0701508, Ivezic2007_photometric_standardisation
 __C.TRANSF.SSA.IVEZIC = {'g_north':  ('g-r', [+0.2628, -0.7952, +1.0544, +0.0268]),
-						 'g_south':  ('g-r', [+0.2628, -0.7952, +1.0544, +0.0268]),
+                         'g_south':  ('g-r', [+0.2628, -0.7952, +1.0544, +0.0268]),
 
-						 'r1':       ('r-i', [-0.0107, +0.0050, -0.2689, -0.1540]),
-			             'r2_north': ('r-i', [-0.0107, +0.0050, -0.2689, -0.1540]),
-			             'r2_south': ('r-i', [-0.0107, +0.0050, -0.2689, -0.1540]),
-			             
-			             'i_north':  ('r-i', [-0.0307, +0.1163, -0.3341, -0.3584]),
-			             'i_south':  ('r-i', [-0.0307, +0.1163, -0.3341, -0.3584])}
+                         'r1':       ('r-i', [-0.0107, +0.0050, -0.2689, -0.1540]),
+                         'r2_north': ('r-i', [-0.0107, +0.0050, -0.2689, -0.1540]),
+                         'r2_south': ('r-i', [-0.0107, +0.0050, -0.2689, -0.1540]),
+                         
+                         'i_north':  ('r-i', [-0.0307, +0.1163, -0.3341, -0.3584]),
+                         'i_south':  ('r-i', [-0.0307, +0.1163, -0.3341, -0.3584])}
 
 #------------------------------------------------------------------------------
 # Analysis and results
@@ -336,5 +346,16 @@ __C.FIG.COLORS.PAIRED_BANDS = {'g':('#b2df8a', '#33a02c'),
                                'i':('#c299D6', '#6a3d9a')}
 
 __C.FIG.COLORS.BANDS = {'g':'#33a02c',
-						'r':'#e31a1c',
-						'i':'#6a3d9a'}
+                        'r':'#e31a1c',
+                        'i':'#6a3d9a'}
+
+# __C.FIG.COLORS.SURVEYS = {'sdss':'#FBC599',
+#                           'ps'  :'#DB5375',
+#                           'ztf' :'#75B2E3',
+#                           'ssa' :'#9C6AD2'}
+
+# inverted
+__C.FIG.COLORS.SURVEYS = {'ssa' :'#FBC599',
+                          'ztf' :'#DB5375',
+                          'ps'  :'#75B2E3',
+                          'sdss':'#9C6AD2'}
