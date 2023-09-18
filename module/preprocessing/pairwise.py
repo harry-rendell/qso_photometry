@@ -9,7 +9,7 @@ def groupby_dtdm_between(df, args):
     for index, group in df.groupby(df.index.name):
         return calculate_dtdm_between_surveys(group, *args)
     
-def groupby_dtdm_within(df):
+def groupby_dtdm_within(df, args):
     df_list = []
     for index, group in df.groupby(df.index.name):
         df_list.append(calculate_dtdm_within_surveys(group))
@@ -51,6 +51,10 @@ def calculate_dtdm_within_surveys(group):
 def groupby_save_pairwise(df, kwargs):
     if not (('basepath' in kwargs) and ('fname' in kwargs)):
         raise Exception('Both basepath and fname must be provided')
+    if 'overwrite' in kwargs:
+        overwrite = kwargs['overwrite']
+    else:
+        overwrite = False
     
     # Use appropriate time (rest frame or observer frame)
     mjd_key = kwargs['mjd_key'] if ('mjd_key' in kwargs) else 'mjd'
@@ -66,12 +70,12 @@ def groupby_save_pairwise(df, kwargs):
     os.makedirs(output_dir, exist_ok=True)
     output_fpath = os.path.join(output_dir, kwargs['fname'].replace('lc','dtdm'))
     
-    if not os.path.exists(output_fpath):
+    if os.path.exists(output_fpath) and not overwrite:
+        raise Exception(f'File already exists: {output_fpath}')
+    else:
         with open(output_fpath, 'w') as file:
             file.write(','.join([kwargs['ID'],'dt','dm','de','dsid']) + '\n')
-    else:
-        raise Exception(f'File already exists: {output_fpath}')
-    
+
     n_chunks = len(df)//30000 + 1 # May need to reduce this down to, say, 30,000 if the memory usage is too large.
     for i, chunk in enumerate(split_into_non_overlapping_chunks(df, n_chunks)):
         # If multiple bands are provided, iterate through them.

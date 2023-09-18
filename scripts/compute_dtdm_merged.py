@@ -14,8 +14,7 @@ DataFrame(columns=[self.ID, 'dt', 'dm', 'de', 'dsid'])
     de : error on dm, calculated by combining individual errors in quadrature as sqrt(err1^2 + err2^2)
     dsid : an ID representing which catalogue this pair was created from, calculated as survey_id_1*survey_id_2
         where survey_ids are: 
-            1 = SSS_r1
-            3 = SSS_r2
+            3 = SSS
             5 = SDSS
             7 = PS1
             11 = ZTF
@@ -38,6 +37,7 @@ if __name__ == "__main__":
     parser.add_argument("--n_cores", type=int, help="Number of cores to use. If left blank, then this value is taken from N_CORES in the config file.")
     parser.add_argument("--n_rows", type=int, help="Number of rows to read in from the photometric data")
     parser.add_argument("--n_skiprows", type=int, help="Number of chunks of n_rows to skip when reading in photometric data")
+    parser.add_argument("--overwrite", action='store_true', default=False, help="Overwrite existing files")
     args = parser.parse_args()
     # Print the arguments for the log
     print(time.strftime('%H:%M:%S %d/%m/%y'))
@@ -47,9 +47,12 @@ if __name__ == "__main__":
     if OBJ == 'qsos':
         ID = 'uid'
         mjd_key = 'mjd_rf'
-    else:
+    elif OBJ == 'calibStars':
         ID = 'uid_s'
         mjd_key = 'mjd'
+    elif OBJ == 'sim':
+        ID = 'uid'
+        mjd_key = 'mjd_rf'
 
     nrows = args.n_rows
     skiprows = args.n_skiprows
@@ -67,23 +70,24 @@ if __name__ == "__main__":
               'na_filter': False,
               'usecols': [ID,mjd_key,'mag','magerr','band','sid'],
               'ID':ID,
-              'mjd_key':mjd_key}
+              'mjd_key':mjd_key,
+              'overwrite':args.overwrite}
               
     start = time.time()
     
     for band in args.band:
         print(f'band: {band}')
-        bool_arr = pd.read_csv(cfg.D_DIR + f'catalogues/{OBJ}/sets/clean_{band}.csv', index_col=ID, comment='#')
-        if OBJ == 'qsos':
-            mask = bool_arr['vac'].values & np.any(bool_arr[['sdss','ps']].values, axis=1)
-        elif OBJ == 'calibStars':
-            mask = np.any(bool_arr[['sdss','ps']].values, axis=1)
-        restricted_set = bool_arr.index[mask]
-        print(f'size of restricted set: {len(restricted_set)}')
-        del bool_arr
-
+        if (OBJ == 'qsos') | (OBJ == 'calibStars'):
+            bool_arr = pd.read_csv(cfg.D_DIR + f'catalogues/{OBJ}/sets/clean_{band}.csv', index_col=ID, comment='#')
+            if OBJ == 'qsos':
+                mask = bool_arr['vac'].values & np.any(bool_arr[['sdss','ps']].values, axis=1)
+            else:
+                mask = np.any(bool_arr[['sdss','ps']].values, axis=1)
+            restricted_set = bool_arr.index[mask]
+            print(f'size of restricted set: {len(restricted_set)}')
+            del bool_arr
+            kwargs['subset'] = restricted_set
         kwargs['band'] = band
-        kwargs['subset'] = restricted_set
 
         data_io.dispatch_function(pairwise.groupby_save_pairwise, chunks=None, max_processes=cfg.USER.N_CORES, **kwargs)
 

@@ -30,8 +30,11 @@ if __name__ == "__main__":
     if OBJ == 'qsos':
         ID = 'uid'
         mjd_key = 'mjd_rf'
-    else:
+    elif OBJ == 'calibStars':
         ID = 'uid_s'
+        mjd_key = 'mjd'
+    elif OBJ == 'sim':
+        ID = 'uid'
         mjd_key = 'mjd'
 
     nrows = args.n_rows
@@ -67,6 +70,8 @@ if __name__ == "__main__":
             max_t = MAX_DTS['REST']['qsos'][band]
         elif OBJ == 'calibStars':
             max_t = MAX_DTS['OBS']['calibStars'][band]
+        elif OBJ == 'sim':
+            max_t = MAX_DTS['OBS']['sim'][band]
 
         # create time bins given the maximum time
         if log_or_lin.startswith('log'):
