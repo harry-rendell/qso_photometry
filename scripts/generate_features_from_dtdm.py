@@ -79,6 +79,7 @@ if __name__ == "__main__":
         # print(f'creating output directory if it does not exist: {output_dir}')
         # os.makedirs(output_dir, exist_ok=True)
 
+        # Would be better to save this as a npz
         results = data_io.dispatch_function(lightcurve_statistics.groupby_apply_features, chunks=None, max_processes=cfg.USER.N_CORES, concat_output=True, **kwargs)
         results.to_csv(cfg.D_DIR + f'computed/{OBJ}/features/features_{band}.csv')
 

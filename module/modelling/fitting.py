@@ -152,7 +152,7 @@ def generate_model_values(function, params, x, n_model_points=None, value_range=
         y = function(x, *params)
     
     else:
-        x = np.linspace(value_range[0], value_range[1], n_model_points)
+        x = np.linspace(value_range[0], value_range[1], int(n_model_points))
         y = function(x, *params)
     
     return x, y

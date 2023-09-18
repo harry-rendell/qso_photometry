@@ -185,6 +185,7 @@ def dispatch_function(function, chunks=None, max_processes=64, concat_output=Tru
 			output = pool.starmap(process_input, [(function, chunk, kwargs) for chunk in chunks])
 		
 		if not all(o is None for o in output):
+			# If pool.starmap returns some output:
 			# If it is better to save chunks rather than concatenate result into one DataFrame
 			#    (eg in case of calculate dtdm) then only run this block if a result is returned.
 			if concat_output:
