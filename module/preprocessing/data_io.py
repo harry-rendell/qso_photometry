@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 from multiprocessing import Pool
 import os
 from .import parse
@@ -55,12 +56,21 @@ def reader(fname, kwargs):
 						   delimiter=delimiter,
 						   na_filter=na_filter).set_index(ID)
 
-def dispatch_reader(kwargs, multiproc=True, i=0, max_processes=64, concat=True, fnames=None):
+def dispatch_reader(kwargs, multiproc=True, i=None, max_processes=64, concat=True, fnames=None):
 	"""
 	Dispatching function for reader
 	"""
 	if fnames is None:
+		# If we have not passed in a list of filenames, then read all files in basepath
 		fnames = sorted([f for f in os.listdir(kwargs['basepath']) if ((f.startswith('lc_') or f.startswith('dtdm_')) and f.endswith('.csv'))])
+	elif i is not None:
+		raise Exception('Cannot specify both i and fnames')
+			
+	if isinstance(i, (int, np.ndarray)):
+		fnames = fnames[i]
+	elif isinstance(i, list):
+		fnames = np.array(fnames)[i]
+	
 	n_files = len(fnames)
 	if multiproc:
 		if __name__ == 'module.preprocessing.data_io':
@@ -74,7 +84,7 @@ def dispatch_reader(kwargs, multiproc=True, i=0, max_processes=64, concat=True, 
 			else:
 				return df_list
 	else:
-		return reader(fnames[i], kwargs)
+		return reader(fnames, kwargs)
 
 def writer(i, chunk, kwargs):
 	"""
