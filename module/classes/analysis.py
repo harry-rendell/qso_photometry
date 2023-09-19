@@ -10,6 +10,8 @@ import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from module.config import cfg
 from module.preprocessing import data_io, parse, lightcurve_statistics
+from module.assets import load_grouped, load_grouped_tot, load_sets, load_coords, load_redshifts, load_vac
+from .methods.plotting import plot_series as plot_series_
 
 def calc_moments(bins,weights):
 	"""
@@ -20,19 +22,17 @@ def calc_moments(bins,weights):
 	return x.mean(axis=1), (z**4).mean(axis = 1) - 3
 
 class analysis():
-	def __init__(self, ID, obj, band):
-		self.ID = ID
+	def __init__(self, obj, band):
+		# Imported methods
 		self.obj = obj
+		self.ID = 'uid' if obj == 'qsos' else 'uid_s'
 		self.band = band
-		# self.plt_color = {'u':'m', 'g':'g', 'r':'r', 'i':'k', 'z':'b'}
+		self.plt_color = {'u':'m', 'g':'g', 'r':'r', 'i':'k', 'z':'b'}
 		# self.plt_color_bokeh = {'u':'magenta', 'g':'green', 'r':'red', 'i':'black', 'z':'blue'}
-		# self.marker_dict = {1:'^', 3:'v', 5:'D', 7:'s', 11:'o'}
+		self.marker_dict = {1:'^', 3:'v', 5:'D', 7:'s', 11:'o'}
 		# self.marker_dict_bokeh = {1:'triangle', 3:'inverted_triangle', 5:'diamond', 7:'square', 11:'circle'}
-		# self.survey_dict = {3: 'SSS', 5:'SDSS', 7:'PS1', 11:'ZTF'}
-
-	# Imported methods
-	from .methods.plotting import plot_sf_moments_pm
-	from .methods.io import read_merged_photometry, read_grouped, read_vac, read_redshifts
+		self.survey_dict = {3: 'SSS', 5:'SDSS', 7:'PS1', 11:'ZTF'}
+		self.read_coords()
 
 	def summary(self):
 		"""
@@ -64,7 +64,82 @@ class analysis():
 		for ra, dec in coords:
 			print("https://skyserver.sdss.org/dr18/VisualTools/quickobj?ra={}&dec={}".format(ra, dec))
 
-	def merge_with_catalogue(self, catalogue='dr12_vac', remove_outliers=True, prop_range_any = {'MBH_MgII':(6,12), 'MBH_CIV':(6,12)}):
+	def read_merged_photometry(self, nrows=None, multiproc=True, i=None, ncores=4, fnames=None):
+		"""
+		Read in photometric data.
+		This method will use ncores to load in all lightcurves located
+			in basepath: '/data/merged/{object}/{band}_band}'
+			and concatenate the result into a single DataFrame	
+		
+		Parameters
+		----------
+		nrows   : dataframe
+			Number of rows to read in per file
+		fnames  : list
+			list of names of files to read in
+			if not specified, all files will be read in
+		multiproc : bool
+			Whether to use multiprocessing or not
+			If false, the i'th file will be read in
+		i : int
+			which file to read in if not using multiproc, see above. 
+		ncores : int
+			Number of cores to use for parallel reading
+			(only relevant if multiproc = True)
+
+		Parameters
+		----------
+		Example:
+			>>> self.read_merged_photometry(nrows=1000, ncores=4, multiproc=True)
+			will read in 1000 rows from each file in parallel using 4 cores and concatenate the result
+			>>> self.read_merged_photometry(ncores=2, multiproc=True, fnames=['lc_000000_005000.csv','lc_020001_025000.csv','lc_055001_060000.csv'])
+			will read in the specified files using 2 cores and concatenate the result
+			>>> self.read_merged_photometry(multiproc=False, i=10)
+			will read in the 10th file only
+		"""
+		# Default to 4 cores
+		# Use the path below for SSA
+		# basepath = cfg.D_DIR + 'merged/{}/{}_band/with_ssa/'
+
+		kwargs = {'dtypes': cfg.PREPROC.lc_dtypes,
+				'nrows': nrows,
+				'basepath': cfg.D_DIR + f'merged/{self.obj}/clean/', # we should make this path more general so it is consistent between surveys
+				'ID': self.ID}
+
+		self.df = data_io.dispatch_reader(kwargs, multiproc=multiproc, i=i, max_processes=ncores, concat=True, fnames=fnames)
+		# self.df = self.df[np.any(self.df['band'].isin(self.band), axis=1)]
+		# Remove objects with a single observation.
+		self.df = self.df[self.df.index.duplicated(keep=False)]
+
+	def add_rest_frame_column(self):
+		if 'mjd_rf' not in self.df.columns:
+			if ~hasattr(self.df, 'redshift'):
+				self.redshift = load_redshifts()
+			self.df = self.df.join(self.redshift, how = 'left', on=self.ID)
+			self.df['mjd_rf'] = self.df['mjd']/(1+self.df['redshift'])
+
+	def read_coords(self):
+		"""
+		Read in RA/Dec coords taken from DR16Q
+		"""
+		self.coords = load_coords(self.obj)
+
+	def read_grouped(self):
+		"""
+		Read in precomputed grouped data
+		"""
+		self.grouped_sdss, self.grouped_ps, self.grouped_ztf, self.grouped_ssa = load_grouped(self.obj, self.band, return_dict=False)
+		self.grouped_tot = load_grouped_tot(self.obj, self.band)
+
+	def read_vac(self, catalogue_name='dr16q_vac'):
+		self.vac = load_vac(self.obj, catalogue_name=catalogue_name)
+
+	def read_redshifts(self):
+		if self.obj == 'calibStars':
+			raise Exception('Stars have no redshift data')
+		self.redshift = load_redshifts()
+
+	def merge_with_catalogue(self):
 		"""
 		Reduce self.df to intersection of self.df and catalogue.
 		Compute summary() to reupdate idx_uid, uids_missing, n_qsos and idx_cat
@@ -83,66 +158,25 @@ class analysis():
 				dictionary of {property_name : (lower_bound, upper_bound)}
 
 		"""
-		if catalogue == 'dr12_vac':
-			# cols = z, Mi, L5100, L5100_err, L3000, L3000_err, L1350, L1350_err, MBH_MgII, MBH_CIV, Lbol, Lbol_err, nEdd, sdss_name, ra, dec, uid
-			prop_range_all = {'Mi':(-30,-20),'mag_mean':(15,23.5),'mag_std':(0,1),'redshift':(0,5),'Lbol':(44,48),'nEdd':(-3,0.5)}
-			self.prop_range = {**prop_range_all, **prop_range_any}
-			vac = pd.read_csv(cfg.D_DIR + 'catalogues/qsos/dr12q/SDSS_DR12Q_BH_matched.csv', index_col=self.ID)
-			vac = vac.rename(columns={'z':'redshift_vac'});
+		if ~hasattr(self, 'vac'):
+			self.read_vac(self.obj)
 
-		if catalogue == 'dr14_vac':
-			# cols = ra, dec, uid, sdssID, plate, mjd, fiberID, z, pl_slope, pl_slope_err, EW_MgII_NA, EW_MgII_NA_ERR, FWHM_MgII_NA, FWHM_MgII_NA_ERR, FWHM_MgII_BR, FWHM_MgII_BR_ERR, EW_MgII_BR, EW_MgII_BR_ERR, MBH_CIV, MBH_CIV_ERR, MBH, MBH_ERR, Lbol
-
-			prop_range_all = {'mag_mean':(15,23.5),'mag_std':(0,1),'redshift':(0,5),'Lbol':(44,48)}
-			self.prop_range = {**prop_range_all, **prop_range_any}
-			vac = pd.read_csv(cfg.D_DIR + 'catalogues/qsos/dr14q/dr14q_spec_prop_matched.csv', index_col=self.ID)
-			vac = vac.rename(columns={'z':'redshift_vac'});
-
-		print(vac.index)
-		self.df = self.df[self.df.index.isin(vac.index)]
+		print(self.vac.index)
+		self.df = self.df[self.df.index.isin(self.vac.index)]
 
 		# Recalculate and print which qsos we are missing and which we have
 		self.summary()
-		self.properties = self.df_grouped.join(vac, how = 'inner', on=self.ID)
-		self.vac = vac
+		self.properties = self.df_grouped.join(self.vac, how = 'inner', on=self.ID)
 		
 		#calculate absolute magnitude
 		self.properties['mag_abs_mean'] = self.properties['mag_mean'] - 5*np.log10(3.0/7.0*self.redshifts*(10**9))
 		self.properties['mjd_ptp_rf']   = self.properties['mjd_ptp']/(1+self.redshifts)
-	
-	def merge_slopes(self):
-		names = ['restframe_all','restframe_ztf']
-		slopes = pd.concat([pd.read_csv(cfg.D_DIR + 'catalogues{}/slopes_{}.csv'.format(self.obj, name), index_col=self.ID, usecols=[self.ID,'m_optimal']) for name in names], axis=1)
-		slopes.columns = []
-		self.properties = self.properties.join(slopes, how='left', on=self.ID)
 
-	def save_dtdm_rf_extras(self, df_ssa, uids, time_key):
-		"""
-		Similar to save_dtdm_rf except for plate data
-		"""
-		df = pd.DataFrame(columns=['uid', 'dt', 'dm', 'de', 'cat'])
-		
-		sub_df = df_ssa[[time_key, 'mag', 'magerr', 'catalogue']].loc[uids]
-		
-		for uid, group1 in sub_df.groupby(self.ID):
-			group2 = self.df.loc[uid]
-			mjd_mag1 = group1[[time_key, 'mag']].values # we need rest frame times
-			mjd_mag2 = group2[[time_key,'mag']].values
-
-			magerr1  = group1['magerr'].values
-			magerr2  = group2['magerr'].values
-			cat1 = group1['catalogue'].values
-			cat2 = group2['catalogue'].values
-
-			n = len(mjd_mag1)*len(mjd_mag2)
-			dtdm = mjd_mag2[:, np.newaxis] - mjd_mag1
-			dcat = cat2[:, np.newaxis]*cat1
-			dmagerr = ( magerr2[:,np.newaxis]**2 + magerr1**2 )**0.5
-			duid = np.full(n,uid,dtype='uint32')
-
-			df = df.append(pd.DataFrame(data={self.ID:duid, 'dt':dtdm[:,:,0].ravel(), 'dm':dtdm[:,:,1].ravel(), 'de':dmagerr.ravel(), 'cat':dcat.ravel()}))
-				
-			if (uid % 500 == 0):
-				print(uid)
-
-		return df	
+	def plot_series(self, uids, sid=None, bands='r', show_outliers=False, axes=None, **kwargs):
+		plot_series_(self.df, uids, sid=sid, bands=bands, 
+											 marker_dict=self.marker_dict, 
+											 survey_dict=self.survey_dict,
+											 plt_color=self.plt_color, 
+											 show_outliers=show_outliers, 
+											 axes=axes, 
+											 **kwargs)
