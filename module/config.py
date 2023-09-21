@@ -59,7 +59,7 @@ __C.COLLECTION = edict()
 __C.SURVEY_LABELS = {'sdss':'SDSS',
                      'ps':'Pan-STARRS',
                      'ztf':'ZTF',
-                     'supercosmos':'SuperCOSMOS'}
+                     'ssa':'SuperCOSMOS'}
 
 __C.COLLECTION.SDSS = edict()
 # Datatypes
@@ -229,9 +229,9 @@ __C.PREPROC.MAG_ERR_THRESHOLD = 0.198
 __C.PREPROC.FILTER_BOUNDS = {'mag':(15,25),'magerr':(1e-10,2)}
 
 __C.PREPROC.SURVEY_IDS =   {'ssa':3,
-                             'sdss': 5,
+                            'sdss': 5,
                             'ps': 7,
-                             'ztf': 11}
+                            'ztf': 11}
 
 __C.PREPROC.VAC_BOUNDS = {'z':(0,5),
                           'redshift':(0,5),
