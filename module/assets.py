@@ -3,7 +3,7 @@ import pandas as pd
 import os
 from .preprocessing import parse
 
-def load_grouped(obj, bands=None, return_dict=True):
+def load_grouped(obj, bands=None, return_dict=True, **kwargs):
     """
     Load grouped data for a given object and band.
     If return_dict = True, then return a dictionary of DataFrames.
@@ -11,41 +11,46 @@ def load_grouped(obj, bands=None, return_dict=True):
         sdss, ps, ztf, ssa, tot
     """
     ID = 'uid' if obj == 'qsos' else 'uid_s'
+    if 'usecols' in kwargs: kwargs['usecols'] += [ID]
     if len(bands) == 1:
-        sdss = pd.read_csv(cfg.D_DIR + f'surveys/sdss/{obj}/clean/{bands}_band/grouped.csv', index_col=ID)
-        ps   = pd.read_csv(cfg.D_DIR + f'surveys/ps/{obj}/clean/{bands}_band/grouped.csv', index_col=ID)
-        ztf  = pd.read_csv(cfg.D_DIR + f'surveys/ztf/{obj}/clean/{bands}_band/grouped.csv', index_col=ID)
-        ssa  = pd.read_csv(cfg.D_DIR + f'surveys/supercosmos/{obj}/clean/{bands}_band/grouped.csv', index_col=ID)
+        sdss = pd.read_csv(cfg.D_DIR + f'surveys/sdss/{obj}/clean/{bands}_band/grouped.csv', index_col=ID, **kwargs)
+        ps   = pd.read_csv(cfg.D_DIR + f'surveys/ps/{obj}/clean/{bands}_band/grouped.csv', index_col=ID, **kwargs)
+        ztf  = pd.read_csv(cfg.D_DIR + f'surveys/ztf/{obj}/clean/{bands}_band/grouped.csv', index_col=ID, **kwargs)
+        ssa  = pd.read_csv(cfg.D_DIR + f'surveys/supercosmos/{obj}/clean/{bands}_band/grouped.csv', index_col=ID, **kwargs)
     else:
-        sdss = {b:pd.read_csv(cfg.D_DIR + f'surveys/sdss/{obj}/clean/{b}_band/grouped.csv'       , index_col=ID) for b in bands}
-        ps   = {b:pd.read_csv(cfg.D_DIR + f'surveys/ps/{obj}/clean/{b}_band/grouped.csv'         , index_col=ID) for b in bands}
-        ztf  = {b:pd.read_csv(cfg.D_DIR + f'surveys/ztf/{obj}/clean/{b}_band/grouped.csv'        , index_col=ID) for b in bands}
-        ssa  = {b:pd.read_csv(cfg.D_DIR + f'surveys/supercosmos/{obj}/clean/{b}_band/grouped.csv', index_col=ID) for b in bands}
+        sdss = {b:pd.read_csv(cfg.D_DIR + f'surveys/sdss/{obj}/clean/{b}_band/grouped.csv'       , index_col=ID, **kwargs) for b in bands}
+        ps   = {b:pd.read_csv(cfg.D_DIR + f'surveys/ps/{obj}/clean/{b}_band/grouped.csv'         , index_col=ID, **kwargs) for b in bands}
+        ztf  = {b:pd.read_csv(cfg.D_DIR + f'surveys/ztf/{obj}/clean/{b}_band/grouped.csv'        , index_col=ID, **kwargs) for b in bands}
+        ssa  = {b:pd.read_csv(cfg.D_DIR + f'surveys/supercosmos/{obj}/clean/{b}_band/grouped.csv', index_col=ID, **kwargs) for b in bands}
     
     if return_dict:
         return {'sdss':sdss, 'ps':ps, 'ztf':ztf, 'ssa':ssa}
     else:
         return sdss, ps, ztf, ssa
     
-def load_grouped_tot(obj, bands=None):
+def load_grouped_tot(obj, bands=None, **kwargs):
     ID = 'uid' if obj == 'qsos' else 'uid_s'
+    if 'usecols' in kwargs: kwargs['usecols'] += [ID]
     if len(bands) == 1:
-        tot  = pd.read_csv(cfg.D_DIR + f'merged/{obj}/clean/grouped_{bands}.csv', index_col=ID)
+        tot  = pd.read_csv(cfg.D_DIR + f'merged/{obj}/clean/grouped_{bands}.csv', index_col=ID, **kwargs)
     else:
-        tot = {bands:pd.read_csv(cfg.D_DIR + f'merged/{obj}/clean/grouped_{b}.csv', index_col=ID) for b in bands}
+        tot = {b:pd.read_csv(cfg.D_DIR + f'merged/{obj}/clean/grouped_{b}.csv', index_col=ID, **kwargs) for b in bands}
 
     return tot
 
-def load_sets(obj, band):
+def load_sets(obj, band, **kwargs):
     ID = 'uid' if obj == 'qsos' else 'uid_s'
-    return pd.read_csv(cfg.D_DIR + f'catalogues/{obj}/sets/clean_{band}.csv', index_col=ID, comment='#')
+    if 'usecols' in kwargs: kwargs['usecols'] += [ID]
+    return pd.read_csv(cfg.D_DIR + f'catalogues/{obj}/sets/clean_{band}.csv', index_col=ID, comment='#', **kwargs)
 
-def load_coords(obj):
+def load_coords(obj, **kwargs):
     ID = 'uid' if obj == 'qsos' else 'uid_s'
-    return pd.read_csv(cfg.D_DIR + f'catalogues/{obj}/{obj}_subsample_coords.csv', index_col=ID, comment='#')
+    if 'usecols' in kwargs: kwargs['usecols'] += [ID]
+    return pd.read_csv(cfg.D_DIR + f'catalogues/{obj}/{obj}_subsample_coords.csv', index_col=ID, comment='#', **kwargs)
 
-def load_redshifts():
-    return pd.read_csv(cfg.D_DIR + f'catalogues/qsos/dr14q/dr14q_redshift.csv', index_col='uid').squeeze()
+def load_redshifts(**kwargs):
+    if 'usecols' in kwargs: kwargs['usecols'] += [ID]
+    return pd.read_csv(cfg.D_DIR + f'catalogues/qsos/dr14q/dr14q_redshift.csv', index_col='uid', **kwargs).squeeze()
 
 def load_vac(obj, catalogue_name='dr16q_vac'):
     """
