@@ -37,7 +37,7 @@ if obj == 'qsos':
 sdss = {band:pd.read_csv(cfg.D_DIR + 'surveys/sdss/{}/clean/{}_band/grouped.csv'.format(obj,band)       , index_col=0) for band in 'gri'}
 ps   = {band:pd.read_csv(cfg.D_DIR + 'surveys/ps/{}/clean/{}_band/grouped.csv'.format(obj,band)         , index_col=0) for band in 'gri'}
 ztf  = {band:pd.read_csv(cfg.D_DIR + 'surveys/ztf/{}/clean/{}_band/grouped.csv'.format(obj,band)        , index_col=0) for band in 'gri'}
-ssa  = {band:pd.read_csv(cfg.D_DIR + 'surveys/supercosmos/{}/clean/{}_band/grouped.csv'.format(obj,band), index_col=0) for band in 'gri'}
+ssa  = {band:pd.read_csv(cfg.D_DIR + 'surveys/ssa/{}/clean/{}_band/grouped.csv'.format(obj,band), index_col=0) for band in 'gri'}
 tot  = {band:pd.read_csv(cfg.D_DIR + 'merged/{}/clean/grouped_{}.csv'.format(obj,band)                  , index_col=0) for band in 'gri'}
 surveys = {'ssa':ssa, 'sdss':sdss, 'ps':ps, 'ztf':ztf}
 

@@ -16,12 +16,12 @@ def load_grouped(obj, bands=None, return_dict=True, **kwargs):
         sdss = pd.read_csv(cfg.D_DIR + f'surveys/sdss/{obj}/clean/{bands}_band/grouped.csv', index_col=ID, **kwargs)
         ps   = pd.read_csv(cfg.D_DIR + f'surveys/ps/{obj}/clean/{bands}_band/grouped.csv', index_col=ID, **kwargs)
         ztf  = pd.read_csv(cfg.D_DIR + f'surveys/ztf/{obj}/clean/{bands}_band/grouped.csv', index_col=ID, **kwargs)
-        ssa  = pd.read_csv(cfg.D_DIR + f'surveys/supercosmos/{obj}/clean/{bands}_band/grouped.csv', index_col=ID, **kwargs)
+        ssa  = pd.read_csv(cfg.D_DIR + f'surveys/ssa/{obj}/clean/{bands}_band/grouped.csv', index_col=ID, **kwargs)
     else:
         sdss = {b:pd.read_csv(cfg.D_DIR + f'surveys/sdss/{obj}/clean/{b}_band/grouped.csv'       , index_col=ID, **kwargs) for b in bands}
         ps   = {b:pd.read_csv(cfg.D_DIR + f'surveys/ps/{obj}/clean/{b}_band/grouped.csv'         , index_col=ID, **kwargs) for b in bands}
         ztf  = {b:pd.read_csv(cfg.D_DIR + f'surveys/ztf/{obj}/clean/{b}_band/grouped.csv'        , index_col=ID, **kwargs) for b in bands}
-        ssa  = {b:pd.read_csv(cfg.D_DIR + f'surveys/supercosmos/{obj}/clean/{b}_band/grouped.csv', index_col=ID, **kwargs) for b in bands}
+        ssa  = {b:pd.read_csv(cfg.D_DIR + f'surveys/ssa/{obj}/clean/{b}_band/grouped.csv', index_col=ID, **kwargs) for b in bands}
     
     if return_dict:
         return {'sdss':sdss, 'ps':ps, 'ztf':ztf, 'ssa':ssa}

@@ -31,7 +31,7 @@ redshift = pd.read_csv(cfg.D_DIR + 'catalogues/qsos/dr14q/dr14q_redshift.csv').s
 sdss = {band:pd.read_csv(cfg.D_DIR + 'surveys/sdss/{}/clean/{}_band/grouped.csv'.format(obj,band)       , index_col=0) for band in 'gri'}
 ps   = {band:pd.read_csv(cfg.D_DIR + 'surveys/ps/{}/clean/{}_band/grouped.csv'.format(obj,band)         , index_col=0) for band in 'gri'}
 ztf  = {band:pd.read_csv(cfg.D_DIR + 'surveys/ztf/{}/clean/{}_band/grouped.csv'.format(obj,band)        , index_col=0) for band in 'gri'}
-ssa  = {band:pd.read_csv(cfg.D_DIR + 'surveys/supercosmos/{}/clean/{}_band/grouped.csv'.format(obj,band), index_col=0) for band in 'gri'}
+ssa  = {band:pd.read_csv(cfg.D_DIR + 'surveys/ssa/{}/clean/{}_band/grouped.csv'.format(obj,band), index_col=0) for band in 'gri'}
 tot  = {band:pd.read_csv(cfg.D_DIR + 'merged/{}/clean/grouped_{}.csv'.format(obj,band)                  , index_col=0) for band in 'gri'}
 surveys = {'ssa':ssa, 'sdss':sdss, 'ps':ps, 'ztf':ztf, 'tot':tot}
 
@@ -61,7 +61,7 @@ if CREATE_SETS:
             sdss = pd.read_csv(cfg.D_DIR + f'surveys/sdss/{obj}/clean/{band}_band/grouped.csv', index_col=0)
             ps   = pd.read_csv(cfg.D_DIR + f'surveys/ps/{obj}/clean/{band}_band/grouped.csv', index_col=0)
             ztf  = pd.read_csv(cfg.D_DIR + f'surveys/ztf/{obj}/clean/{band}_band/grouped.csv', index_col=0)
-            ssa  = pd.read_csv(cfg.D_DIR + f'surveys/supercosmos/{obj}/clean/{band}_band/grouped.csv', index_col=0)
+            ssa  = pd.read_csv(cfg.D_DIR + f'surveys/ssa/{obj}/clean/{band}_band/grouped.csv', index_col=0)
             if obj == 'qsos':
                 vac = pd.read_csv(cfg.D_DIR + f'catalogues/{obj}/dr12q/SDSS_DR12Q_BH_matched.csv', index_col=ID)        
                 for name, survey in zip(['ssa','sdss','ps','ztf', 'vac'], [ssa, sdss, ps, ztf, vac]):

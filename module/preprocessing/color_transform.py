@@ -54,7 +54,7 @@ class ssa_transform():
 
     def parse(self, df=None):
         if df is None:
-            df = pd.read_csv(cfg.D_DIR + 'surveys/supercosmos/{}/ssa_secondary.csv'.format(self.obj)).set_index(self.ID)
+            df = pd.read_csv(cfg.D_DIR + 'surveys/ssa/{}/ssa_secondary.csv'.format(self.obj)).set_index(self.ID)
         else:
             assert df.index.name == self.ID, "Not using the right DataFrame"
         surveyID_dict = {'r1':(5,9), 'r2_north': (7,), 'r2_south': (2,),
