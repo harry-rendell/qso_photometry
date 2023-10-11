@@ -66,7 +66,10 @@ def dispatch_reader(kwargs, multiproc=True, i=None, max_processes=64, concat=Tru
     elif i is not None:
         raise Exception('Cannot specify both i and fnames')
             
-    if isinstance(i, (int, np.ndarray)):
+    if isinstance(i, int):
+        fnames = fnames[i]
+        multiproc = False
+    elif isinstance(i, np.ndarray):
         fnames = fnames[i]
     elif isinstance(i, list):
         fnames = np.array(fnames)[i]
@@ -211,9 +214,10 @@ def dispatch_function(function, chunks=None, max_processes=64, concat_output=Tru
 def groupby_apply_dispatcher(func, df, kwargs, args=()):
     if 'fname' in kwargs:
         print(f"processing file: {kwargs['fname']}", flush=True)
-
+    if 'subset' in kwargs:
+        df = df[df.index.isin(kwargs['subset'])]
     if ('band' in kwargs) & ('band' in df.columns):
-        s = df[df['band'] == kwargs['band']].groupby(df.index.name).apply(func, *args)
+        s = df[df['band'] == kwargs['band']].groupby(df.index.name).apply(func, kwargs)
     else:
-        s = df.groupby(df.index.name).apply(func, *args)
+        s = df.groupby(df.index.name).apply(func, kwargs)
     return pd.DataFrame(s.values.tolist(), index=s.index, dtype='float32')

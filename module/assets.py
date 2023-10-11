@@ -49,10 +49,10 @@ def load_coords(obj, **kwargs):
     return pd.read_csv(cfg.D_DIR + f'catalogues/{obj}/{obj}_subsample_coords.csv', index_col=ID, comment='#', **kwargs)
 
 def load_redshifts(**kwargs):
-    if 'usecols' in kwargs: kwargs['usecols'] += [ID]
+    if 'usecols' in kwargs: kwargs['usecols'] += ['uid']
     return pd.read_csv(cfg.D_DIR + f'catalogues/qsos/dr14q/dr14q_redshift.csv', index_col='uid', **kwargs).squeeze()
 
-def load_vac(obj, catalogue_name='dr16q_vac'):
+def load_vac(obj, catalogue_name='dr16q_vac', **kwargs):
     """
     Load value-added catalogues for our quasar sample.
     Options of:
@@ -67,6 +67,7 @@ def load_vac(obj, catalogue_name='dr16q_vac'):
             https://arxiv.org/abs/2209.03987
     """
     ID = 'uid'
+    if 'usecols' in kwargs: kwargs['usecols'] += [ID]
     if obj == 'calibStars':
         raise Exception('Stars have no value-added catalogues')
     
@@ -95,9 +96,9 @@ def load_vac(obj, catalogue_name='dr16q_vac'):
     else:
         raise Exception('Unrecognised value-added catalogue')
 
-    vac = pd.read_csv(os.path.join(cfg.D_DIR,fpath), index_col=ID)
-    vac = vac.rename(columns={'z':'redshift_vac'});
-    if catalogue_name == 'dr16q_vac':
+    vac = pd.read_csv(os.path.join(cfg.D_DIR,fpath), index_col=ID, **kwargs)
+    # vac = vac.rename(columns={'z':'redshift_vac'});
+    if (catalogue_name == 'dr16q_vac') & ('nEdd' in vac.columns):
         # Note, in dr16q, bad nEdd entries are set to 0 (exactly) so we can remove those.
         vac['nEdd'] = vac['nEdd'].where((vac['nEdd']!=0).values)
     
