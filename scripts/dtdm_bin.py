@@ -54,19 +54,19 @@ if __name__ == "__main__":
               'inner':args.inner}
 
     if args.inner:
-        MAX_DTS = cfg.PREPROC.MAX_DT_INNER
+        MAX_DTS = cfg.PREPROC.MAX_DT_COMBINED['inner']
     else:
-        MAX_DTS = cfg.PREPROC.MAX_DT
+        MAX_DTS = cfg.PREPROC.MAX_DT_COMBINED['outer']
 
     for band in args.band:
         # set the maximum time to use for this band
-        if args.frame:
-            t_max = MAX_DTS[args.frame][OBJ][band]
-        elif OBJ == 'qsos':
-            t_max = MAX_DTS['REST']['qsos'][band]
-        elif OBJ == 'calibStars':
-            t_max = MAX_DTS['OBS']['calibStars'][band]
-        bin_dict1['t_max'] = t_max
+        # if args.frame:
+        #     t_max = MAX_DTS[args.frame][OBJ][band]
+        # elif OBJ == 'qsos':
+        #     t_max = MAX_DTS['REST']['qsos'][band]
+        # elif OBJ == 'calibStars':
+        #     t_max = MAX_DTS['OBS']['calibStars'][band]
+        bin_dict1['t_max'] = MAX_DTS[band]
 
         bin_dict2 = binning.create_bins(bin_dict1)
 
