@@ -27,7 +27,7 @@ if __name__ == "__main__":
         cfg.USER.N_CORES = args.n_cores
 
     # Make a script to do this, but do it properly. write it out on paper first.
-    survey_dict = load_grouped(OBJ, band=args.band)
+    survey_dict = load_grouped(OBJ, bands=args.band)
     surveys = ['ssa', 'sdss', 'ps', 'ztf']
     survey_features = {s:{key:(survey_dict[s][key].mean(), survey_dict[s][key].std()) for key in ['mjd_min', 'mjd_max', 'n_tot']} for s in surveys}
     
