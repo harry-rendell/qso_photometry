@@ -7,7 +7,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 from module.config import cfg
 from module.preprocessing import data_io, pairwise
 from module.preprocessing.binning import construct_T_edges
-
+from module.assets import load_grouped_tot
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -21,6 +21,8 @@ if __name__ == "__main__":
     parser.add_argument("--frame",   type=str, help=("OBS or REST to specify rest frame or observer frame time. \n"
                                                    "Defaults to rest frame for Quasars and observer time for Stars.\n"))
     parser.add_argument("--inner", action='store_true', default=False, help="Apply pairwise analysis to points only within a survey")
+    parser.add_argument("--mag_max", type=float, help="Maximum magnitude to use for the analysis")
+    
     args = parser.parse_args()
     # Print the arguments for the log
     print(time.strftime('%H:%M:%S %d/%m/%y'))
@@ -60,7 +62,8 @@ if __name__ == "__main__":
               'features':['n', 'mean weighted a', 'mean weighted b', 'SF cwf a', 'SF c', 'SF', 'SF cwf p', 'SF cwf n', 'skewness', 'kurtosis'],
               'n_points':n_points}
 
-    
+    if args.mag_max:
+        log_or_lin += f'_mag_max_{args.mag_max}'
     
     for band in args.band:
         # set the maximum time to use for this band
@@ -72,6 +75,11 @@ if __name__ == "__main__":
             max_t = MAX_DTS['OBS']['calibStars'][band]
         elif OBJ == 'sim':
             max_t = MAX_DTS['OBS']['sim'][band]
+
+        if args.mag_max:
+            mag_med = load_grouped_tot(OBJ, band, usecols=['mag_med']).squeeze()
+            uid_subset = mag_med[(mag_med < args.mag_max).values].index
+            kwargs['subset'] = uid_subset
 
         # create time bins given the maximum time
         if log_or_lin.startswith('log'):
