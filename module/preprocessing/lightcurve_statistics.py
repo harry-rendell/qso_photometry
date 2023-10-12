@@ -7,6 +7,9 @@ def groupby_apply_average(df, kwargs):
     return pd.DataFrame(s.values.tolist(), index=s.index, dtype='float32').reset_index('mjd_floor', drop=True)
 
 def groupby_apply_stats(df, kwargs):
+    """
+    TODO replace with partial(groupby_apply_dispatcher, stats)
+    """
     return groupby_apply_dispatcher(stats, df, kwargs)
 
 def groupby_apply_welch_stetson(df, kwargs):
