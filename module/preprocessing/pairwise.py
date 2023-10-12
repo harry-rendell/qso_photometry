@@ -86,6 +86,16 @@ def groupby_save_pairwise(df, kwargs):
     print('finished processing file:',kwargs['fname'], flush=True)
 
 def calculate_dtdm(group, mjd_key):
+    """
+    Calculate ∆t, ∆m, ∆e, ∆sid for all pairs of observations in a group.
+    ∆m = (m2 - m1)
+    ∆t = (t2 - t1)
+    ∆e = sqrt(e1^2 + e2^2)
+    ∆sid = sid1*sid2
+        where 1 and 2 are the first and second observations in the pair, respectively.
+    ∆m < 0 corresponds to brightening
+    ∆m > 0 corresponds to dimming
+    """
     mjd_mag = group[[mjd_key,'mag']].values
     magerr = group['magerr'].values
     sid = group['sid'].values
@@ -151,8 +161,14 @@ def calculate_stats_looped(df, kwargs):
         # print('\t\tnumber of points in {:.1f} < ∆t < {:.1f}: {}'.format(mjd_lower, mjd_upper, boolean.sum()))
         if n>0:
             weights = subset['de']**-2
-            results['mean weighted a'][j,(0,1)] = np.average(subset['dm'], weights = weights), 1/weights.sum()
-            results['mean weighted b'][j,(0,1)] = np.average(subset['dm'], weights = weights), subset['dm'].var() 
+            mean = np.average(subset['dm'], weights = weights)
+            results['mean weighted a'][j,(0,1)] = mean, 1/weights.sum()
+            results['mean weighted b'][j,(0,1)] = mean, subset['dm'].var()
+
+            median = np.median(subset['dm'])
+            results['median a'][j,(0,1)] = median, 1/weights.sum()
+            results['median b'][j,(0,1)] = median, subset['dm'].var()
+
             if n>8:
                 results['skewness'][j,(0,1)] = skew(subset['dm']), skewtest(subset['dm'])[1]
             if n>20:
