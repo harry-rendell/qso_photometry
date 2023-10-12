@@ -8,7 +8,7 @@ from module.config import cfg
 from module.preprocessing import data_io
 from module.modelling import carma
 from module.assets import load_grouped_tot
-
+from functools import partial
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -29,8 +29,8 @@ if __name__ == "__main__":
     OBJ = args.object
     if OBJ == 'qsos':
         ID = 'uid'
-        # mjd_key = 'mjd_rf'
-        mjd_key = 'mjd'
+        mjd_key = 'mjd_rf'
+        # mjd_key = 'mjd'
     else:
         ID = 'uid_s'
         mjd_key = 'mjd'
@@ -73,12 +73,13 @@ if __name__ == "__main__":
         print('band:',band)
 
         if args.model == 'drw':
-            results = data_io.dispatch_function(carma.groupby_apply_drw_fit, max_processes=cfg.USER.N_CORES, concat_output=True, **kwargs)
+            f = partial(data_io.groupby_apply_dispatcher, carma.apply_drw_fit)
         elif args.model == 'dho':
-            results = data_io.dispatch_function(carma.groupby_apply_dho_fit, max_processes=cfg.USER.N_CORES, concat_output=True, **kwargs)
+            f = partial(data_io.groupby_apply_dispatcher, carma.apply_dho_fit)
         else:
             raise ValueError('Invalid model selected. Options are drw or dho.')
-        
-        results.to_csv(cfg.D_DIR + f'computed/{OBJ}/features/{args.model}_fits_{band}_{args.survey}_{args.nobs_min}_{phot_str}_obs_frame.csv')
+
+        results = data_io.dispatch_function(f, max_processes=cfg.USER.N_CORES, concat_output=True, **kwargs)
+        results.to_csv(cfg.D_DIR + f'computed/{OBJ}/features/{args.model}_fits_{band}_{args.survey}_{args.nobs_min}_{phot_str}_rest_frame.csv')
         # results.to_csv(cfg.D_DIR + f'computed/{OBJ}/features/{args.model}_fits_{band}_{args.survey}_{args.nobs_min}_{phot_str}.csv')
         print('Elapsed:',time.strftime("%Hh %Mm %Ss",time.gmtime(time.time()-start)))
