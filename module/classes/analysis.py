@@ -107,6 +107,7 @@ class analysis():
                 'ID': self.ID}
 
         self.df = data_io.dispatch_reader(kwargs, multiproc=multiproc, i=i, max_processes=ncores, concat=True, fnames=fnames)
+        self.df = self.df[np.any([(self.df.band == b).values for b in self.band], axis=0)]
         # self.df = self.df[np.any(self.df['band'].isin(self.band), axis=1)]
         # Remove objects with a single observation.
         self.df = self.df[self.df.index.duplicated(keep=False)]
