@@ -3,38 +3,86 @@ import pandas as pd
 import numpy as np
 from ..preprocessing.data_io import groupby_apply_dispatcher
 from ..config import cfg
-from eztao.ts import drw_fit
+from eztao.ts import drw_fit, dho_fit,  neg_param_ll
 from eztao.carma import DRW_term
 from eztao.ts import gpSimRand
+from celerite import GP
+import emcee
 
-def apply_drw_fit(group):
+def apply_drw_fit(group, kwargs):
     """
     Find best DRW parameters for a single lightcurve using whole lightcurve and just ZTF
     """
-    if (len(group) < 3) or (np.ptp(group['mjd_rf']) < 10):
-        return {'sig':np.nan, 'tau':np.nan, 'sig_ztf':np.nan, 'tau_ztf':np.nan}
-
-    t, y, yerr = group[['mjd_rf', 'mag', 'magerr']].values.T
+    t, y, yerr = group[[kwargs['mjd_key'], 'mag', 'magerr']].values.T
+    
     try:
         sig, tau = drw_fit(t, y, yerr)
-    except:
-        print('error with uid:', group.index[0])
-        return {'sig':np.nan, 'tau':np.nan, 'sig_ztf':np.nan, 'tau_ztf':np.nan}
+    except Exception as e:
+        print('error with uid:', group.index[0],'\n',e,flush=True)
+        sig, tau = np.nan, np.nan
+    
+    if (tau > np.ptp(t)) | (tau < np.diff(t).min()):
+        # condition imposted by Yu 2022
+        sig, tau = np.nan, np.nan
 
-    mask = (group['sid']==11).values
+    return {'sig':sig, 'tau':tau}
+
+def apply_fit_drw_mcmc(group, kwargs):
+    """
+    Use MCMC to find 16th, 50th and 84th percentiles for tau and sigma DRW parameters
+    TODO: Add hyperparams of MCMC fit into kwargs
+    """
+    t, y, yerr = group[[kwargs['mjd_key'], 'mag', 'magerr']].values.T
+    
+    # obtain best-fit 
     try:
-        sig_ztf, tau_ztf = drw_fit(t[mask], y[mask], yerr[mask])
-    except:
-        print('error with uid:', group.index[0])
-        sig_ztf, tau_ztf = np.nan, np.nan
+        best_drw = drw_fit(t, y, yerr)
 
-    return {'sig':sig, 'tau':tau, 'sig_ztf':sig_ztf, 'tau_ztf':tau_ztf}
+        # define celerite GP model
+        drw_gp = GP(DRW_term(*np.log(best_drw)), mean=np.median(y))
+        drw_gp.compute(t, yerr)
 
-def groupby_apply_drw_fit(df, kwargs):
+        # define log prob function
+        def param_ll(*args):
+            return -neg_param_ll(*args)
+
+        # initialize the walker, specify number of walkers, prob function, args and etc.
+        initial = np.array(np.log(best_drw))
+        ndim, nwalkers = len(initial), 32
+        sampler_drw = emcee.EnsembleSampler(nwalkers, ndim, param_ll, args=[y, drw_gp])
+
+        # run a burn-in surrounding the best-fit parameters obtained above
+        p0 = initial + 1e-8 * np.random.randn(nwalkers, ndim)
+        p0, _, _ = sampler_drw.run_mcmc(p0, 500, skip_initial_state_check=True)
+
+        # clear up the stored chain from burn-in, rerun the MCMC
+        sampler_drw.reset()
+        sampler_drw.run_mcmc(p0, 2000, skip_initial_state_check=True)
+
+        # remove points with low prob (ie less than 5%) for the sake of making good corner plot
+        prob_threshold_drw = np.percentile(sampler_drw.flatlnprobability, 5)
+        clean_chain_drw = sampler_drw.flatchain[sampler_drw.flatlnprobability > prob_threshold_drw, :]
+        p = np.percentile(clean_chain_drw, q=[16,50,84], axis=0) * 0.4342944819032518
+    except Exception as e:
+        print('error with uid:', group.index[0],'\n',e, flush=True)
+        p = np.full((3,2), np.nan)
+
+    return {'sig16':p[0,0], 'sig50':p[1,0], 'sig84':p[2,0], 'tau16':p[0,1], 'tau50':p[1,1], 'tau84':p[2,1]}
+
+def apply_dho_fit(group, kwargs):
     """
-    This may be superseeded by data_io.dispatch_groupby
+    Find best DHO parameters for a single lightcurve using whole lightcurve and just ZTF
     """
-    return groupby_apply_dispatcher(apply_drw_fit, df, kwargs)
+
+    t, y, yerr = group[[kwargs['mjd_key'], 'mag', 'magerr']].values.T
+    
+    try:
+        alpha1, alpha2, beta1, beta2  = dho_fit(t, y, yerr)
+    except Exception as e:
+        print('error with uid:', group.index[0],'\n',e, flush=True)
+        alpha1, alpha2, beta1, beta2 = np.nan, np.nan, np.nan, np.nan
+
+    return {'alpha1':alpha1, 'alpha2':alpha2, 'beta1':beta1, 'beta2':beta2}
 
 def generate_mask(t, survey_features):
     indices = np.array([], dtype='int')
