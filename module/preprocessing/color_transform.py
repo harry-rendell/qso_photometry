@@ -24,6 +24,7 @@ def transform_sdss_to_ps(df, color='g-r', system='tonry'):
     """
     Add a column onto df with magnitudes transformed to the PS system.
     There are few options of published transformations available. Here we use ones from Tonry 2012.
+    Note: we use colours per observation for transformations (because SDSS does simultaneous imaging for ugriz bands)
     TODO: Move transformations to data/assets (unversioned).
     """
     color_transf = pd.read_csv(cfg.W_DIR+'assets/transformations/transf_to_ps_{}.txt'.format(system), sep='\s+', index_col=0)
