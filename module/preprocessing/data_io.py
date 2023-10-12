@@ -211,7 +211,7 @@ def dispatch_function(function, chunks=None, max_processes=64, concat_output=Tru
             else:
                 return output
 
-def groupby_apply_dispatcher(func, df, kwargs, args=()):
+def groupby_apply_dispatcher(func, df, kwargs):
     if 'fname' in kwargs:
         print(f"processing file: {kwargs['fname']}", flush=True)
     if 'subset' in kwargs:
