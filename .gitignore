@@ -4,6 +4,7 @@ plots/
 .obsidian
 archive/
 logs/
+temp/
 tex.cache/
 res/*.json
 **/computed/
