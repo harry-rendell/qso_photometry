@@ -18,7 +18,7 @@ if __name__ == "__main__":
     parser.add_argument("--frame",   type=str, required=True, help=("OBS or REST to specify rest frame or observer frame time. \n"
                                                                     "Defaults to rest frame for Quasars and observer time for Stars.\n"))
     parser.add_argument("--n_rows",  type=int, help="Number of rows to read in from the photometric data")
-    parser.add_argument("--survey",   type=str, help="name of survey to restrict data to. If left blank, then all surveys are used.")
+    parser.add_argument("--survey",   type=str, help="name of surveys (separated with a space) to restrict data to. If left blank, then all surveys are used.")
     parser.add_argument("--nobs_min",type=int, help="Minimum number of observations required to fit a model.")
     parser.add_argument("--best_phot", action='store_true', help="Use this flag to only save the best subset of the data")
     args = parser.parse_args()
@@ -57,7 +57,7 @@ if __name__ == "__main__":
               'mjd_key':mjd_key}
 
     if args.survey:
-        kwargs['sid'] = cfg.PREPROC.SURVEY_IDS[args.survey]
+        kwargs['sid'] = [cfg.PREPROC.SURVEY_IDS[s] for s in args.survey.split(' ')]
     else:
         args.survey = 'all'
 
@@ -79,6 +79,6 @@ if __name__ == "__main__":
         f = partial(data_io.groupby_apply_dispatcher, carma.apply_fit_drw_mcmc)
         results = data_io.dispatch_function(f, max_processes=cfg.USER.N_CORES, concat_output=True, **kwargs)
         
-        results.to_csv(cfg.D_DIR + f'computed/{OBJ}/features/mcmc_drw_fits_{band}_{args.survey}_{args.nobs_min}_{phot_str}_{args.frame}_frame.csv')
+        results.to_csv(cfg.D_DIR + f"computed/{OBJ}/mcmc_fits/mcmc_drw_fits_{band}_{args.survey.replace(' ','_')}_{args.nobs_min}_{phot_str}_{args.frame}_frame.csv")
         # results.to_csv(cfg.D_DIR + f'computed/{OBJ}/features/{args.model}_fits_{band}_{args.survey}_{args.nobs_min}_{phot_str}.csv')
         print('Elapsed:',time.strftime("%Hh %Mm %Ss",time.gmtime(time.time()-start)))
