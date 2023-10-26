@@ -9,7 +9,7 @@ import os
 import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from module.config import cfg
-from module.preprocessing import data_io, parse, lightcurve_statistics
+from module.preprocessing import data_io
 from module.assets import load_grouped, load_grouped_tot, load_sets, load_coords, load_redshifts, load_vac
 from .methods.plotting import plot_series as plot_series_
 
@@ -64,7 +64,7 @@ class analysis():
         for ra, dec in coords:
             print("https://skyserver.sdss.org/dr18/VisualTools/quickobj?ra={}&dec={}".format(ra, dec))
 
-    def read_merged_photometry(self, nrows=None, multiproc=True, i=None, ncores=4, fnames=None):
+    def read_merged_photometry(self, nrows=None, multiproc=True, i=None, ncores=4, fnames=None, phot_str='clean'):
         """
         Read in photometric data.
         This method will use ncores to load in all lightcurves located
@@ -103,7 +103,7 @@ class analysis():
 
         kwargs = {'dtypes': cfg.PREPROC.lc_dtypes,
                 'nrows': nrows,
-                'basepath': cfg.D_DIR + f'merged/{self.obj}/clean/', # we should make this path more general so it is consistent between surveys
+                'basepath': cfg.D_DIR + f'merged/{self.obj}/{phot_str}/', # we should make this path more general so it is consistent between surveys
                 'ID': self.ID}
 
         self.df = data_io.dispatch_reader(kwargs, multiproc=multiproc, i=i, max_processes=ncores, concat=True, fnames=fnames)
