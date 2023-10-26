@@ -38,6 +38,18 @@ def transform_sdss_to_ps(df, color='g-r', system='tonry'):
         df.loc[slidx, 'mag'] = df.loc[slidx, 'mag_orig'] + a0 + a1*x + a2*(x**2) + a3*(x**3)
     return df[['mjd', 'mag', 'mag_orig', 'magerr']].dropna(subset=['mag'])
 
+def calculate_wavelength(band, redshift):
+    """
+    Calculate the wavelength of a given band at a given redshift.
+    """
+    if band == 'g':
+        return 4720 / (1 + redshift)
+    elif band == 'r':
+        return 6415 / (1 + redshift)
+    elif band == 'i':
+        return 7835 / (1 + redshift)
+    else:
+        raise ValueError('invalid band')
 
 #------------------------------------------------------------------------------
 # Class for calculating and plotting transformations for SuperCOSMOS
