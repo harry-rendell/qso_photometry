@@ -37,35 +37,46 @@ def apply_fit_drw_mcmc(group, kwargs):
     # obtain best-fit 
     try:
         best_drw = drw_fit(t, y, yerr)
-
-        # define celerite GP model
-        drw_gp = GP(DRW_term(*np.log(best_drw)), mean=np.median(y))
-        drw_gp.compute(t, yerr)
-
-        # define log prob function
-        def param_ll(*args):
-            return -neg_param_ll(*args)
-
-        # initialize the walker, specify number of walkers, prob function, args and etc.
-        initial = np.array(np.log(best_drw))
-        ndim, nwalkers = len(initial), 32
-        sampler_drw = emcee.EnsembleSampler(nwalkers, ndim, param_ll, args=[y, drw_gp])
-
-        # run a burn-in surrounding the best-fit parameters obtained above
-        p0 = initial + 1e-8 * np.random.randn(nwalkers, ndim)
-        p0, _, _ = sampler_drw.run_mcmc(p0, 500, skip_initial_state_check=True)
-
-        # clear up the stored chain from burn-in, rerun the MCMC
-        sampler_drw.reset()
-        sampler_drw.run_mcmc(p0, 2000, skip_initial_state_check=True)
-
-        # remove points with low prob (ie less than 5%) for the sake of making good corner plot
-        prob_threshold_drw = np.percentile(sampler_drw.flatlnprobability, 5)
-        clean_chain_drw = sampler_drw.flatchain[sampler_drw.flatlnprobability > prob_threshold_drw, :]
-        p = np.percentile(clean_chain_drw, q=[16,50,84], axis=0) * 0.4342944819032518
     except Exception as e:
-        print('error with uid:', group.index[0],'\n',e, flush=True)
-        p = np.full((3,2), np.nan)
+        print('error with eztao fit for uid:', group.index[0],'\n',e, flush=True)
+        return {'sig16':np.nan, 'sig50':np.nan, 'sig84':np.nan, 'tau16':np.nan, 'tau50':np.nan, 'tau84':np.nan}
+    # define celerite GP model
+    drw_gp = GP(DRW_term(*np.log(best_drw)), mean=np.median(y))
+    drw_gp.compute(t, yerr)
+
+    # define log prob function
+    def param_ll(*args):
+        return -neg_param_ll(*args)
+
+    # initialize the walker, specify number of walkers, prob function, args and etc.
+    initial = np.array(np.log(best_drw))
+    ndim, nwalkers = len(initial), 16
+    sampler_drw = emcee.EnsembleSampler(nwalkers, ndim, param_ll, args=[y, drw_gp])
+
+    # run a burn-in surrounding the best-fit parameters obtained above
+    p0 = initial + 1e-8 * np.random.randn(nwalkers, ndim)
+    try:
+        p0, _, _ = sampler_drw.run_mcmc(p0, 500, skip_initial_state_check=False)
+    except Exception as e:
+        print('error with burn-in for uid:', group.index[0],'\n',e, flush=True)
+        return {'sig16':np.nan, 'sig50':np.nan, 'sig84':np.nan, 'tau16':np.nan, 'tau50':np.nan, 'tau84':np.nan}
+    # clear up the stored chain from burn-in, rerun the MCMC
+    sampler_drw.reset()
+    try:
+        sampler_drw.run_mcmc(p0, 1000, skip_initial_state_check=False)
+    except Exception as e:
+        print('error with MCMC for uid:', group.index[0],'\n',e, flush=True)
+        return {'sig16':np.nan, 'sig50':np.nan, 'sig84':np.nan, 'tau16':np.nan, 'tau50':np.nan, 'tau84':np.nan}
+
+    # remove points with low prob (ie less than 5%) for the sake of making good corner plot
+    prob_threshold_drw = np.percentile(sampler_drw.flatlnprobability, 5)
+    clean_chain_drw = sampler_drw.flatchain[sampler_drw.flatlnprobability > prob_threshold_drw, :]
+    
+    if len(clean_chain_drw) == 0:
+        print('clean chain is empty for uid:', group.index[0], flush=True)
+        return {'sig16':np.nan, 'sig50':np.nan, 'sig84':np.nan, 'tau16':np.nan, 'tau50':np.nan, 'tau84':np.nan}
+    
+    p = np.percentile(clean_chain_drw, q=[16,50,84], axis=0) * 0.4342944819032518 # multiply to convert from ln to log10
 
     return {'sig16':p[0,0], 'sig50':p[1,0], 'sig84':p[2,0], 'tau16':p[0,1], 'tau50':p[1,1], 'tau84':p[2,1]}
 
