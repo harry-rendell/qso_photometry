@@ -167,3 +167,33 @@ def cost_function(f, params, *args):
         return np.inf
     return np.sum((np.log10(y) - np.log10(y_pred))**2)
     # return np.sum((y - y_pred)**2) # In theory this should arrive at the same ish result as curve_fit
+
+# Fit a skewed gaussian to tau_obs
+from scipy.stats import skewnorm
+
+def skewnorm_squared_error(x,a16,amed,a84):
+    """
+    Calculate the squared error on the 16th, 50th and 84th percentiles
+        of the skewnorm distribution and the observed values.
+    """
+    a,loc,scale = x 
+    v = skewnorm.ppf([0.16,0.50,0.84],a=a,loc=loc,scale=scale)
+    vmed = skewnorm.median(a=a,loc=loc,scale=scale)
+    return ( (v[0] - a16)**2 + (vmed - amed)**2 + (v[2] - a84)**2 )
+
+def fit_skewnorm(tau16, tau50, tau84):
+    """
+    Fit a skewed gaussian to the 16th, 50th and 84th percentiles
+        of the skewnorm distribution and return a, loc, scale.
+    """
+    x0 = np.array([0.0,tau50,1.0])
+    res = minimize(skewnorm_squared_error,x0,method='nelder-mead',
+                args=(tau16, tau50, tau84), options={'xatol': 1e-8, 'disp': False})
+    # skewnorm.ppf([0.16,0.50,0.84],a=res.x[0],loc=res.x[1],scale=res.x[2])
+    return res.x
+
+def fit_skewnorm_(row):
+    return fit_skewnorm(row['tau16'], row['tau50'], row['tau84'])
+
+def apply_fit_skewnnorm(df, kwargs):
+    return df.apply(fit_skewnorm_, axis=1, result_type='expand')
