@@ -52,6 +52,12 @@ def load_redshifts(**kwargs):
     if 'usecols' in kwargs: kwargs['usecols'] += ['uid']
     return pd.read_csv(cfg.D_DIR + f'catalogues/qsos/dr14q/dr14q_redshift.csv', index_col='uid', **kwargs).squeeze()
 
+def load_n_tot(obj, **kwargs):
+    ID = 'uid' if obj == 'qsos' else 'uid_s'
+    if 'usecols' in kwargs: kwargs['usecols'] += [ID]
+    return pd.read_csv(cfg.D_DIR + f'catalogues/{obj}/n_tot.csv', index_col=ID, **kwargs)
+
+
 def load_vac(obj, catalogue_name='dr16q_vac', **kwargs):
     """
     Load value-added catalogues for our quasar sample.
