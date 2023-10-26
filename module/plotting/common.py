@@ -4,7 +4,7 @@ import pandas as pd
 import os
 from ..config import cfg
 
-def plot_series(df, uids, sid=None, bands='gri', grouped, **kwargs):
+def plot_series(df, uids, sid=None, bands='gri', grouped=None, **kwargs):
     """
     Simple plotting function for lightcurves
     """
