@@ -4,19 +4,31 @@ import pandas as pd
 import os
 from ..config import cfg
 
-def plot_series(df, uids, axes=None, grouped=None, **kwargs):
+def plot_series(df, uids, sid=None, bands='gri', grouped, **kwargs):
     """
     Simple plotting function for lightcurves
     """
+
+    plt_color = {'u':'m', 'g':'g', 'r':'r', 'i':'k', 'z':'b'}
+    marker_dict = {3:'v', 5:'D', 7:'s', 11:'o'}
+    survey_dict = {3: 'SSS', 5:'SDSS', 7:'PS1', 11:'ZTF'}
+
     if np.issubdtype(type(uids),np.integer): uids = [uids]
-    if axes is None:
-        fig, axes = plt.subplots(len(uids),1,figsize = (25,3*len(uids)), sharex=True)
+    fig, axes = plt.subplots(len(uids),1,figsize = (20,3*len(uids)), sharex=True)
+    
     if len(uids)==1:
         axes=[axes]
     for uid, ax in zip(uids,axes):
-        x = df.loc[uid]
-        ax.errorbar(x=x['mjd'], y=x['mag'], yerr=x['magerr'], lw = 0.5, markersize = 3)
-        ax.scatter(x['mjd'], x['mag'], s=10)
+        single_obj = df.loc[uid].sort_values('mjd')
+        for band in bands:
+            single_band = single_obj[single_obj['band']==band]
+            if sid is not None:
+                # Restrict data to a single survey
+                single_band = single_band[single_band['sid']==sid]
+            for sid_ in single_band['sid'].unique():
+                x = single_band[single_band['sid']==sid_]
+                ax.errorbar(x['mjd'], x['mag'], yerr = x['magerr'], lw = 0.5, markersize = 3, marker = marker_dict[sid_], label = survey_dict[sid_]+' '+band, color = plt_color[band])
+
         ax.invert_yaxis()
         ax.set(xlabel='MJD', ylabel='mag', **kwargs)
         ax.text(0.02, 0.9, 'uid: {}'.format(uid), transform=ax.transAxes, fontsize=10)
@@ -29,10 +41,8 @@ def plot_series(df, uids, axes=None, grouped=None, **kwargs):
     if len(uids)==1:
         axes=axes[0]
         
-    plt.subplots_adjust(hspace=0)
-    if axes is None:
-        return fig, axes
-    return axes
+    plt.subplots_adjust(hspace=0)        
+    return fig, axes
 
 def savefigs(fig, imgname, dirname, dpi=100, noaxis=False, **kwargs):
     """
