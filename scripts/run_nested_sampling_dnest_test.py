@@ -18,19 +18,17 @@ def prior_transform(u):
     """Transforms the uniform random variable `u ~ Unif[0., 1.)`
     to the parameter of interest `x ~ Unif[1, 5)`."""
 
-    # x = 1. + 4*u 
     x = 4*u 
 
     # This is n set to 1. Change the first term here to set it to another
     # value, or comment out this line to let n be free.
-
     # x[0] = 1 + 1e-6*(u[0]-0.5)
 
     return x
 
 def logprob(x):
-    models = [x[i+1] + x[0]*np.log10(1+fits[i][:,3]) for i in range(len(x)-1)]
-    t_pdfs = [np.sum(skewnorm.logpdf(models[i], a=fits[i][:,0], loc=fits[i][:,1], scale=fits[i][:,2])) for i in range(len(models))]
+    models = [x[i+1] + x[0]*np.log10(1+zfits[i]) for i in range(len(x)-1)]
+    t_pdfs = [np.sum(skewnorm.logpdf(models[i], a=tfits[i][:,0], loc=tfits[i][:,1], scale=tfits[i][:,2])) for i in range(len(models))]
     return sum(t_pdfs)
 
 class Model(object):
@@ -39,7 +37,7 @@ class Model(object):
     """
 
     def __init__(self):
-        self.ndim = len(fits)+1
+        self.ndim = 13
 
     def from_prior(self):
         return rng.rand(self.ndim)
@@ -65,7 +63,6 @@ if __name__ == "__main__":
     parser.add_argument("--n_cores", type=int, required=True, help="Number of cores to use. If left blank, then this value is taken from N_CORES in the config file.")
     parser.add_argument("--nobs_min",type=int, help="Minimum number of observations required to fit a model.")
     parser.add_argument("--survey",   type=str, help="name of surveys (separated with a space) to restrict data to. If left blank, then all surveys are used.")
-
     args = parser.parse_args()
     # Print the arguments for the log
     print(time.strftime('%H:%M:%S %d/%m/%y'))
@@ -80,25 +77,21 @@ if __name__ == "__main__":
     if args.n_cores:
         cfg.USER.N_CORES = args.n_cores
 
-    vac = load_vac('qsos', usecols=['z','Lbol'])
-    skewfits = []
-    for band in args.band:
-        s = pd.read_csv(cfg.D_DIR + f"computed/qsos/mcmc_fits/skewfit_{band}_{args.survey.replace(' ','_')}_{args.nobs_min}.csv", index_col=ID)
-        s['band'] = band
-        vac['wavelength'] = color_transform.calculate_wavelength(band, vac['z'])
-        s = s.join(vac, on=ID)
-        skewfits.append(s)
-    skewfits = pd.concat(skewfits).dropna().sort_index()
-    skewfits = parse.filter_data(skewfits, bounds={'a':(0,0.01),'loc':(2,5),'scale':(0.1,1), 'z':(0.2,5)}, verbose=True)
-
-    mask_dict = parse.create_mask_lambda_lbol(skewfits, n = 15, l_low = 1000, l_high = 5000, L_low = 45.2, L_high = 47.2)
-    fits = [skewfits[['a','loc','scale','z']][mask].sample(100).values for mask in mask_dict.values()]
-    print(f'mcmc dimensionality: {len(fits)+1}')
+    # Load the data
+    import pickle as pkl
+    file = open(cfg.W_DIR + 'temp/zfits.pkl','rb')
+    zfits = pkl.load(file)
+    file.close()
+    file = open(cfg.W_DIR + 'temp/tfits.pkl','rb')
+    tfits = pkl.load(file)
+    file.close()
 
     # Cannot parallelise this? :(
     start = time.time()
-    os.makedirs(cfg.W_DIR + 'temp/dnest4_logs_parse_free_n2', exist_ok=True)
-    os.chdir(cfg.W_DIR + 'temp/dnest4_logs_parse_free_n2/')
+
+    os.makedirs(cfg.W_DIR + 'temp/dnest4_logs_test/', exist_ok=True)
+    os.chdir(cfg.W_DIR + 'temp/dnest4_logs_test/')
+
     model = Model()
     sampler = dnest4.DNest4Sampler(model,backend=dnest4.backends.CSVBackend(".", sep=" "))
     gen = sampler.sample(100, num_steps=100000, new_level_interval=5000,
@@ -115,4 +108,4 @@ if __name__ == "__main__":
             np.savetxt("posterior_sample.txt", posterior_sample)
     
     # results.to_csv(cfg.D_DIR + f'computed/{OBJ}/features/{args.model}_fits_{band}_{args.survey}_{args.nobs_min}_{phot_str}.csv')
-    print('Elapsed:',time.strftime("%Hh %Mm %Ss",time.gmtime(time.time()-start)),'\n')
+    print('Elapsed:',time.strftime("%Hh %Mm %Ss",time.gmtime(time.time()-start)))

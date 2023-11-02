@@ -214,10 +214,41 @@ def dispatch_function(function, chunks=None, max_processes=64, concat_output=Tru
 def groupby_apply_dispatcher(func, df, kwargs):
     if 'fname' in kwargs:
         print(f"processing file: {kwargs['fname']}", flush=True)
+    
+    masks = []
     if 'subset' in kwargs:
-        df = df[df.index.isin(kwargs['subset'])]
+        masks.append(df.index.isin(kwargs['subset']))
+    
+    if 'sid' in kwargs:
+        assert (type(kwargs['sid']) is not int), 'sid must be a list or array, not an int'
+        masks.append(df['sid'].isin(kwargs['sid']))
+    
     if ('band' in kwargs) & ('band' in df.columns):
-        s = df[df['band'] == kwargs['band']].groupby(df.index.name).apply(func, kwargs)
-    else:
-        s = df.groupby(df.index.name).apply(func, kwargs)
+        masks.append(df['band'] == kwargs['band'])
+    
+    if len(masks)>0:
+        masks = np.all(masks, axis=0)
+        df = df[masks]
+    pd.DataFrame.groupby
+    s = df.groupby(df.index.name, group_keys=False).apply(func, kwargs)
     return pd.DataFrame(s.values.tolist(), index=s.index, dtype='float32')
+
+    # if 'subset' in kwargs:
+    #     df = df[df.index.isin(kwargs['subset'])]
+    # if 'sid' in kwargs:
+    #     df = df[df['sid'].isin(kwargs['sid'])]
+    # if ('band' in kwargs) & ('band' in df.columns):
+    #     s = df[df['band'] == kwargs['band']].groupby(df.index.name).apply(func, kwargs)
+    # else:
+    #     s = df.groupby(df.index.name).apply(func, kwargs)
+    # return pd.DataFrame(s.values.tolist(), index=s.index, dtype='float32')
+
+def find_lcs_containing_uids(uids, basepath):
+    file_bounds = {f:(int(f[3:9]),int(f[10:16])) for f in sorted(os.listdir(basepath)) if f.startswith('lc_')}
+    fnames = []
+    for f, bounds in file_bounds.items():
+        for uid in uids:
+            if bounds[0] <= uid <= bounds[1]:
+                if f not in fnames:
+                    fnames.append(f)
+    return fnames

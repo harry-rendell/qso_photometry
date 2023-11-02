@@ -1,13 +1,14 @@
 import numpy as np
+import pandas as pd
 import time
 import argparse
 import os
 import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from module.config import cfg
-from module.preprocessing import data_io
-from module.modelling import carma
-from module.assets import load_grouped_tot
+from module.preprocessing import data_io, parse
+from module.modelling import carma, fitting
+from module.assets import load_n_tot
 from functools import partial
 
 if __name__ == "__main__":
@@ -50,26 +51,37 @@ if __name__ == "__main__":
 
     # keyword arguments to pass to our reading function
     kwargs = {'obj':OBJ,
-              'dtypes': cfg.PREPROC.lc_dtypes,
+            'dtypes': cfg.PREPROC.lc_dtypes,
               'nrows': nrows,
               'usecols': [ID,mjd_key,'mag','magerr','band','sid'],
               'ID':ID,
               'mjd_key':mjd_key}
 
     if args.survey:
-        kwargs['sid'] = [cfg.PREPROC.SURVEY_IDS[s] for s in args.survey.split(' ')]
+        kwargs['sid'] = [cfg.PREPROC.SURVEY_IDS[s] for s in args.survey.split()]
     else:
         args.survey = 'all'
 
-    for band in args.band:
-        # add these back into the kwargs dictionary
-        if args.nobs_min:
-            n_tot = load_grouped_tot(OBJ, band, usecols=['n_tot']).squeeze()
-            uid_subset = n_tot[(n_tot > args.nobs_min).values].index
-            kwargs['subset'] = uid_subset
+    if args.nobs_min:
+        # We select a subset of quasars which have a minimum of args.nobs_min observations in each of the bands 
+        #   specified in args.band
+        n_tot = load_n_tot(OBJ)
+        if args.survey != 'ztf':
+            survey_str = args.survey.replace('ztf','').split()
         else:
-            args.nobs_min = 0
+            survey_str = args.survey.split()
 
+        # mask = np.all([(n_tot[[f'n_{s}_{b}' for s in survey_str]].sum(axis=1) > args.nobs_min) for b in args.band], axis=0)
+        # kwargs['subset'] = n_tot[mask].index
+    else:
+        args.nobs_min = 0
+
+    for band in args.band:
+
+        mask = (n_tot[[f'n_{s}_{band}' for s in survey_str]].sum(axis=1) > args.nobs_min)
+        kwargs['subset'] = n_tot[mask].index
+
+        # add these back into the kwargs dictionary
         kwargs['band'] = band
         kwargs['basepath'] = cfg.D_DIR + f'merged/{OBJ}/{phot_str}/'
 
@@ -77,8 +89,18 @@ if __name__ == "__main__":
         print('band:',band)
 
         f = partial(data_io.groupby_apply_dispatcher, carma.apply_fit_drw_mcmc)
-        results = data_io.dispatch_function(f, max_processes=cfg.USER.N_CORES, concat_output=True, **kwargs)
+        drw_params = data_io.dispatch_function(f, max_processes=cfg.USER.N_CORES, concat_output=True, **kwargs)
+
+        # bounds = {'tau16':(2,  4.5), 'tau50':(2,5), 'tau84':(2,6), 'sig16':(-2,0.5), 'sig50':(-1,0.5), 'sig84':(-0.9,0.5)}
+        # drw_params = parse.filter_data(drw_params, bounds=bounds, dropna=False, verbose=True)
+        print(drw_params)
+        tau = drw_params[['tau16','tau50','tau84']].dropna()
         
-        results.to_csv(cfg.D_DIR + f"computed/{OBJ}/mcmc_fits/mcmc_drw_fits_{band}_{args.survey.replace(' ','_')}_{args.nobs_min}_{phot_str}_{args.frame}_frame.csv")
+        print('applying skewfit')
+        skewfits = data_io.dispatch_function(fitting.apply_fit_skewnnorm, np.array_split(tau, args.n_cores), max_processes=args.n_cores)
+        skewfits = skewfits.rename(columns={0:'a',1:'loc',2:'scale'})
+        # skewfits = parse.filter_data(skewfits, bounds={'a':(0,30), 'loc':(0,10), 'scale':(0,5)}, dropna=True, verbose=True)
+
+        drw_params.join(skewfits, on=ID, how='left').to_csv(cfg.D_DIR + f"computed/{OBJ}/mcmc_fits/{args.frame.lower()}/{band}_{args.survey.replace(' ','_')}_{args.nobs_min}.csv")
         # results.to_csv(cfg.D_DIR + f'computed/{OBJ}/features/{args.model}_fits_{band}_{args.survey}_{args.nobs_min}_{phot_str}.csv')
         print('Elapsed:',time.strftime("%Hh %Mm %Ss",time.gmtime(time.time()-start)))

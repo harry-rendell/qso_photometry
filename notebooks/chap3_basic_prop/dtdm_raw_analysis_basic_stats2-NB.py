@@ -140,7 +140,7 @@ kwargs = {'xscale':'log',
 fig, ax = plt.subplots(3,1, figsize=(10,12), sharex=True)
 plt.style.use('default')
 plt.style.use(cfg.RES_DIR + 'stylelib/paired_bands.mplstyle')
-ylim = (-0.3,0.4) # wide view
+ylim = (-0.6,0.4) # wide view
 # ylim = (-0.1,0.1) # narrow view
 # g
 kwargs['ylabel'] = r'mean $\Delta g$ (mag)'
@@ -181,11 +181,10 @@ fig, ax = plt.subplots(3,1, figsize=(10,12), sharex=True)
 plt.style.use('default')
 plt.style.use(cfg.RES_DIR + 'stylelib/paired_bands.mplstyle')
 # ylim = (-0.1,0.3) # wide view
-ylim = (-0.3,0.2) # narrow view
+ylim = (-0.1,0.1) # narrow view
 # g
 kwargs['ylabel'] = r'mean $\Delta g$ (mag)'
 ax[0].set_prop_cycle(color=['33a02c', 'b2df8a'])
-dtdm_qsos_g.plot_comparison_data(ax[0], 'caplar')
 dtdm_qsos_g_inner.plot_stats(plotting_keys, figax=(fig, ax[0]), label='Quasars', ylim=ylim, xlim=(1,2e4), **kwargs)
 dtdm_star_g_inner.plot_stats(plotting_keys, figax=(fig, ax[0]), label='Stars', legend_loc='upper left', xlabel='')
 # r
@@ -200,8 +199,8 @@ dtdm_qsos_i_inner.plot_stats(plotting_keys, figax=(fig, ax[2]), label='Quasars',
 dtdm_star_i_inner.plot_stats(plotting_keys, figax=(fig, ax[2]), label='Stars', legend_loc='upper left')
 
 plt.subplots_adjust(hspace=0.05)
-if SAVE_FIGS:
-    savefigs(fig, 'ensemble/DRIFT-ENSEMBLE-qsos_and_stars_inner_gri', 'chap3')
+# if SAVE_FIGS:
+savefigs(fig, 'ensemble/DRIFT-ENSEMBLE-qsos_and_stars_inner_gri', 'chap3')
 # -
 
 # # Compare between inner and all survey data

@@ -24,6 +24,9 @@ if __name__ == "__main__":
     parser.add_argument("--n_cores", type=int, required=True, help="Number of cores to use. If left blank, then this value is taken from N_CORES in the config file.")
     parser.add_argument("--nobs_min",type=int, help="Minimum number of observations required to fit a model.")
     parser.add_argument("--survey",   type=str, help="name of surveys (separated with a space) to restrict data to. If left blank, then all surveys are used.")
+    parser.add_argument("--output_dir",   type=str, help="Directory to save the output to.")
+    parser.add_argument("--threshold", type=int, required=True, help="Threshold for masking")
+    parser.add_argument("--qsos_per_bin", type=int, required=True, help="Threshold for masking")
     args = parser.parse_args()
     # Print the arguments for the log
     print(time.strftime('%H:%M:%S %d/%m/%y'))
@@ -41,48 +44,38 @@ if __name__ == "__main__":
     vac = load_vac('qsos', usecols=['z','Lbol'])
     skewfits = []
     for band in args.band:
-        s = pd.read_csv(cfg.D_DIR + f"computed/qsos/mcmc_fits/skewfit_{band}_{args.survey.replace(' ','_')}_{args.nobs_min}.csv", index_col=ID)
+        # TODO: we should use args.frame
+        s = pd.read_csv(cfg.D_DIR + f"computed/qsos/mcmc_fits_old/obs/{band}_{args.survey.replace(' ','_')}_{args.nobs_min}.csv", index_col=ID)
         s['band'] = band
         vac['wavelength'] = color_transform.calculate_wavelength(band, vac['z'])
         s = s.join(vac, on=ID)
         skewfits.append(s)
     skewfits = pd.concat(skewfits).dropna().sort_index()
-    skewfits = parse.filter_data(skewfits, bounds={'a':(0,0.01),'loc':(1.6,5),'scale':(0.1,1), 'z':(0.2,5)}, verbose=True)
 
-    Lbol_edges   = np.linspace(45.2, 47.2, 5)
-    lambda_edges = np.linspace(900, 4900, 5)
-    # create a series of 2d bins from the edges
-    Lbol_bins = pd.cut(skewfits['Lbol'], Lbol_edges, labels=False)
-    lambda_bins = pd.cut(skewfits['wavelength'], lambda_edges, labels=False)
+    # TODO: put tau/sig bounds in here too.
+    skewfits = parse.filter_data(skewfits, bounds={'a':(0,0.01),'loc':(1.5,5),'scale':(0.1,1), 'z':(0.2,5)}, verbose=True)
 
-    # change groups so that the y axis is flipped
-    # groups = {1: (0,3), 2: (0,2), 3: (1,3), 4: (1,2), 5: (1,1), 6: (2,3), 7: (2,2), 8: (2,1), 9: (2,0), 10: (3,2), 11: (3,1), 12: (3,0)}
+    mask_dict = parse.create_mask_lambda_lbol(skewfits, threshold=args.threshold, n = 15, l_low = 1000, l_high = 5000, L_low = 45.2, L_high = 47.2)
+    fits = [skewfits[['a','loc','scale','z']][mask].sample(args.qsos_per_bin).values for mask in mask_dict.values()]
     
-    # NOTE: We may need to create more groups when using more data, or have spaces between the bins.
-        # Do this by increasing the number of edges, overplotting numbers on Lbol/lambda and picking numbers in a lattice.
-    groups = {1: (0,3), 2: (0,2), 3: (1,3), 4: (1,2), 5: (1,1), 6: (2,2), 7: (2,1), 8: (2,0), 9: (3,1), 10: (3,0)}
-
-    masks = [(Lbol_bins == L).values & (lambda_bins == l).values for l,L in groups.values()]
-    for i, mask in enumerate(masks):
-        print(f"Number of objects in bin {i+1}, {groups[i+1]}: {np.sum(mask)}")
-    fits = [skewfits[['a','loc','scale','z']][mask].sample(45).values for mask in masks]
-
     start = time.time()
-    os.makedirs(cfg.W_DIR + 'temp/nautilus_45_free/', exist_ok=True)
-    os.chdir(cfg.W_DIR + 'temp/nautilus_45_free/')
+    os.makedirs(cfg.W_DIR + f'temp/{args.output_dir}/', exist_ok=True)
+    os.chdir(cfg.W_DIR + f'temp/{args.output_dir}/')
 
-    params = ['n'] + [f'c_{1+i}' for i in range(len(groups))]
+    params = ['n'] + [f'c_{1+i}' for i in range(len(fits))]
     prior = Prior()
     for key in params:
         if key == 'n':
             # prior.add_parameter(key, dist=norm(loc=1.0, scale=0.5))
-            prior.add_parameter(key, dist=(0,2))
+            prior.add_parameter(key, dist=norm(loc=1.0, scale=0.5))
         else:
-            prior.add_parameter(key, dist=(0,5))
+            prior.add_parameter(key, dist=(2,5))
+
+    print(f'dimensionality of mcmc: {len(params)}')
 
     sampler = Sampler(prior,
                       likelihood,
-                      n_live=3000,
+                      n_live=5000,
                       n_dim=len(params),
                       pool=args.n_cores,
                       filepath='checkpoint.hdf5',

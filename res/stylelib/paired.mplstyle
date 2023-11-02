@@ -6,6 +6,8 @@ grid.alpha : 0.5
 grid.linewidth : 0.6
 grid.linestyle : -
 
+font.size: 10
+
 # Pastel
 # axes.prop_cycle: cycler('color', ['FBBEAB','F06C9B','5AADC0','9C6AD2','33A02C','B2DF8A','1F78B4','A6CEE3'])
 

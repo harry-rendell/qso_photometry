@@ -125,3 +125,17 @@ def calculate_groups(x, bounds):
     groups = [z_score[(lower <= z_score).values & (z_score < upper).values].index.values for lower, upper in bounds_tuple]
     # label_range_val = {i:'{:.1f} < {} < {:.1f}'.format(bounds_values[i],key,bounds_values[i+1]) for i in range(len(bounds_values)-1)}
     return groups, bounds_values
+
+def assign_groups(df_, property_='Lbol'):
+    import pandas as pd
+    import os
+    df = df_.copy()
+    vac = pd.read_csv(cfg.D_DIR + 'catalogues/qsos/dr16q/dr16q_vac_shen_matched.csv', index_col=ID)
+    vac = parse.filter_data(vac, cfg.PREPROC.VAC_BOUNDS, dropna=False)
+    bounds_z = np.array([5,-3.5,-1,0,1,4])
+    groups, bounds_values = binning.calculate_groups(vac[property_], bounds = bounds_z)
+    df['group'] = np.nan
+    for i, group in enumerate(groups):
+        df.loc[df.index.isin(group),'group'] = i
+    print(df['group'].value_counts().sort_index())
+    return df.join(vac, on='uid')

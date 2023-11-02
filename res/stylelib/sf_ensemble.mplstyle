@@ -1,0 +1,2 @@
+font.size: 10
+axes.prop_cycle: cycler('color', ['DD3434','8846CF','4E62EA','35B142','1F78B4','A6CEE3'])

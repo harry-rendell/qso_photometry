@@ -174,28 +174,33 @@ class dtdm_raw_analysis():
 			ax[i].hist(slice_, bins=101, range=(-0.5,0.5), alpha=0.4)
 			ax[i].legend()
 
-	def read_pooled_stats(self, log_or_lin, key=None):
+	def read_pooled_stats(self, log_or_lin, key=None, pooled_stats=None, mjd_edges=None):
 		self.log_or_lin = log_or_lin
 		self.key = key
-		fpath = cfg.D_DIR + f'computed/{self.obj}/dtdm_stats/{key}/{self.log_or_lin}/{self.band}/'
-		names = os.listdir(fpath)
-
-		if key == 'all':
-			self.pooled_stats = ({name[7:-4].replace('_',' '):np.loadtxt(fpath+name) 
-								  for name in names if name.startswith('pooled')})
-			self.mjd_edges = np.loadtxt(fpath + 'mjd_edges.csv')
-			self.mjd_centres = (self.mjd_edges[:-1] + self.mjd_edges[1:])/2
+		
+		if (pooled_stats is None) & (mjd_edges is None):
+			fpath = cfg.D_DIR + f'computed/{self.obj}/dtdm_stats/{key}/{self.log_or_lin}/{self.band}/'
+			names = os.listdir(fpath)
+			if key == 'all':
+				self.pooled_stats = ({name[7:-4].replace('_',' '):np.loadtxt(fpath+name) 
+									for name in names if name.startswith('pooled')})
+				self.mjd_edges = np.loadtxt(fpath + 'mjd_edges.csv')
+			else:
+				self.bounds_values = np.loadtxt(fpath + 'bounds_values.csv')
+				self.n_groups = len(self.bounds_values)-1
+				self.pooled_stats = ({name[7:-6].replace('_',' '):np.array([np.loadtxt('{}{}_{}.csv'.format(fpath,name[:-6],i)) 
+									for i in range(self.n_groups)])
+									for name in names if name.startswith('pooled')})
+				self.label_range_val = {i:'{:.1f} < {} < {:.1f}'.format(self.bounds_values[i],self.key,self.bounds_values[i+1]) for i in range(self.n_groups)}
+				self.mjd_edges = np.array([np.loadtxt(fpath + f'mjd_edges_{i}.csv') for i in range(self.n_groups)])
+		
 		else:
-			self.bounds_values = np.loadtxt(fpath + 'bounds_values.csv')
-			self.n_groups = len(self.bounds_values)-1
-			self.pooled_stats = ({name[7:-6].replace('_',' '):np.array([np.loadtxt('{}{}_{}.csv'.format(fpath,name[:-6],i)) 
-							      for i in range(self.n_groups)])
-								  for name in names if name.startswith('pooled')})
-			self.label_range_val = {i:'{:.1f} < {} < {:.1f}'.format(self.bounds_values[i],self.key,self.bounds_values[i+1]) for i in range(self.n_groups)}
-			self.mjd_edges = np.array([np.loadtxt(fpath + f'mjd_edges_{i}.csv') for i in range(self.n_groups)])
-			self.mjd_centres = (self.mjd_edges[:, :-1] + self.mjd_edges[:, 1:])/2
+			self.pooled_stats = pooled_stats
+			self.mjd_edges = mjd_edges
+		
+		self.mjd_centres = (self.mjd_edges[..., :-1] + self.mjd_edges[..., 1:])/2
 
-	def plot_stats(self, keys, figax, label=None, **kwargs):
+	def plot_stats(self, keys, figax, label=None, legend_loc='upper right', show_marker_bin_counts=False, **kwargs):
 		if figax is None:
 			fig, ax = plt.subplots(1,1, figsize=(10,6))
 		else:
@@ -206,37 +211,38 @@ class dtdm_raw_analysis():
 		color = kwargs.pop('color') if 'color' in kwargs else None
 
 		# Norm by log
-		# normalised_bin_counts = np.log(self.pooled_stats['n']) + 50
+		# normalised_bin_counts = np.log(self.pooled_stats['n']) + 10
 		# Norm by total max
 		# normalised_bin_counts = self.pooled_stats['n']/np.max(self.pooled_stats['n'])*1e4
 		# Norm per time bin
-		normalised_bin_counts = self.pooled_stats['n']/self.pooled_stats['n'].sum(axis=0)*1e3
-		error_norm = (2/self.pooled_stats['n'])**0.2
+		# normalised_bin_counts = self.pooled_stats['n']/self.pooled_stats['n'].sum(axis=0)*1e3
+		# Norm per sqrt time bin (ie area propto counts)
+		normalised_bin_counts = (self.pooled_stats['n']/self.pooled_stats['n'].sum(axis=0))**0.5*1e2
+		error_norm = (2/self.pooled_stats['n'])**0.25
 		for key in keys:
 			y = self.pooled_stats[key]
-			if key.startswith('SF'):
-				y[y<0] = np.nan
-			else:
-				y[:,1] = y[:,1]**0.5 # NOTE: Non SF errors are actually variances as of 08/08/23. If extract_features is run since then, remove this line.
+			# if key.startswith('SF'):
+				# y[y<0] = np.nan
+			# else:
+				# y[:,1] = y[:,1]**0.5 # NOTE: Non SF errors are actually variances as of 08/08/23. If extract_features is run since then, remove this line.
 			
 			if label is None:
 				label = '{}, {}'.format(self.name,key)
 			# ax.errorbar(self.mjd_centres, y[:,0], yerr=y[:,1]**0.5, label='{}, {}'.format(key,self.name), color=color, lw=2.5) # square root this
 			ax.errorbar(self.mjd_centres, y[:,0], yerr=y[:,1]*error_norm,
-						capsize=5,
+						capsize=3,
 						lw=0.6,
-						elinewidth=0.5,
-						markeredgecolor=0.2,
+						elinewidth=0.4,
+						markeredgewidth=0.5,
 						color=color)
 			ax.scatter(self.mjd_centres, y[:,0], s=normalised_bin_counts,
 	      			   label=label,
 					   color=color)
 	
 			ax.set(xlabel='Rest frame time lag (days)')
-
+		ax.grid(visible=True, lw=0.4)
 		ax.set(**kwargs)
-		ax.legend()
-		for handle in plt.legend().legend_handles:
+		for handle in ax.legend(loc=legend_loc).legend_handles:
 			try:
 				handle.set_sizes([70])
 			except:
@@ -267,7 +273,22 @@ class dtdm_raw_analysis():
 			fitted_params, _, model_values = fit_minimize(bkn_pow_smooth, cost_function, self.mjd_centres, y, yerr, **kwargs)
 			print(f'fitted broken power law:\ny = {fitted_params[0]:.2f}*x^{fitted_params[2]:.2f} for x < {fitted_params[1]:.2f}\ny = {fitted_params[0]:.2f}*x^{fitted_params[3]:.2f} for x > {fitted_params[1]:.2f}')
 			label = 'broken power law'
+		elif model_name == 'DRW SF':
+			from module.modelling.fitting import fit_DRW_SF
+			y, yerr = self.pooled_stats[key].T
+			tau, SF_inf, pcov, model_values = fit_DRW_SF(self.mjd_centres, y, yerr, **kwargs)
+			print(f'fitted DRW SF:\ntau = {tau:.2f}\nSF_inf = {SF_inf:.2f}')
+			label = 'DRW SF'
+			fitted_params = (tau, SF_inf)
 
+		elif model_name == 'mod DRW SF':
+			from module.modelling.fitting import fit_mod_DRW_SF
+			y, yerr = self.pooled_stats[key].T
+			tau, SF_inf, beta, pcov, model_values = fit_mod_DRW_SF(self.mjd_centres, y, yerr, **kwargs)
+			print(f'fitted mod DRW SF:\ntau = {tau:.2f}\nSF_inf = {SF_inf:.2f}\nbeta = {beta:.2f}')
+			label = 'mod DRW SF'
+			fitted_params = (tau, SF_inf, beta)
+			
 		if ax is not None:
 			ax.plot(*model_values, lw=1.5, ls='-.', label=label)		
 			ax.legend()
@@ -279,10 +300,13 @@ class dtdm_raw_analysis():
 		# ax.plot(self.mjd_centres, f(self.mjd_centres), lw=0.5, ls='--', color='b', label='MacLeod 2012')
 		if name=='macleod':
 			x,y = np.loadtxt(cfg.D_DIR + 'archive/Macleod2012/SF/macleod2012.csv', delimiter=',').T
+			ax.scatter(x, y, color='k')
+			ax.plot(x, y, label = 'Macleod 2012', lw=2, ls='--', color='k')
+		elif name=='caplar':
+			dt, dm = pd.read_csv(cfg.W_DIR + 'assets/comparison_data/caplar2020_fig4.csv', comment='#').values.T
+			dt = dt*365.25
+			ax.scatter(dt, -dm, color='k', s=0.2, label='Caplar 2020')
 		# elif name=='morganson':
-
-		ax.scatter(x, y, color='k')
-		ax.plot(x, y, label = 'Macleod 2012', lw=2, ls='--', color='k')
 
 	def plot_stats_property(self, keys, figax, macleod=False, fill_between=False, **kwargs):
 		if figax is None:
@@ -313,14 +337,14 @@ class dtdm_raw_analysis():
 		else:
 			elinewdith = 0.2
 			markeredgewidth = 0.2
-
 		for group_idx in range(self.n_groups):
+			error_norm = (2/self.pooled_stats['n'][group_idx])**0.1
 			for key in keys:
 				y = self.pooled_stats[key][group_idx]
 				mask = abs(y[:,0]-y[:,0].mean()) > 10*y[:,0].std() # Note this is a hack to remove the large values from the plot
 				y[mask, :] = np.nan,np.nan 
 				color = cmap.gist_earth(group_idx/self.n_groups)
-				ax.errorbar(self.mjd_centres[group_idx], y[:,0], yerr=y[:,1],
+				ax.errorbar(self.mjd_centres[group_idx], y[:,0], yerr=y[:,1]*error_norm,
 							capsize=5,
 							lw=0.5,
 							elinewidth=elinewdith,
