@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 from .data_io import groupby_apply_dispatcher
+from statsmodels.tsa.stattools import adfuller
 
 def groupby_apply_average(df, kwargs):
     s = df.groupby([df.index.name, 'mjd_floor']).apply(average_nightly_obs)
@@ -18,6 +19,13 @@ def groupby_apply_welch_stetson(df, kwargs):
 def groupby_apply_features(df, kwargs):
     args = (kwargs['mjd_edges'], kwargs['n_points'])
     return groupby_apply_dispatcher(calculate_sf_per_qso, df, kwargs, args=args)
+
+def ad_fuller(group, kwargs):
+    if len(group) < 4:
+        prob = np.nan
+    else:
+        prob = adfuller(group['mag'].values)[1]
+    return {'ad_fuller':prob}
 
 def welch_stetson_JK(group):
     """
