@@ -305,7 +305,7 @@ class dtdm_raw_analysis():
 		elif name=='caplar':
 			dt, dm = pd.read_csv(cfg.W_DIR + 'assets/comparison_data/caplar2020_fig4.csv', comment='#').values.T
 			dt = dt*365.25
-			ax.scatter(dt, -dm, color='k', s=0.2, label='Caplar 2020')
+			ax.scatter(dt, -dm, color='k', s=0.5, label='Caplar 2020')
 		# elif name=='morganson':
 
 	def plot_stats_property(self, keys, figax, macleod=False, fill_between=False, **kwargs):
