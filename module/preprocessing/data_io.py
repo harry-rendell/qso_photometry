@@ -47,47 +47,53 @@ def reader(fname, kwargs):
             if not line.strip().startswith(('#','|','\\')):
                 names = line.replace('\n','').split(',')
                 break
-        return pd.read_csv(file,
-                           usecols=usecols,
-                           dtype=dtypes,
-                           nrows=nrows,
-                           names=names,
-                           skiprows=skiprows,
-                           delimiter=delimiter,
-                           na_filter=na_filter).set_index(ID)
+        df = pd.read_csv(file,
+                         usecols=usecols,
+                         dtype=dtypes,
+                         nrows=nrows,
+                         names=names,
+                         skiprows=skiprows,
+                         delimiter=delimiter,
+                         na_filter=na_filter).set_index(ID)
+        if 'uids' in kwargs:
+            df = df[df.index.isin(kwargs['uids'])]
+        
+        return df
 
-def dispatch_reader(kwargs, multiproc=True, i=None, max_processes=64, concat=True, fnames=None):
+def dispatch_reader(kwargs, multiproc=True, i=None, max_processes=64, concat=True, fnames=None, uids=None):
     """
     Dispatching function for reader
     """
-    if fnames is None:
-        # If we have not passed in a list of filenames, then read all files in basepath
-        fnames = sorted([f for f in os.listdir(kwargs['basepath']) if ((f.startswith('lc_') or f.startswith('dtdm_')) and f.endswith('.csv'))])
-    elif i is not None:
-        raise Exception('Cannot specify both i and fnames')
-            
-    if isinstance(i, int):
-        fnames = fnames[i]
-        multiproc = False
-    elif isinstance(i, np.ndarray):
-        fnames = fnames[i]
-    elif isinstance(i, list):
-        fnames = np.array(fnames)[i]
+    if uids is None:
+        if fnames is None:
+            # If we have not passed in a list of filenames, then read all files in basepath
+            fnames = sorted([f for f in os.listdir(kwargs['basepath']) if ((f.startswith('lc_') or f.startswith('dtdm_')) and f.endswith('.csv'))])
+        elif i is not None:
+            raise Exception('Cannot specify both i and fnames')
+                
+        if isinstance(i, int):
+            fnames = fnames[i]
+            multiproc = False
+        elif isinstance(i, np.ndarray):
+            fnames = fnames[i]
+        elif isinstance(i, list):
+            fnames = np.array(fnames)[i]
+    else:
+        fnames = find_lcs_containing_uids(uids, kwargs['basepath'])
+        kwargs['uids'] = uids
     
     n_files = len(fnames)
-    if multiproc:
-        if __name__ == 'module.preprocessing.data_io':
-            # Make as many tasks as there are files, unless we have set max_processes
-            n_tasks = min(n_files, max_processes)
-            with Pool(n_tasks) as pool:
-                df_list = pool.starmap(reader, [(fname, kwargs) for fname in fnames])
-            # sorting is required as we cannot guarantee that starmap returns dataframes in the order we expect.
-            if concat:
-                return pd.concat(df_list, sort=True)
-            else:
-                return df_list
-    else:
-        return reader(fnames, kwargs)
+    if __name__ == 'module.preprocessing.data_io':
+        # Make as many tasks as there are files, unless we have set max_processes
+        n_tasks = min(n_files, max_processes)
+        with Pool(n_tasks) as pool:
+            df_list = pool.starmap(reader, [(fname, kwargs) for fname in fnames])
+        # sorting is required as we cannot guarantee that starmap returns dataframes in the order we expect.
+        if concat:
+            return pd.concat(df_list, sort=True)
+        else:
+            return df_list
+
 
 def writer(i, chunk, kwargs):
     """
@@ -252,3 +258,23 @@ def find_lcs_containing_uids(uids, basepath):
                 if f not in fnames:
                     fnames.append(f)
     return fnames
+
+def load_lcs_containing_uids(uids, basepath, max_processes=4):
+    """
+    Load lightcurves containing the uids provided.
+    uids : list of uids to load
+    basepath : path to the folder containing the lightcurves
+    max_processes : maximum number of processes (ie cpus)
+    """
+    fnames = find_lcs_containing_uids(uids, basepath)
+    n_files = len(fnames)
+    kwargs = {'basepath':basepath, 'uids':uids, 'ID':'uid'}
+    if __name__ == 'module.preprocessing.data_io':
+        # Make as many tasks as there are files, unless we have set max_processes
+        n_tasks = min(n_files, max_processes)
+        with Pool(n_tasks) as pool:
+            df_list = pool.starmap(reader, [(fname, kwargs) for fname in fnames])
+
+        # sorting is required as we cannot guarantee that starmap returns dataframes in the order we expect.
+        return pd.concat(df_list, sort=True)
+    

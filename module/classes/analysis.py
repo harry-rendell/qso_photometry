@@ -64,7 +64,7 @@ class analysis():
         for ra, dec in coords:
             print("https://skyserver.sdss.org/dr18/VisualTools/quickobj?ra={}&dec={}".format(ra, dec))
 
-    def read_merged_photometry(self, nrows=None, multiproc=True, i=None, ncores=4, fnames=None, phot_str='clean'):
+    def read_merged_photometry(self, nrows=None, multiproc=True, i=None, ncores=4, fnames=None, phot_str='clean', uids=None):
         """
         Read in photometric data.
         This method will use ncores to load in all lightcurves located
@@ -106,7 +106,7 @@ class analysis():
                 'basepath': cfg.D_DIR + f'merged/{self.obj}/{phot_str}/', # we should make this path more general so it is consistent between surveys
                 'ID': self.ID}
 
-        self.df = data_io.dispatch_reader(kwargs, multiproc=multiproc, i=i, max_processes=ncores, concat=True, fnames=fnames)
+        self.df = data_io.dispatch_reader(kwargs, multiproc=multiproc, i=i, max_processes=ncores, concat=True, fnames=fnames, uids=uids)
         self.df = self.df[np.any([(self.df.band == b).values for b in self.band], axis=0)]
         # self.df = self.df[np.any(self.df['band'].isin(self.band), axis=1)]
         # Remove objects with a single observation.
