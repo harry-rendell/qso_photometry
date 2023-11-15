@@ -16,9 +16,6 @@ def groupby_apply_stats(df, kwargs):
 def groupby_apply_welch_stetson(df, kwargs):
     return groupby_apply_dispatcher(welch_stetson_JK, df, kwargs)
 
-def groupby_apply_features(df, kwargs):
-    args = (kwargs['mjd_edges'], kwargs['n_points'])
-    return groupby_apply_dispatcher(calculate_sf_per_qso, df, kwargs, args=args)
 
 def ad_fuller(group, kwargs):
     if len(group) < 4:
@@ -57,20 +54,27 @@ def welch_stetson_JK(group):
 
     return {'welch_stetson_j':J, 'welch_stetson_k':K}
 
-def calculate_sf_per_qso(group, mjd_edges, n_points):
+def calculate_sf_per_qso(group, kwargs):
+    mjd_edges = kwargs['mjd_edges']
+    n_points = kwargs['n_points']
+    features = kwargs['features']
+
     dm, dt, de = group[['dm','dt','de']].values.T
-    n_features = 3
+    n_features = len(features)
     a = np.zeros(shape=(n_points, n_features), dtype=np.float32)
     for i in range(n_points):
-        mask = (mjd_edges[i] < dt) & (dt < mjd_edges[i+1])
+        mask = (mjd_edges[i] < dt) & (dt <= mjd_edges[i+1])
         if mask.sum()==0:
             a[i,:] = np.nan
         else:
-            a[i,0] = np.average(dm[mask]**2 - de[mask]**2, weights=de[mask]**-2)
-            a[i,1] = np.average(dm[mask]**2, weights=de[mask]**-2)
-            a[i,2] = dm[mask].var()
+            a[i,0] = np.average(dm[mask]**2 - de[mask]**2, weights=de[mask]**-2) # SF2_cw
+            a[i,1] = np.average(dm[mask]**2, weights=de[mask]**-2) # SF2_w
+            a[i,2] = dm[mask].var() # dm_var
+        a[i,3] = int(mask.sum()) # n
 
-    return {f'f{j}_{i}':a[i,0] for j in range(n_features) for i in range(n_points)}
+    return {f'{key}_{mjd_edges[i]}_{mjd_edges[i+1]}':a[i,j] for i in range(n_points) for j, key in enumerate(features)}
+
+
 
 def average_nightly_obs(group):
     """
