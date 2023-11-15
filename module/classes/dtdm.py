@@ -218,11 +218,11 @@ class dtdm_raw_analysis():
 		# normalised_bin_counts = self.pooled_stats['n']/self.pooled_stats['n'].sum(axis=0)*1e3
 		# Norm per sqrt time bin (ie area propto counts)
 		normalised_bin_counts = (self.pooled_stats['n']/self.pooled_stats['n'].sum(axis=0))**0.5*1e2
-		error_norm = (2/self.pooled_stats['n'])**0.25
+		error_norm = (2/self.pooled_stats['n'])**0.12
 		for key in keys:
 			y = self.pooled_stats[key]
-			# if key.startswith('SF'):
-				# y[y<0] = np.nan
+			if key.startswith('SF'):
+				y[y<0] = np.nan
 			# else:
 				# y[:,1] = y[:,1]**0.5 # NOTE: Non SF errors are actually variances as of 08/08/23. If extract_features is run since then, remove this line.
 			
@@ -250,17 +250,16 @@ class dtdm_raw_analysis():
 		# ax.set(xlabel='$(m_i-m_j)^2 - \sigma_i^2 - \sigma_j^2$', title='Distribution of individual corrected SF values', **kwargs)
 		return (fig,ax)
 	
-	def fit_stats(self, key, model_name, ax=None, least_sq_kwargs={}, **kwargs):
+	def fit_stats(self, key, model_name, ax=None, least_sq_kwargs={}, plot_args={}, **kwargs):
+		y, yerr = self.pooled_stats[key].T 
 		if model_name == 'power_law':
 			from module.modelling.fitting import fit_power_law
-			y, yerr = self.pooled_stats[key].T
 			# yerr = 10*np.ones(y.shape) # to fit without errors
 			coefficient, exponent, pcov, model_values = fit_power_law(self.mjd_centres, y, yerr, **kwargs)
 			label = r'$\Delta t^{\beta}, \beta='+'{:.2f}'.format(exponent)+'$'
 			fitted_params = (coefficient, exponent)			
 		elif model_name == 'broken_power_law':
 			from module.modelling.fitting import fit_broken_power_law
-			y, yerr = self.pooled_stats[key].T
 			# yerr = 10*np.ones(y.shape) # to fit without errors
 			amplitude, break_point, index_1, index_2, pcov, model_values = fit_broken_power_law(self.mjd_centres, y, yerr, least_sq_kwargs=least_sq_kwargs, **kwargs)
 			print(f'fitted broken power law:\ny = {amplitude:.2f}*x^{index_1:.2f} for x < {break_point:.2f}\ny = {amplitude:.2f}*x^{index_2:.2f} for x > {break_point:.2f}')
@@ -269,13 +268,11 @@ class dtdm_raw_analysis():
 		elif model_name == 'broken_power_law_minimize':
 			from module.modelling.fitting import fit_minimize, cost_function
 			from module.modelling.models import bkn_pow_smooth
-			y, yerr = self.pooled_stats[key].T
 			fitted_params, _, model_values = fit_minimize(bkn_pow_smooth, cost_function, self.mjd_centres, y, yerr, **kwargs)
 			print(f'fitted broken power law:\ny = {fitted_params[0]:.2f}*x^{fitted_params[2]:.2f} for x < {fitted_params[1]:.2f}\ny = {fitted_params[0]:.2f}*x^{fitted_params[3]:.2f} for x > {fitted_params[1]:.2f}')
 			label = 'broken power law'
 		elif model_name == 'DRW SF':
 			from module.modelling.fitting import fit_DRW_SF
-			y, yerr = self.pooled_stats[key].T
 			tau, SF_inf, pcov, model_values = fit_DRW_SF(self.mjd_centres, y, yerr, **kwargs)
 			print(f'fitted DRW SF:\ntau = {tau:.2f}\nSF_inf = {SF_inf:.2f}')
 			label = 'DRW SF'
@@ -283,32 +280,79 @@ class dtdm_raw_analysis():
 
 		elif model_name == 'mod DRW SF':
 			from module.modelling.fitting import fit_mod_DRW_SF
-			y, yerr = self.pooled_stats[key].T
 			tau, SF_inf, beta, pcov, model_values = fit_mod_DRW_SF(self.mjd_centres, y, yerr, **kwargs)
 			print(f'fitted mod DRW SF:\ntau = {tau:.2f}\nSF_inf = {SF_inf:.2f}\nbeta = {beta:.2f}')
 			label = 'mod DRW SF'
 			fitted_params = (tau, SF_inf, beta)
 			
 		if ax is not None:
-			ax.plot(*model_values, lw=1.5, ls='-.', label=label)		
+			ax.plot(*model_values, ls='-.', label=label, **plot_args)		
 			ax.legend()
 
 		return fitted_params
 
-	def plot_comparison_data(self, ax, name='macleod'):
+	def fit_stats_prop(self, key, model_name, ax=None, least_sq_kwargs={}, plot_args={}, **kwargs):
+		fitted_params_ = []
+		for group_idx in range(self.n_groups):
+			y, yerr = self.pooled_stats[key][group_idx].T
+			x = self.mjd_centres[group_idx]
+			if model_name == 'power_law':
+				from module.modelling.fitting import fit_power_law
+				# yerr = 10*np.ones(y.shape) # to fit without errors
+				coefficient, exponent, pcov, model_values = fit_power_law(x, y, yerr, **kwargs)
+				label = r'$\Delta t^{\beta}, \beta='+'{:.2f}'.format(exponent)+'$'
+				fitted_params = (coefficient, exponent)			
+			elif model_name == 'broken_power_law':
+				from module.modelling.fitting import fit_broken_power_law
+				# yerr = 10*np.ones(y.shape) # to fit without errors
+				amplitude, break_point, index_1, index_2, pcov, model_values = fit_broken_power_law(x, y, yerr, least_sq_kwargs=least_sq_kwargs, **kwargs)
+				# print(f'fitted broken power law:\ny = {amplitude:.2f}*x^{index_1:.2f} for x < {break_point:.2f}\ny = {amplitude:.2f}*x^{index_2:.2f} for x > {break_point:.2f}')
+				label = 'broken power law'
+				fitted_params = (amplitude, break_point, index_1, index_2)
+			elif model_name == 'broken_power_law_minimize':
+				from module.modelling.fitting import fit_minimize, cost_function
+				from module.modelling.models import bkn_pow_smooth
+				fitted_params, _, model_values = fit_minimize(bkn_pow_smooth, cost_function, x, y, yerr, **kwargs)
+				# print(f'fitted broken power law:\ny = {fitted_params[0]:.2f}*x^{fitted_params[2]:.2f} for x < {fitted_params[1]:.2f}\ny = {fitted_params[0]:.2f}*x^{fitted_params[3]:.2f} for x > {fitted_params[1]:.2f}')
+				label = 'broken power law'
+			elif model_name == 'DRW SF':
+				from module.modelling.fitting import fit_DRW_SF
+				tau, SF_inf, pcov, model_values = fit_DRW_SF(x, y, yerr, **kwargs)
+				# # print(f'fitted DRW SF:\ntau = {tau:.2f}\nSF_inf = {SF_inf:.2f}')
+				label = 'DRW SF'
+				fitted_params = (tau, SF_inf)
+
+			elif model_name == 'mod DRW SF':
+				from module.modelling.fitting import fit_mod_DRW_SF
+				tau, SF_inf, beta, pcov, model_values = fit_mod_DRW_SF(x, y, yerr, **kwargs)
+				# print(f'fitted mod DRW SF:\ntau = {tau:.2f}\nSF_inf = {SF_inf:.2f}\nbeta = {beta:.2f}')
+				label = 'mod DRW SF'
+				fitted_params = (tau, SF_inf, beta)
+				
+			if ax is not None:
+				ax.plot(*model_values, lw=1.5, ls='-.', label=label, **plot_args)		
+				# ax.legend()
+
+			fitted_params_.append(fitted_params)
+		return fitted_params_
+
+	def plot_comparison_data(self, ax, name='macleod', **kwargs):
 		# f = lambda x: 0.01*(x**0.443)
 		# ax.plot(self.mjd_centres, f(self.mjd_centres), lw=0.5, ls='--', color='b', label='MacLeod 2012')
 		if name=='macleod':
-			x,y = np.loadtxt(cfg.D_DIR + 'archive/Macleod2012/SF/macleod2012.csv', delimiter=',').T
-			ax.scatter(x, y, color='k')
-			ax.plot(x, y, label = 'Macleod 2012', lw=2, ls='--', color='k')
+			x,y = pd.read_csv(cfg.W_DIR + 'assets/comparison_data/macleod2012_fig5.csv', comment='#').values.T
+			ax.plot(x, y, label = 'Macleod 2012', **kwargs)
 		elif name=='caplar':
 			dt, dm = pd.read_csv(cfg.W_DIR + 'assets/comparison_data/caplar2020_fig4.csv', comment='#').values.T
 			dt = dt*365.25
-			ax.scatter(dt, -dm, color='k', s=0.5, label='Caplar 2020')
+			ax.scatter(dt, -dm, color='k', s=0.5, label='Caplar et al. 2020', **kwargs)
+		elif name=='stone':
+			dt, dm = pd.read_csv(cfg.W_DIR + 'assets/comparison_data/stone2022_fig10.csv', comment='#').values.T
+			ax.plot(dt, dm, label='Stone et al. 2022', **kwargs)
+			# ax.scatter(dt, dm, color='k', s=0.5, label='Stone et al. 2022', **kwargs)
 		# elif name=='morganson':
 
-	def plot_stats_property(self, keys, figax, macleod=False, fill_between=False, **kwargs):
+	def plot_stats_property(self, keys, figax, macleod=False, fill_between=False, shift=False, **kwargs):
 		if figax is None:
 			fig, ax = plt.subplots(1,1, figsize=(10,7))
 		else:
@@ -337,20 +381,27 @@ class dtdm_raw_analysis():
 		else:
 			elinewdith = 0.2
 			markeredgewidth = 0.2
+
+		key_centres = (self.bounds_values[1:] + self.bounds_values[:-1])/2
 		for group_idx in range(self.n_groups):
 			error_norm = (2/self.pooled_stats['n'][group_idx])**0.1
 			for key in keys:
 				y = self.pooled_stats[key][group_idx]
-				mask = abs(y[:,0]-y[:,0].mean()) > 10*y[:,0].std() # Note this is a hack to remove the large values from the plot
-				y[mask, :] = np.nan,np.nan 
+				if key.startswith('SF'):
+					y[y<0] = np.nan
+				# mask = abs(y[:,0]-y[:,0].mean()) > 10*y[:,0].std() # Note this is a hack to remove the large values from the plot
+				# y[mask, :] = np.nan,np.nan 
 				color = cmap.gist_earth(group_idx/self.n_groups)
-				ax.errorbar(self.mjd_centres[group_idx], y[:,0], yerr=y[:,1]*error_norm,
+				x = self.mjd_centres[group_idx].copy()
+				if shift:
+					x /= 10**(key_centres[group_idx, np.newaxis])
+				ax.errorbar(x, y[:,0], yerr=y[:,1]*error_norm,
 							capsize=5,
 							lw=0.5,
 							elinewidth=elinewdith,
 							markeredgewidth=markeredgewidth)#, color=color) # square root this
 				# make the size of the scatter points proportional to the number of points in the bin
-				ax.scatter(self.mjd_centres[group_idx], y[:,0], s=normalised_bin_counts[group_idx],
+				ax.scatter(x, y[:,0], s=normalised_bin_counts[group_idx],
 	       				   alpha=0.6,
 						   label=self.label_range_val[group_idx])#, color=color)
 
@@ -368,7 +419,7 @@ class dtdm_raw_analysis():
 			except:
 				pass
 
-		ax.set(xlabel='Rest frame time lag (days)', title='{}, {}'.format(keys[0], self.obj), **kwargs)
+		ax.set(xlabel='Rest frame time lag (days)', **kwargs)
 
 		return (fig,ax)
 
