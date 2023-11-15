@@ -122,22 +122,3 @@ def create_mask_from_bounds(df, bounds):
     Create a boolean mask for a dataframe based on bounds provided.
     """
     return np.all([df[key].between(bound[0], bound[1]).values for key, bound in bounds.items()], axis=0)
-
-def create_mask_lambda_lbol(df, threshold=100, n=15, l_low=1000, l_high=5000, L_low=45.2, L_high=47.2):
-    import itertools
-
-    Lbol_edges   = np.linspace(L_low, L_high, n)
-    lambda_edges = np.linspace(l_low, l_high, n)
-
-    # create a series of 2d bins from the edges
-    Lbol_bins = pd.cut(df['Lbol'], Lbol_edges, labels=False)
-    lambda_bins = pd.cut(df['wavelength'], lambda_edges, labels=False)
-
-    # masks = [(Lbol_bins == L).values & (lambda_bins == l).values for l,L in itertools.product(range(n-1), range(n-1))]
-    masks_full = {(l,L):(Lbol_bins == L).values & (lambda_bins == l).values for l,L in itertools.product(range(n-1), range(n-1))}
-    mask_dict = {key:value for key,value in masks_full.items() if (value.sum() > threshold) and (key[0] % 2 == 0) and (key[1] % 2 == 0)}
-    
-    for key, mask in mask_dict.items():
-        print(f"Number of objects in bin {key}: {np.sum(mask)}")
-
-    return mask_dict

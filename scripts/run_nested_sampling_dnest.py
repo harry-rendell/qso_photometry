@@ -5,7 +5,7 @@ import os
 import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from module.config import cfg
-from module.preprocessing import data_io, parse, color_transform
+from module.preprocessing import parse, binning, color_transform
 from module.modelling import fitting
 from module.assets import load_vac
 import pandas as pd
@@ -91,7 +91,7 @@ if __name__ == "__main__":
     skewfits = pd.concat(skewfits).dropna().sort_index()
     skewfits = parse.filter_data(skewfits, bounds={'a':(0,0.01),'loc':(2,5),'scale':(0.1,1), 'z':(0.2,5)}, verbose=True)
 
-    mask_dict = parse.create_mask_lambda_lbol(skewfits, n = 15, l_low = 1000, l_high = 5000, L_low = 45.2, L_high = 47.2)
+    mask_dict = binning.create_mask_lambda_lbol(skewfits, n = 15, l_low = 1000, l_high = 5000, L_low = 45.2, L_high = 47.2)
     fits = [skewfits[['a','loc','scale','z']][mask].sample(100).values for mask in mask_dict.values()]
     print(f'mcmc dimensionality: {len(fits)+1}')
 
