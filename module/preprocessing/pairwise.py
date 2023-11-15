@@ -3,19 +3,28 @@ import pandas as pd
 import os
 from ..config import cfg
 from .parse import split_into_non_overlapping_chunks, create_mask_from_bounds
-from scipy.stats import skew, skewtest, kurtosis, kurtosistest
+from scipy.stats import skew, kurtosis
 
 def groupby_dtdm_between(df, args):
+    """
+    NOTE: Unused
+    """
     for index, group in df.groupby(df.index.name):
         return calculate_dtdm_between_surveys(group, *args)
     
 def groupby_dtdm_within(df, args):
+    """
+    NOTE: Unused
+    """
     df_list = []
     for index, group in df.groupby(df.index.name):
         df_list.append(calculate_dtdm_within_surveys(group))
     return pd.concat(df_list, ignore_index=True)
 
 def calculate_dtdm_between_surveys(group, sid_1, sid_2):
+    """
+    NOTE: Unused
+    """
     mask = (group['sid']==sid_1).values
     n = mask.sum()*(~mask).sum()
 
@@ -31,6 +40,9 @@ def calculate_dtdm_between_surveys(group, sid_1, sid_2):
     return pd.DataFrame({'uid':uid, 'dt':dtdm[:,:,0].ravel(), 'dm':dtdm[:,:,1].ravel(), 'de':dmagerr.ravel(), 'dm2_de2': (dtdm[:,:,1]**2 - dmagerr**2).ravel()})
 
 def calculate_dtdm_within_surveys(group):
+    """
+    NOTE: Unused
+    """
     mjd_mag = group[['mjd','mag']].values
     magerr = group['magerr'].values
     n = len(mjd_mag)
@@ -147,7 +159,8 @@ def calculate_stats_looped(df, kwargs):
     results['n'] = np.zeros(shape=(n_points), dtype='uint64')
 
     if inner:
-        df = df[(np.sqrt(df['dsid'])%1==0).values]
+        df = df[df['dsid'].isin([25, 49, 121]).values] # Allow sdss-sdss, ps-ps, ztf-ztf only
+        # df = df[df['dsid'].isin([35, 25, 49, 121]).values] # Allow sdss-ps, sdss-sdss, ps-ps, ztf-ztf only
 
     mask1 = df['dm'].notna().values & df['de'].notna().values
     mask2 = create_mask_from_bounds(df, cfg.PREPROC.dtdm_bounds[kwargs['obj']])
@@ -170,9 +183,11 @@ def calculate_stats_looped(df, kwargs):
             results['median b'][j,(0,1)] = median, subset['dm'].var()
 
             if n>8:
-                results['skewness'][j,(0,1)] = skew(subset['dm']), skewtest(subset['dm'])[1]
+                skew_err = (6*n*(n-1)/((n-2)*(n+1)*(n+3)))**0.5
+                results['skewness'][j,(0,1)] = skew(subset['dm'], nan_policy='omit'), skew_err
             if n>20:
-                results['kurtosis'][j,(0,1)] = kurtosis(subset['dm']), kurtosistest(subset['dm'])[1]
+                kurt_err = 2*skew_err*( (n**2-1)/((n-3)*(n+5)) )**0.5
+                results['kurtosis'][j,(0,1)] = kurtosis(subset['dm'], nan_policy='omit'), kurt_err
             
             weights = 0.5*subset['de']**-4
 
@@ -256,10 +271,12 @@ def calculate_stats_looped_key(df, kwargs):
                 results['mean weighted a'][j,group_idx,(0,1)] = np.average(subset['dm'], weights = weights), 1/weights.sum()
                 results['mean weighted b'][j,group_idx,(0,1)] = np.average(subset['dm'], weights = weights), subset['dm'].var() 
                 if n>8:
-                    results['skewness'][j,group_idx,(0,1)] = skew(subset['dm']), skewtest(subset['dm'])[1]
-                if n>20:
-                    results['kurtosis'][j,group_idx,(0,1)] = kurtosis(subset['dm']), kurtosistest(subset['dm'])[1]
-                
+                    skew_err = (6*n*(n-1)/((n-2)*(n+1)*(n+3)))**0.5
+                    results['skewness'][j,group_idx,(0,1)] = skew(subset['dm']), skew_err
+                if n>10:
+                    kurt_err = 2*skew_err*( (n**2-1)/((n-3)*(n+5)) )**0.5
+                    results['kurtosis'][j,group_idx,(0,1)] = kurtosis(subset['dm']), kurt_err
+                    
                 weights = 0.5*subset['de']**-4
 
                 dm2_de2 = subset['dm']**2 - subset['de']**2

@@ -35,7 +35,7 @@ def fit(function, x, y, yerr, n_model_points=None, least_sq_kwargs={}, **curve_f
     # Generate values from the model
     model_values = generate_model_values(function, popt, x, n_model_points=n_model_points, value_range=value_range)
     rms_error = rmse(y[mask], generate_model_values(function, popt, x[mask])[0])
-    print(f'RMSE: {rms_error:.5f}')
+    # print(f'RMSE: {rms_error:.5f}')
     return popt, pcov, model_values
 
 def fit_minimize(fit_function, cost_function, x, y, yerr, n_model_points=None, **kwargs):
