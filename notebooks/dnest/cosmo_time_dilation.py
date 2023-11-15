@@ -21,7 +21,7 @@ import os
 import sys
 sys.path.insert(0, os.path.join(os.getcwd(), "..", ".."))
 from module.config import cfg
-from module.preprocessing import data_io, parse, binning
+from module.preprocessing import parse, binning
 from module.preprocessing.color_transform import calculate_wavelength
 from module.assets import load_vac
 import pandas as pd
@@ -65,7 +65,7 @@ for band in 'gri':
 skewfits = pd.concat(skewfits).dropna().sort_index()
 skewfits = parse.filter_data(skewfits, bounds={'a':(0,0.01),'loc':(2,5),'scale':(0.1,1), 'z':(0.2,5)}, verbose=True)
 
-mask_dict = parse.create_mask_lambda_lbol(skewfits, n = 15, l_low = 1000, l_high = 5000, L_low = 45.2, L_high = 47.2)
+mask_dict = binning.create_mask_lambda_lbol(skewfits, n = 15, l_low = 1000, l_high = 5000, L_low = 45.2, L_high = 47.2)
 fits = [skewfits[['a','loc','scale','z']][mask].sample(100).values for mask in mask_dict.values()]
 print(f'mcmc dimensionality: {len(fits)+1}')
 
@@ -92,7 +92,7 @@ lambda_edges = np.linspace(l_low, l_high, n)
 # masks_full = {(l,L):(Lbol_bins == L).values & (lambda_bins == l).values for l,L in itertools.product(range(n-1), range(n-1))}
 # masks = {key:value for key,value in masks_full.items() if (value.sum() > 250) and (key[0] % 3 == 0) and (key[1] % 3 == 0)}
 
-masks = parse.create_mask_lambda_lbol(sigs, n, l_low, l_high, L_low, L_high)
+masks = binning.create_mask_lambda_lbol(sigs, n, l_low, l_high, L_low, L_high)
 
 fig, ax = plt.subplots(1,1, figsize=(10,10))
 binrange = np.array([[l_low-100, l_high+100], [L_low-0.5, L_high+0.5]])
