@@ -6,7 +6,7 @@ import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from module.config import cfg
 from module.preprocessing import data_io, parse, pairwise, binning
-from module.classes.analysis import analysis
+from module.assets import load_vac
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -18,8 +18,7 @@ if __name__ == "__main__":
     parser.add_argument("--n_bins",  type=int, required=True, help="Number of time bins to use")
     parser.add_argument("--n_rows",  type=int, help="Number of rows to read in from the photometric data")
     parser.add_argument("--dry_run", action='store_true', help="Whether to do a dry run (i.e. don't save the output)")
-    parser.add_argument("--frame",   type=str, help=("OBS or REST to specify rest frame or observer frame time. \n"
-                                                   "Defaults to rest frame for Quasars and observer time for Stars.\n"))
+    parser.add_argument("--frame",   type=str, default='REST', help="OBS or REST to specify rest frame or observer frame time for Quasars")
     args = parser.parse_args()
     # Print the arguments for the log
     print(time.strftime('%H:%M:%S %d/%m/%y'))
@@ -27,8 +26,12 @@ if __name__ == "__main__":
     
     OBJ = 'qsos'
     ID = 'uid'
-    mjd_key = 'mjd_rf'
-
+    if args.frame == 'OBS':
+        mjd_key = 'mjd'
+    elif args.frame == 'REST':
+        mjd_key = 'mjd_rf'
+    else:
+        raise ValueError(f'frame should be OBS or REST, not {args.frame}')
     nrows = args.n_rows
     if args.n_cores:
         cfg.USER.N_CORES = args.n_cores
@@ -36,12 +39,11 @@ if __name__ == "__main__":
     n_points = args.n_bins
     log_or_lin = args.name
 
-    dr = analysis(ID, OBJ, 'r')
-    dr.read_vac(catalogue_name='dr16q_vac')
-    dr.vac = parse.filter_data(dr.vac, cfg.PREPROC.VAC_BOUNDS, dropna=False)
+    vac = load_vac(OBJ, 'dr16q_vac')
+    vac = parse.filter_data(vac, cfg.PREPROC.VAC_BOUNDS, dropna=False)
 
     bounds_z = np.array([-3.5,-1.5,-1,-0.5,0,0.5,1,1.5,3.5])
-    groups, bounds_values = binning.calculate_groups(dr.vac[args.property], bounds = bounds_z)
+    groups, bounds_values = binning.calculate_groups(vac[args.property], bounds = bounds_z)
     n_groups = len(groups)
     
     # keyword arguments to pass to our reading function

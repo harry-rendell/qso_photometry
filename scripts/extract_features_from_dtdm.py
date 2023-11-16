@@ -18,8 +18,7 @@ if __name__ == "__main__":
     parser.add_argument("--n_bins",  type=int, required=True, help="Number of time bins to use")
     parser.add_argument("--n_rows",  type=int, help="Number of rows to read in from the photometric data")
     parser.add_argument("--dry_run", action='store_true', help="Whether to do a dry run (i.e. don't save the output)")
-    parser.add_argument("--frame",   type=str, help=("OBS or REST to specify rest frame or observer frame time. \n"
-                                                   "Defaults to rest frame for Quasars and observer time for Stars.\n"))
+    parser.add_argument("--frame",   type=str, default='REST', help="OBS or REST to specify rest frame or observer frame time for Quasars")
     parser.add_argument("--inner", action='store_true', default=False, help="Apply pairwise analysis to points only within a survey")
     parser.add_argument("--mag_max", type=float, help="Maximum magnitude to use for the analysis")
     
@@ -31,13 +30,19 @@ if __name__ == "__main__":
     OBJ = args.object
     if OBJ == 'qsos':
         ID = 'uid'
-        mjd_key = 'mjd_rf'
+        if args.frame == 'OBS':
+            mjd_key = 'mjd'
+        elif args.frame == 'REST':
+            mjd_key = 'mjd_rf'
+        else:
+            raise ValueError(f'frame should be OBS or REST, not {args.frame}')
     elif OBJ == 'calibStars':
         ID = 'uid_s'
         mjd_key = 'mjd'
+        args.frame = 'REST'
     elif OBJ == 'sim':
         ID = 'uid'
-        mjd_key = 'mjd'
+        mjd_key = 'mjd'    
 
     nrows = args.n_rows
     if args.n_cores:

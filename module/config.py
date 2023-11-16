@@ -153,7 +153,7 @@ __C.PREPROC.pairwise_dtypes = {'uid': np.uint32,
 
 # Bounds to be applied in when running calculate_stats_looped
 __C.PREPROC.dtdm_bounds = {'qsos':       {'dm': (-5, 5), 'de': (1e-10, 2)},
-                           'calibStars': {'dm': (-0.75, 0.75), 'de': (0, 1)},
+                           'calibStars': {'dm': (-5, 5), 'de': (0, 1)},
                            'sim':        {'dm': (-5, 5), 'de': (1e-10, 2)}}
 
 # Limiting magnitudes

@@ -5,9 +5,9 @@ import os
 import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from module.config import cfg
-from module.preprocessing import data_io, features
+from module.preprocessing import data_io, lightcurve_statistics
 from module.preprocessing.binning import construct_T_edges
-
+from functools import partial
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -16,9 +16,8 @@ if __name__ == "__main__":
     parser.add_argument("--n_cores", type=int, required=True, help="Number of cores to use. If left blank, then this value is taken from N_CORES in the config file.")
     parser.add_argument("--n_bins",  type=int, required=True, help="Number of time bins to use")
     parser.add_argument("--n_rows",  type=int, help="Number of rows to read in from the photometric data")
-    parser.add_argument("--dry_run", action='store_true', help="Whether to do a dry run (i.e. don't save the output)")
     parser.add_argument("--frame",   type=str, help=("OBS or REST to specify rest frame or observer frame time. \n"
-                                                   "Defaults to rest frame for Quasars and observer time for Stars.\n"))
+                                                     "Defaults to rest frame for Quasars and observer time for Stars.\n"))
     parser.add_argument("--inner", action='store_true', default=False, help="Apply pairwise analysis to points only within a survey")
     args = parser.parse_args()
     # Print the arguments for the log
@@ -45,9 +44,9 @@ if __name__ == "__main__":
         MAX_DTS = cfg.PREPROC.MAX_DT
     # keyword arguments to pass to our reading function
     kwargs = {'obj':OBJ,
-              'dtypes': cfg.PREPROC.dtdm_dtypes,
+              'dtypes': cfg.PREPROC.lc_dtypes,
               'nrows': nrows,
-              'usecols': [ID,'dt','dm','de','dsid'],
+              'usecols': [...], # TODO: decide on columns
               'ID':ID,
               'mjd_key':mjd_key,
               'inner':args.inner,
@@ -67,8 +66,7 @@ if __name__ == "__main__":
 
         # add these back into the kwargs dictionary
         kwargs['band'] = band
-        kwargs['basepath'] = cfg.D_DIR + f'merged/{OBJ}/clean/'
-        kwargs['mjd_edges'] = mjd_edges
+        kwargs['basepath'] = cfg.D_DIR + f'merged/{OBJ}/clean'
 
         start = time.time()
         print('band:',band)
@@ -78,8 +76,8 @@ if __name__ == "__main__":
         # output_dir = os.path.join(cfg.D_DIR, f'computed/{OBJ}/dtdm_stats/all/{log_or_lin}/{band}')
         # print(f'creating output directory if it does not exist: {output_dir}')
         # os.makedirs(output_dir, exist_ok=True)
-
-        results = data_io.dispatch_function(features.groupby_apply_features, chunks=None, max_processes=cfg.USER.N_CORES, concat_output=True, **kwargs)
-        results.to_csv(cfg.D_DIR + f'computed/{OBJ}/features/features_{band}.csv')
+        f = partial(data_io.groupby_apply_dispatcher, lightcurve_statistics...) # TODO: add relevant function
+        results = data_io.dispatch_function(f, chunks=None, max_processes=cfg.USER.N_CORES, concat_output=True, **kwargs)
+        results.to_csv(cfg.D_DIR + f'computed/{OBJ}/features/..._{band}.csv') # TODO: decide on a filename
 
         print('Elapsed:',time.strftime("%Hh %Mm %Ss",time.gmtime(time.time()-start)))

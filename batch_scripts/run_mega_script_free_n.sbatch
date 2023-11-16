@@ -13,7 +13,7 @@
 # source ~/.bashrc_old
 
 # use same number of cores as cpus-per-task above
-n_cores=30
+n_cores=40
 # surveys='sdss ps ztf'
 surveys='ssa sdss ps ztf'
 bands='gri'
@@ -67,24 +67,18 @@ bands='gri'
 #------------------------------------------------------------------------------
 # Extract and save features from dtdm
 # ------------------------------------------------------------------------------
-# python scripts/extract_features_from_dtdm.py --object='calibStars' --band=$bands --n_cores=$n_cores --name='log_18_2' --n_bins=18 --frame='OBS' #>& batch_scripts/logs/log_extract_features_from_dtdm_calibStars.log
-# python scripts/extract_features_from_dtdm.py --object='qsos'       --band=$bands --n_cores=$n_cores --name='log_20' --n_bins=20 >& batch_scripts/logs/log_extract_features_from_dtdm_qsos.log
-# python scripts/extract_features_from_dtdm.py --object='calibStars' --band=$bands --n_cores=$n_cores --name='log_30_obs' --n_bins=30 --frame=OBS >& batch_scripts/logs/log_extract_features_from_dtdm_calibStars.log
-# python scripts/extract_features_from_dtdm.py --object='qsos'       --band=$bands --n_cores=$n_cores --name='log_30_obs' --n_bins=30 --frame=OBS >& batch_scripts/logs/log_extract_features_from_dtdm_qsos.log
-
+# python scripts/extract_features_from_dtdm.py --object='calibStars' --band=$bands --n_cores=$n_cores --name='log_30' --n_bins=30 >& batch_scripts/logs/log_extract_features_from_dtdm_calibStars.log
+# python scripts/extract_features_from_dtdm.py --object='qsos'       --band=$bands --n_cores=$n_cores --name='log_30' --n_bins=30 >& batch_scripts/logs/log_extract_features_from_dtdm_qsos.log
 # python scripts/extract_features_from_dtdm.py --object='calibStars' --band=$bands --n_cores=$n_cores --name='log_20_inner' --n_bins=20 --inner >& batch_scripts/logs/log_extract_features_from_dtdm_calibStars.log
 # python scripts/extract_features_from_dtdm.py --object='qsos'       --band=$bands --n_cores=$n_cores --name='log_20_inner' --n_bins=20 --inner >& batch_scripts/logs/log_extract_features_from_dtdm_qsos.log
 # python scripts/extract_features_from_dtdm.py --object='qsos'       --band=$bands --n_cores=$n_cores --name='log_30' --n_bins=30 >& batch_scripts/logs/log_extract_features_from_dtdm_qsos.log
-# python scripts/extract_features_from_dtdm.py --object='qsos'       --band=$bands --n_cores=$n_cores --name='log_20_inner_except_sdss_ps' --n_bins=20 --inner >& batch_scripts/logs/log_extract_features_from_dtdm.log
-# python scripts/extract_features_from_dtdm.py --object='calibStars' --band=$bands --n_cores=$n_cores --name='log_20_inner_except_sdss_ps' --n_bins=20 --inner >& batch_scripts/logs/log_extract_features_from_dtdm.log
 
 #------------------------------------------------------------------------------
 # Extract and save features from grouped dtdm (only applied to qsos)
 # ------------------------------------------------------------------------------
-# python scripts/extract_features_from_dtdm_group.py --object='qsos' --band=$bands --property='Lbol' --n_cores=$n_cores --name='log_30_obs' --n_bins=30 --frame=OBS >& batch_scripts/logs/log_extract_features_from_dtdm_group_qsos_lbol.log
-# python scripts/extract_features_from_dtdm_group.py --object='qsos' --band=$bands --property='Lbol' --n_cores=$n_cores --name='log_20' --n_bins=20 #>& batch_scripts/logs/log_extract_features_from_dtdm_group_qsos_lbol.log
-# python scripts/extract_features_from_dtdm_group.py --object='qsos' --band=$bands --property='MBH' --n_cores=$n_cores --name='log_20' --n_bins=20 #>& batch_scripts/logs/log_extract_features_from_dtdm_group_qsos_mbh.log
-# python scripts/extract_features_from_dtdm_group.py --object='qsos' --band=$bands --property='nEdd' --n_cores=$n_cores --name='log_20' --n_bins=20 #>& batch_scripts/logs/log_extract_features_from_dtdm_group_qsos_nedd.log
+# python scripts/extract_features_from_dtdm_group.py --object='qsos' --band=$bands --property='Lbol' --n_cores=$n_cores --name='log_30' --n_bins=30 >& batch_scripts/logs/log_extract_features_from_dtdm_group_qsos_lbol.log
+# python scripts/extract_features_from_dtdm_group.py --object='qsos' --band=$bands --property='MBH' --n_cores=$n_cores --name='log_30' --n_bins=30 >& batch_scripts/logs/log_extract_features_from_dtdm_group_qsos_mbh.log
+# python scripts/extract_features_from_dtdm_group.py --object='qsos' --band=$bands --property='nEdd' --n_cores=$n_cores --name='log_30' --n_bins=30 >& batch_scripts/logs/log_extract_features_from_dtdm_group_qsos_nedd.log
 
 #------------------------------------------------------------------------------
 # Bin dtdm data
@@ -103,10 +97,8 @@ bands='gri'
 #------------------------------------------------------------------------------
 # Extract and save features from light curves
 #------------------------------------------------------------------------------
-python scripts/generate_features_from_dtdm.py --object='qsos'       --band='gri' --n_cores=$n_cores --n_bins=10 >& batch_scripts/logs/log_generate_features_qsos.log
-python scripts/generate_features_from_dtdm.py --object='qsos'       --band='gri' --n_cores=$n_cores --n_bins=20 >& batch_scripts/logs/log_generate_features_qsos.log
-# python scripts/generate_features_from_dtdm.py --object='calibStars' --band='gri' --n_cores=$n_cores --n_bins=10 >& batch_scripts/logs/log_generate_features_calibStars.log
-# python scripts/generate_features.py --object='calibStars' --band='r' --n_cores=$n_cores --n_rows=1000 --n_bins=10 >& batch_scripts/logs/log_generate_features_calibStars.log
+# python scripts/generate_features_from_dtdm.py --object='qsos'       --band=$bands --n_cores=$n_cores --n_bins=10 >& batch_scripts/logs/log_generate_features_qsos.log
+# python scripts/generate_features.py --object='calibStars' --band=$bands --survey=$surveys --n_cores=$n_cores >& batch_scripts/logs/log_generate_features_calibStars.log
 
 #------------------------------------------------------------------------------
 # Fit CARMA models
@@ -120,9 +112,12 @@ python scripts/generate_features_from_dtdm.py --object='qsos'       --band='gri'
 # python scripts/generate_features.py --object='calibStars' --band=$bands --survey=$surveys --n_cores=$n_cores >& batch_scripts/logs/log_generate_features_calibStars.log
 
 #------------------------------------------------------------------------------
-# Fit DRW models using MCMC
+# Fit DRW models using MCMCls
 #------------------------------------------------------------------------------
-# python scripts/fit_drw_mcmc.py --object='qsos' --band='gri' --n_cores=$n_cores --best_phot --frame='obs' --nobs_min=30 --survey='sdss ps ztf' >& batch_scripts/logs/log_fit_drw_mcmc.log
+# TODO: rerun this with surveys = 'sdss ps ztf'
+# python scripts/fit_drw_mcmc.py --object='qsos' --band='g' --n_cores=$n_cores --best_phot --frame='obs' --nobs_min=100 >& batch_scripts/logs/log_fit_drw_mcmc_g.log
+# python scripts/fit_drw_mcmc.py --object='qsos' --band='r' --n_cores=$n_cores --best_phot --frame='obs' --nobs_min=100 >& batch_scripts/logs/log_fit_drw_mcmc_r.log
+# python scripts/fit_drw_mcmc.py --object='qsos' --band='i' --n_cores=$n_cores --best_phot --frame='obs' --nobs_min=100 >& batch_scripts/logs/log_fit_drw_mcmc_i.log
 
 #------------------------------------------------------------------------------
 # Generate simulated light curves, compute dtdm and extract features
@@ -132,20 +127,7 @@ python scripts/generate_features_from_dtdm.py --object='qsos'       --band='gri'
 # python scripts/extract_features_from_dtdm.py --object='sim'       --band=$bands --n_cores=$n_cores --name='log_40' --n_bins=40 #>& batch_scripts/logs/log_extract_features_from_dtdm_qsos.log
 
 #------------------------------------------------------------------------------
-# Apply nested sampling using DNEST4 to DRW tau params for n = 1 hypothesis
+# Apply nested sampling to DRW tau params for n = 1 hypothesis
 #------------------------------------------------------------------------------
-# python scripts/run_nested_sampling_dnest.py --object='qsos' --band='gri' --n_cores=$n_cores --survey='sdss ps ztf' --nobs_min=30 >& batch_scripts/logs/log_run_nested_sampling_dnest.log
-
-#------------------------------------------------------------------------------
-# Apply nested sampling using Nautilus to DRW tau params
-#------------------------------------------------------------------------------
-# python scripts/run_nested_sampling_nautilus.py --object='qsos' --band='gri' --n_cores=$n_cores --survey='ztf'     --nobs_min=200 --threshold=300 --qsos_per_bin=100 --output_dir='nautilus_ztf_200_norm' >& batch_scripts/logs/log_run_nested_sampling_nautilus_ztf.log
-# python scripts/run_nested_sampling_nautilus.py --object='qsos' --band='gri' --n_cores=$n_cores --survey='ssa sdss ps ztf' --nobs_min=30 --threshold=35 --output_dir='nautilus_ssa_sdss_ps_ztf_30_fixed_n1' >& batch_scripts/logs/log_run_nested_sampling_nautilus_ssa_sdss_ps_ztf_fixed_n1.log
-# python scripts/run_nested_sampling_nautilus_test.py --object='qsos' --band='gri' --n_cores=$n_cores >& batch_scripts/logs/log_run_nested_sampling_nautilus_brewerdata.log
-
-# python scripts/fit_drw_mcmc.py --object='qsos' --band='gr' --n_cores=$n_cores --best_phot --frame='obs' --nobs_min=500 --survey='ztf' #>& batch_scripts/logs/log_fit_drw_mcmc_ztf.log
-
-#------------------------------------------------------------------------------
-# Caculate ADF 
-#------------------------------------------------------------------------------
-# python scripts/run_stationarity_test.py --object='qsos' --band='gri' --n_cores=$n_cores --survey='ssa sdss ps ztf' --nobs_min=10
+# Currently running on fcfs2
+python scripts/run_nested_sampling.py --object='qsos' --band='r' --n_cores=4 --best_phot --frame='obs' --nobs_min=0 >& batch_scripts/logs/log_run_nested_sampling_free_n.log

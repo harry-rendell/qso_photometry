@@ -13,7 +13,7 @@
 # source ~/.bashrc_old
 
 # use same number of cores as cpus-per-task above
-n_cores=30
+n_cores=22
 # surveys='sdss ps ztf'
 surveys='ssa sdss ps ztf'
 bands='gri'
@@ -103,8 +103,8 @@ bands='gri'
 #------------------------------------------------------------------------------
 # Extract and save features from light curves
 #------------------------------------------------------------------------------
-python scripts/generate_features_from_dtdm.py --object='qsos'       --band='gri' --n_cores=$n_cores --n_bins=10 >& batch_scripts/logs/log_generate_features_qsos.log
-python scripts/generate_features_from_dtdm.py --object='qsos'       --band='gri' --n_cores=$n_cores --n_bins=20 >& batch_scripts/logs/log_generate_features_qsos.log
+# python scripts/generate_features_from_dtdm.py --object='qsos'       --band='gri' --n_cores=$n_cores --n_bins=10 >& batch_scripts/logs/log_generate_features_qsos.log
+python scripts/generate_features_from_dtdm.py --object='qsos'       --band='gri' --n_cores=$n_cores --n_bins=20 >& batch_scripts/logs/log_generate_features_qsos2.log
 # python scripts/generate_features_from_dtdm.py --object='calibStars' --band='gri' --n_cores=$n_cores --n_bins=10 >& batch_scripts/logs/log_generate_features_calibStars.log
 # python scripts/generate_features.py --object='calibStars' --band='r' --n_cores=$n_cores --n_rows=1000 --n_bins=10 >& batch_scripts/logs/log_generate_features_calibStars.log
 
