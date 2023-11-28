@@ -27,13 +27,13 @@ def plot_groups(x, bounds, plot=False, hist_kwargs={}, ax_kwargs={}):
 
     return fig
 
-def plot_groups_lambda_lbol(df, mask_dict, n=15, l_low=1000, l_high=5000, L_low=45.2, L_high=47.2):
+def plot_groups_lambda_lbol(df, mask_dict, n_l=15, n_L=15, l_low=1000, l_high=5000, L_low=45.2, L_high=47.2):
     # Create matplotlib polygon with vertices at the bin edges of Lbol_edges and lambda_edges
     from matplotlib.collections import PatchCollection
     from matplotlib.patches import Rectangle
 
-    Lbol_edges   = np.linspace(L_low, L_high, n)
-    lambda_edges = np.linspace(l_low, l_high, n)
+    lambda_edges = np.linspace(l_low, l_high, n_l)
+    Lbol_edges   = np.linspace(L_low, L_high, n_L)
 
     # # create a series of 2d bins from the edges
     # Lbol_bins = pd.cut(sigs['Lbol'], Lbol_edges, labels=False)
@@ -48,7 +48,7 @@ def plot_groups_lambda_lbol(df, mask_dict, n=15, l_low=1000, l_high=5000, L_low=
     sns.histplot(data=df.reset_index(), x='wavelength',y='Lbol', bins=100, cmap='Spectral_r', binrange=binrange, ax=ax)
 
     vertices = [[lambda_edges[i], Lbol_edges[j]] for i,j in mask_dict.keys()]
-    squares = [Rectangle(vertex, width=(l_high-l_low)/(n-1), height=2/(n-1)) for vertex in vertices]
+    squares = [Rectangle(vertex, width=(l_high-l_low)/(n_l-1), height=(L_high-L_low)/(n_L-1)) for vertex in vertices]
     # add text to each square, showing the i, j indices
 
     p = PatchCollection(squares, alpha=1, lw=2, ec='k', fc='none')
@@ -57,6 +57,6 @@ def plot_groups_lambda_lbol(df, mask_dict, n=15, l_low=1000, l_high=5000, L_low=
 
 
     for i, j in mask_dict.keys():
-        ax.text(lambda_edges[i]+2000/(n-1), Lbol_edges[j]+1/(n-1), s=f'({i},{j})', ha='center', va='center', fontsize=8)
+        ax.text(lambda_edges[i]+0.5*(l_high-l_low)/(n_l-1), Lbol_edges[j]+0.5*(L_high-L_low)/(n_L-1), s=f'({i},{j})', ha='center', va='center', fontsize=8)
 
     return fig
