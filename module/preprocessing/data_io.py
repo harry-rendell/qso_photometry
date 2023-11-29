@@ -228,6 +228,10 @@ def groupby_apply_dispatcher(func, df, kwargs):
     if 'sid' in kwargs:
         assert (type(kwargs['sid']) is not int), 'sid must be a list or array, not an int'
         masks.append(df['sid'].isin(kwargs['sid']))
+
+    if 'dsid' in kwargs:
+        assert (type(kwargs['dsid']) is not int), 'dsid must be a list or array, not an int'
+        masks.append(df['dsid'].isin(kwargs['dsid']))
     
     if ('band' in kwargs) & ('band' in df.columns):
         masks.append(df['band'] == kwargs['band'])

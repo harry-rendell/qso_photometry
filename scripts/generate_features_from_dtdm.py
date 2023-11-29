@@ -19,6 +19,7 @@ if __name__ == "__main__":
     parser.add_argument("--frame",   type=str, help=("OBS or REST to specify rest frame or observer frame time. \n"
                                                      "Defaults to rest frame for Quasars and observer time for Stars.\n"))
     parser.add_argument("--inner", action='store_true', default=False, help="Apply pairwise analysis to points only within a survey")
+    parser.add_argument("--name", type=str, default='', help="Name to append to the output file")
     args = parser.parse_args()
     # Print the arguments for the log
     print(time.strftime('%H:%M:%S %d/%m/%y'))
@@ -51,7 +52,9 @@ if __name__ == "__main__":
               'mjd_key':mjd_key,
               'inner':args.inner,
               'features':['SF2_cw', 'SF2_w', 'dm_var', 'n'],
-              'n_points':n_points}
+              'n_points':n_points,
+              'dsid':[25, 49, 35, 15, 21, 33] # sdss-sdss, ps-ps, sdss-ps, ssa-sdss, ssa-ps, ssa-ztf
+              } 
     
     for band in args.band:
         # set the maximum time to use for this band
@@ -91,5 +94,5 @@ if __name__ == "__main__":
             if col.startswith('n'):
                 results[col] = results[col].astype(int)
         results[columns].to_csv(os.path.join(output_dir, f'SF_{args.n_bins}_bins.csv'))
-        np.savetxt(os.path.join(output_dir, f'mjd_edges_{args.n_bins}_bins.csv'), mjd_edges, delimiter=',', fmt='%d')
+        np.savetxt(os.path.join(output_dir, f'mjd_edges_{args.n_bins}_bins_{args.name}.csv'), mjd_edges, delimiter=',', fmt='%d')
         print('Elapsed:',time.strftime("%Hh %Mm %Ss",time.gmtime(time.time()-start)))
