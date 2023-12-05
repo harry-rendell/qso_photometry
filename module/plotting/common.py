@@ -66,12 +66,18 @@ def savefigs(fig, imgname, dirname, dpi=100, noaxis=False, **kwargs):
     # Remove extension if user has accidentally provided one
     imgname = imgname.split('.')[0]
 
-    if not os.path.exists(dirname):
+    if dirname == 'temp':
+        # Save to a temporary directory
+        pdf_path = os.path.join(cfg.W_DIR, 'temp')
+        png_path = os.path.join(cfg.W_DIR, 'temp')
+
+    elif not os.path.exists(dirname):
         # If we provide a relative path, assume that we're plotting straight to our overleaf project
         dirname = os.path.join(cfg.THESIS_DIR, dirname)
         assert os.path.exists(dirname), f"Relative path {dirname} does not exist"
         pdf_path = os.path.join(dirname, 'graphics')
         png_path = os.path.join(dirname, 'draft_graphics')
+        
     else:
         # If we provide an absolute path that exists, save both png and pdf to the same provided directory
         pdf_path = dirname
@@ -90,8 +96,9 @@ def savefigs(fig, imgname, dirname, dpi=100, noaxis=False, **kwargs):
         os.makedirs(os.path.join(png_path, os.path.dirname(imgname)), exist_ok=True)
         os.makedirs(os.path.join(pdf_path, os.path.dirname(imgname)), exist_ok=True)
 
-    fig.savefig(os.path.join(png_path,imgname)+'.png',dpi=dpi, **kwargs)
     fig.savefig(os.path.join(pdf_path,imgname)+'.pdf', **kwargs)
+    if dirname != 'temp':
+        fig.savefig(os.path.join(png_path,imgname)+'.png', dpi=dpi, **kwargs)
 
 # from  matplotlib import rcParams
 # rcParams['pdf.fonttype'] = 42
