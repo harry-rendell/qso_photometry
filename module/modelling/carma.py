@@ -20,11 +20,14 @@ def apply_drw_fit(group, kwargs):
         print('error with uid:', group.index[0],'\n',e,flush=True)
         sig, tau = np.nan, np.nan
     
-    if (tau > np.ptp(t)) | (tau < np.diff(t).min()):
-        # condition imposted by Yu 2022
+    try:
+        if (tau > np.ptp(t)) | (tau < np.diff(t).min()):
+            # condition imposted by Yu 2022
+            sig, tau = np.nan, np.nan
+    except:
         sig, tau = np.nan, np.nan
 
-    return {'sig':sig, 'tau':tau}
+    return {'sig':sig, 'tau':tau, 'mjd_ptp':np.ptp(t), 'n':len(t)}
 
 def apply_fit_drw_mcmc(group, kwargs):
     """
@@ -32,13 +35,13 @@ def apply_fit_drw_mcmc(group, kwargs):
     TODO: Add hyperparams of MCMC fit into kwargs
     """
     t, y, yerr = group[[kwargs['mjd_key'], 'mag', 'magerr']].values.T
-    
+    nan_result = {'sig16':np.nan, 'sig50':np.nan, 'sig84':np.nan, 'tau16':np.nan, 'tau50':np.nan, 'tau84':np.nan, 'mjd_ptp':np.ptp(t), 'n':len(t)}
     # obtain best-fit 
     try:
         best_drw = drw_fit(t, y, yerr)
     except Exception as e:
         print('error with eztao fit for uid:', group.index[0],'\n',e, flush=True)
-        return {'sig16':np.nan, 'sig50':np.nan, 'sig84':np.nan, 'tau16':np.nan, 'tau50':np.nan, 'tau84':np.nan}
+        return nan_result
     # define celerite GP model
     drw_gp = GP(DRW_term(*np.log(best_drw)), mean=np.median(y))
     drw_gp.compute(t, yerr)
@@ -58,14 +61,14 @@ def apply_fit_drw_mcmc(group, kwargs):
         p0, _, _ = sampler_drw.run_mcmc(p0, 500, skip_initial_state_check=False)
     except Exception as e:
         print('error with burn-in for uid:', group.index[0],'\n',e, flush=True)
-        return {'sig16':np.nan, 'sig50':np.nan, 'sig84':np.nan, 'tau16':np.nan, 'tau50':np.nan, 'tau84':np.nan}
+        return nan_result
     # clear up the stored chain from burn-in, rerun the MCMC
     sampler_drw.reset()
     try:
         sampler_drw.run_mcmc(p0, 1000, skip_initial_state_check=False)
     except Exception as e:
         print('error with MCMC for uid:', group.index[0],'\n',e, flush=True)
-        return {'sig16':np.nan, 'sig50':np.nan, 'sig84':np.nan, 'tau16':np.nan, 'tau50':np.nan, 'tau84':np.nan}
+        return nan_result
 
     # remove points with low prob (ie less than 5%) for the sake of making good corner plot
     prob_threshold_drw = np.percentile(sampler_drw.flatlnprobability, 5)
@@ -73,15 +76,15 @@ def apply_fit_drw_mcmc(group, kwargs):
     
     if len(clean_chain_drw) == 0:
         print('clean chain is empty for uid:', group.index[0], flush=True)
-        return {'sig16':np.nan, 'sig50':np.nan, 'sig84':np.nan, 'tau16':np.nan, 'tau50':np.nan, 'tau84':np.nan}
+        return nan_result
     
     p = np.percentile(clean_chain_drw, q=[16,50,84], axis=0) * 0.4342944819032518 # multiply to convert from ln to log10
 
-    return {'sig16':p[0,0], 'sig50':p[1,0], 'sig84':p[2,0], 'tau16':p[0,1], 'tau50':p[1,1], 'tau84':p[2,1]}
+    return {'sig16':p[0,0], 'sig50':p[1,0], 'sig84':p[2,0], 'tau16':p[0,1], 'tau50':p[1,1], 'tau84':p[2,1], 'mjd_ptp':np.ptp(t), 'n':len(t)}
 
 def apply_dho_fit(group, kwargs):
     """
-    Find best DHO parameters for a single lightcurve using whole lightcurve and just ZTF
+    Find best DHO parameters for a single lightcurve
     """
 
     t, y, yerr = group[[kwargs['mjd_key'], 'mag', 'magerr']].values.T
@@ -92,7 +95,7 @@ def apply_dho_fit(group, kwargs):
         print('error with uid:', group.index[0],'\n',e, flush=True)
         alpha1, alpha2, beta1, beta2 = np.nan, np.nan, np.nan, np.nan
 
-    return {'alpha1':alpha1, 'alpha2':alpha2, 'beta1':beta1, 'beta2':beta2}
+    return {'alpha1':alpha1, 'alpha2':alpha2, 'beta1':beta1, 'beta2':beta2, 'mjd_ptp':np.ptp(t), 'n':len(t)}
 
 def generate_mask(t, survey_features):
     indices = np.array([], dtype='int')
