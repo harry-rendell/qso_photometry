@@ -7,165 +7,148 @@
 #       format_version: '1.5'
 #       jupytext_version: 1.14.5
 #   kernelspec:
-#     display_name: Python 3 (ipykernel)
+#     display_name: astro
 #     language: python
 #     name: python3
 # ---
 
-import pandas as pd 
+# + language="bash"
+# jupytext --to py calculate_ssa_errors.ipynb # Only run this if the notebook is more up-to-date than -NB.py
+# # jupytext --to --update ipynb calculate_ssa_errors.ipynb # Run this to update the notebook if changes have been made to -NB.py
+# -
+
+import pandas as pd
 import numpy as np
-from astropy.table import Table
 import matplotlib.pyplot as plt
-from matplotlib import rc
-rc('font', **{'size':18})
-# %matplotlib inline
-from multiprocessing import Pool
-# from profilestats import profile
-from scipy.stats import binned_statistic
-from module.classes.analysis import *
-from os import listdir
+import seaborn as sns
 import os
-import time
-from module.preprocessing.binning import bin_data
-import warnings
-warnings.simplefilter(action='ignore', category=FutureWarning)
+import sys
+sys.path.insert(0, os.path.join(os.getcwd(), "..", ".."))
+from module.config import cfg
+from module.classes.dtdm import dtdm_raw_analysis
+from module.preprocessing import data_io
+from module.assets import load_grouped_tot
 
-# +
-wdir = cfg.W_DIR
+OBJ = 'calibStars'
 band = 'r'
+ID = 'uid' if OBJ == 'qsos' else 'uid_s'
 
-# t_max w/o SSA = 6751 for qsos
-# t_max w/o SSA = 7772 for stars
-# USE cfg.MAX_DT_REST_FRAME
-# config = {'obj':'qsos'       ,'ID':'uid'  ,'t_max':23576,'n_bins_t':200,'n_bins_m':200,'n_t_chunk':19, 'width':2, 'steepness':0.005}
-config = {'obj':'calibStars','ID':'uid_s','t_max':25600,'n_bins_t':200,'n_bins_m':200,'n_t_chunk':19, 'width':1, 'steepness':0.005}
+a = dtdm_raw_analysis(OBJ, band, 'ssa_ps', phot_str='dsid_21_49')
+a.read_all()
 
-width   = config['width']
-steepness = config['steepness']
-obj = config['obj']
-ID  = config['ID']
-t_max = config['t_max']
-n_bins_t = config['n_bins_t']
-n_bins_m = config['n_bins_m']
-n_t_chunk = config['n_t_chunk']
+mag_med = load_grouped_tot(OBJ, band, usecols=['mag_med'])
+df = a.df.join(mag_med, on=ID, how='inner').dropna()
+ps_mask = df['dsid']==49
+ssa_ps_mask = df['dsid']==21
 
-data_path = cfg.D_DIR + 'computed/{}/dtdm/raw/{}/'.format(obj,band)
+fig, ax = plt.subplots(1,1, figsize=(15,10))
+sns.histplot(data=a.df.sample(frac=0.2), x='dm', hue='dsid', bins=100, stat='density', ax=ax, binrange=(-1,1))
 
-# sort based on filesize, then do ordered shuffle so that each core recieves the same number of large files
-fnames = [a for a in listdir(data_path) if (len(a)>27)]
-size=[]
-for file in fnames:
-    size.append(os.path.getsize(data_path+file))
-    
-
-fnames = [name for i in [0,1,2,3] for sizename, name in sorted(zip(size, fnames))[i::4]]
+# Create masks so we are comparing the same objects in each survey
+intersection = ssa_ps_mask.index[ssa_ps_mask.values].unique().intersection(ps_mask.index[ps_mask.values].unique())
+ps_mask[~ps_mask.index.isin(intersection)] = False
+ssa_ps_mask[~ssa_ps_mask.index.isin(intersection)] = False
 
 # +
-import pandas as pd 
-pd.options.mode.chained_assignment = None
-import numpy as np
-from astropy.table import Table
-import matplotlib.pyplot as plt
-import matplotlib
-from multiprocessing import Pool
-# from profilestats import profile
-from scipy.stats import binned_statistic
-from module.classes.analysis import *
-# %matplotlib inline
+# sns.jointplot(data=a.df[ps_mask].sample(frac=0.1), x='dm', y='mag_med', kind='hex', )
+fig, axes = plt.subplots(1,2, figsize=(12,6))
+plt.style.use(cfg.RES_DIR + 'stylelib/sf_ensemble.mplstyle')
+lims = [(16.5,21),(-1,1)]
+for ax in axes:
+    ax.grid(visible=True, which='both', alpha=0.5)
+    ax.grid(visible=True, which='minor', alpha=0.2)
+    ax.set(xlim=lims[0], ylim=lims[1])
 
-def reader(n_subarray):
-    return pd.read_csv('../data/merged/{}/r_band/lc_{}.csv'.format(obj,n_subarray), comment='#', nrows=None, index_col = ID, dtype = {'catalogue': np.uint8, 'mag_ps': np.float32, 'magerr': np.float32, 'mjd': np.float64, ID: np.uint32})
-
-
+sns.histplot(data=df.loc[ps_mask    ].sample(frac=0.1), x='mag_med', y='dm', binrange=lims, cmap='Spectral_r', ax=axes[0], thresh=4)
+axes[0].set(ylabel=r'$\Delta m (\mathrm{PS-PS})$ [mag]', xlabel='Median magnitude [mag]')
+sns.histplot(data=df.loc[ssa_ps_mask].sample(frac=0.1), x='mag_med', y='dm', binrange=lims, cmap='Spectral_r', ax=axes[1], thresh=4)
+axes[1].set(ylabel=r'$\Delta m (\mathrm{SSA-PS})$ [mag]', xlabel='Median magnitude [mag]')
 # -
 
-obj = 'calibStars'
-ID  = 'uid_s'
-band = 'r'
-redshift_bool = False
-dr = analysis(ID, obj)
+mag_edges = np.arange(18.5, 20, 0.25)
+mag_centres = (mag_edges[1:] + mag_edges[:-1]) / 2
+n_bins = len(mag_edges) - 1
 
-# dr.read_in(reader, redshift=redshift_bool)
-dr.band = band
-dr.group(keys = ['uid_s'],read_in=True, redshift=redshift_bool)
+mag_mask = df['mag_med'].between(mag_edges[0], mag_edges[-1])
+ps_mask_ = ps_mask[mag_mask]
+ssa_ps_mask_ = ssa_ps_mask[mag_mask]
 
-fpath = data_path + fnames[5]
-df = pd.read_csv(fpath, index_col = ID, dtype = {ID: np.uint32, 'dt': np.float32, 'dm': np.float32, 'de': np.float32, 'cat': np.uint8});
+df_masked = df[mag_mask].copy()
+df_masked['bin_idx'] = pd.cut(df_masked['mag_med'], mag_edges, labels=False)
 
 # +
-# # combining several dtdm files into one. Takes a little while to run.
-# # We have already run and saved this
-# df_list = []
-# for fname in fnames:
-#     df = pd.read_csv(fpath, index_col = ID, dtype = {ID: np.uint32, 'dt': np.float32, 'dm': np.float32, 'de': np.float32, 'cat': np.uint8});
-#     df = df[df['cat']==2]
-#     df_list.append(df)
-# df = pd.concat(df_list)
+ps_var = np.zeros(n_bins)
+ssa_ps_var = np.zeros(n_bins)
+def var_iqr(series):
+    q1, q2 = series.quantile([0.25,0.75]).values
+    return 0.549081*(q2-q1)**2
+for i in range(n_bins):
+    # ps_var[i]     = df_masked[(df_masked['bin_idx']==i) & ps_mask_    ]['dm'].var()
+    # ssa_ps_var[i] = df_masked[(df_masked['bin_idx']==i) & ssa_ps_mask_]['dm'].var()
+    ps_var[i]     = var_iqr(df_masked[(df_masked['bin_idx']==i) & ps_mask_    ]['dm'])
+    ssa_ps_var[i] = var_iqr(df_masked[(df_masked['bin_idx']==i) & ssa_ps_mask_]['dm'])
+
+ps_std = ps_var**0.5
+ssa_ps_std = ssa_ps_var**0.5
+ssa_std = (ssa_ps_var-ps_var)**0.5
 # -
 
-# load in dtdm ps ssa pairwise observations
-df = pd.read_csv('transformations/ssa_error_calculation/dtdm_ps_ssa.csv', index_col='uid_s')
-df = df.join(dr.df_grouped['mag_mean'], on='uid_s')
+# fit with exponential
+from scipy.optimize import curve_fit
+def exp(x, a, b, c, d):
+    return a * np.exp(b * (x-d)) + c
 
-# plot the dm with with increasing mag slices
-var = []
-n=21
-x = np.linspace(18.5, 21, n)
-fig, ax = plt.subplots(n-1,1, figsize=(10,30), sharex=True)
-intervals = [(x[i], x[i+1]) for i in range(len(x)-1)]
-for i, interval in enumerate(intervals):
-    lower, upper = interval
-    subdf = df[(lower < df['mag_mean']) & (df['mag_mean'] < upper)]
-    
-    mean = subdf['dm'].mean()
-    std  = subdf['dm'].std()
-    
-    z = (subdf['dm'] - mean)/std
-    ax[i].axvline(x=mean + std*3)
-    ax[i].axvline(x=mean - std*3)
-    ax[i].axvline(x=0, color='k', ls='--')
-    
-    ax[i].hist(subdf['dm'], bins=100, label=str(interval))
-    subdf = subdf[np.abs(z) < 3] 
-    var.append(subdf['dm'].std())
-    ax[i].legend()
-
-# plot the widths vs mag slices and save result
-centres = (x[1:] + x[:-1])/2
-plt.plot(centres, var)
-np.savetxt('transformations/ssa_error_calculation/ps_ssa_mag_magerr.csv',np.array([centres,var]).T, delimiter = ',', fmt='%.5f')
 
 # +
-# df = df.join(dr.df_grouped['mag_mean'], on='uid_s')
+plt.style.use(cfg.RES_DIR + 'stylelib/sf_ensemble.mplstyle')
+
+fig, ax = plt.subplots(1,1, figsize=(10,6))
+
+ax.grid(visible=True, which='both', alpha=0.6)
+ax.grid(visible=True, which='minor', alpha=0.2)
+
+popt_ps, pcov = curve_fit(exp, mag_centres, ps_std, p0=[0.1, 1.2, 0.1, 18])
+ax.plot(mag_centres, exp(mag_centres, *popt_ps), 'b-', label=rf'${popt_ps[0]:.2f}\mathrm{{exp}}(x-{popt_ps[3]:.2f})+{popt_ps[2]:.2f}$')
+popt_ssa_ps, pcov = curve_fit(exp, mag_centres, ssa_ps_std, p0=[0.1, 1.2, 0.1, 18])
+ax.plot(mag_centres, exp(mag_centres, *popt_ssa_ps), 'r-', label=rf'${popt_ssa_ps[0]:.2f}\mathrm{{exp}}(x-{popt_ssa_ps[3]:.2f})+{popt_ssa_ps[2]:.2f}$')
+popt_ssa, pcov = curve_fit(exp, mag_centres, ssa_std, p0=[0.1, 1.2, 0.1, 18])
+ax.plot(mag_centres, exp(mag_centres, *popt_ssa), 'k-', label=rf'${popt_ssa[0]:.2f}\mathrm{{exp}}(x-{popt_ssa[3]:.2f})+{popt_ssa[2]:.2f}$')
+
+ax.plot(mag_centres, ps_std, label='PS', marker='.')
+ax.plot(mag_centres, ssa_ps_std, label='SSA_PS', marker='.')
+ax.plot(mag_centres, ssa_std+0.05, label='SSA', marker='.')
+ax.legend()
+ax.set(xlabel='Median magnitude [mag]', ylabel=r'$\sigma_{\Delta m}$ [mag]')
+
+ax.plot(mag_centres, 0.06751*mag_centres - 1.08)
+
 
 # +
-# df2=pd.read_csv('../data/surveys/ps/calibStars/gb.csv')
-# df2 = df2[df2['filtercode'] == 'r']
-# result = dr.df.groupby('uid_s').agg({'mag':'median','magerr':'median'})
+# sns.jointplot(data=a.df[ps_mask].sample(frac=0.1), x='dm', y='mag_med', kind='hex', )
+fig, axes = plt.subplots(1,2, figsize=(12,6))
+plt.style.use(cfg.RES_DIR + 'stylelib/sf_ensemble.mplstyle')
+lims = [(16.5,21),(-1,1)]
+for ax in axes:
+    ax.grid(visible=True, which='both', alpha=0.5)
+    ax.grid(visible=True, which='minor', alpha=0.2)
+    ax.set(xlim=lims[0], ylim=lims[1])
 
-# +
-# var = []
-# n=21
-# intervals = [(x[i], x[i+1]) for i in range(len(x)-1)]
-# for i, interval in enumerate(intervals):
-#     lower, upper = interval
-#     subdf = df[(lower < df['mag']) & (df['mag'] < upper)]
-#     var.append(subdf['magerr'].mean())
+sns.histplot(data=df.loc[ps_mask    ].sample(frac=0.1), x='mag_med', y='dm', binrange=lims, cmap='Spectral_r', ax=axes[0], thresh=4)
+axes[0].set(ylabel=r'$\Delta m (\mathrm{PS-PS})$ [mag]', xlabel='Median magnitude [mag]')
+axes[0].plot(mag_centres, ps_std, label='PS', marker='.')
+axes[0].plot(mag_centres,-ps_std, label='PS', marker='.')
+sns.histplot(data=df.loc[ssa_ps_mask].sample(frac=0.1), x='mag_med', y='dm', binrange=lims, cmap='Spectral_r', ax=axes[1], thresh=4)
+axes[1].set(ylabel=r'$\Delta m (\mathrm{SSA-PS})$ [mag]', xlabel='Median magnitude [mag]')
+axes[1].plot(mag_centres, -0.05+ssa_ps_std, label='SSA_PS', marker='.')
+axes[1].plot(mag_centres, -0.05-ssa_ps_std, label='SSA_PS', marker='.')
+
+x = np.linspace(16, 21, 100)
+axes[0].plot(x, exp(x, *popt_ps), 'b-')
+axes[0].plot(x, -exp(x, *popt_ps), 'b-')
+axes[1].plot(x, -0.05+exp(x, *popt_ssa_ps), 'r-')
+axes[1].plot(x, -0.05-exp(x, *popt_ssa_ps), 'r-')
 # -
 
-intervals = [(x[i], x[i+1]) for i in range(len(x)-1)]
-centres = (x[1:] + x[:-1])/2
 
-a = np.loadtxt('transformations/ssa_error_calculation/ps_mag_magerr.csv', delimiter=',')
-b = np.loadtxt('transformations/ssa_error_calculation/ps_ssa_mag_magerr.csv', delimiter=',')
 
-a
-
-# +
-ssa_magerr = np.sqrt(b[:,1]**2 - a[:,1]**2)
-m, c = np.polyfit(centres, ssa_magerr, 1)
-plt.plot(centres, ssa_magerr)
-plt.plot(centres, m*centres+c)
-m,c
-
-# maybe start from 15th mag?
+exp(-100, *popt_ssa)+0.05
