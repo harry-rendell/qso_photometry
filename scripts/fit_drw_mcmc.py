@@ -51,7 +51,7 @@ if __name__ == "__main__":
 
     # keyword arguments to pass to our reading function
     kwargs = {'obj':OBJ,
-            'dtypes': cfg.PREPROC.lc_dtypes,
+              'dtypes': cfg.PREPROC.lc_dtypes,
               'nrows': nrows,
               'usecols': [ID,mjd_key,'mag','magerr','band','sid'],
               'ID':ID,
@@ -65,6 +65,7 @@ if __name__ == "__main__":
     if args.nobs_min:
         # We select a subset of quasars which have a minimum of args.nobs_min observations in each of the bands 
         #   specified in args.band
+        # ignore ztf when using n_tot as a threshold if args.survey is not ztf
         n_tot = load_n_tot(OBJ)
         if args.survey != 'ztf':
             survey_str = args.survey.replace('ztf','').split()
@@ -77,9 +78,9 @@ if __name__ == "__main__":
         args.nobs_min = 0
 
     for band in args.band:
-
-        mask = (n_tot[[f'n_{s}_{band}' for s in survey_str]].sum(axis=1) > args.nobs_min)
-        kwargs['subset'] = n_tot[mask].index
+        if args.nobs_min > 0:
+            mask = (n_tot[[f'n_{s}_{band}' for s in survey_str]].sum(axis=1) > args.nobs_min)
+            kwargs['subset'] = n_tot[mask].index
 
         # add these back into the kwargs dictionary
         kwargs['band'] = band
@@ -93,14 +94,15 @@ if __name__ == "__main__":
 
         # bounds = {'tau16':(2,  4.5), 'tau50':(2,5), 'tau84':(2,6), 'sig16':(-2,0.5), 'sig50':(-1,0.5), 'sig84':(-0.9,0.5)}
         # drw_params = parse.filter_data(drw_params, bounds=bounds, dropna=False, verbose=True)
-        print(drw_params)
+        
         tau = drw_params[['tau16','tau50','tau84']].dropna()
         
         print('applying skewfit')
         skewfits = data_io.dispatch_function(fitting.apply_fit_skewnnorm, np.array_split(tau, args.n_cores), max_processes=args.n_cores)
         skewfits = skewfits.rename(columns={0:'a',1:'loc',2:'scale'})
         # skewfits = parse.filter_data(skewfits, bounds={'a':(0,30), 'loc':(0,10), 'scale':(0,5)}, dropna=True, verbose=True)
-
-        drw_params.join(skewfits, on=ID, how='left').to_csv(cfg.D_DIR + f"computed/{OBJ}/mcmc_fits/{args.frame.lower()}/{band}_{args.survey.replace(' ','_')}_{args.nobs_min}.csv")
+        output_dir = cfg.D_DIR + f'computed/{OBJ}/mcmc_fits/{args.frame.lower()}/'
+        os.makedirs(output_dir, exist_ok=True)
+        drw_params.join(skewfits, on=ID, how='left').to_csv(output_dir + f"{band}_{args.survey.replace(' ','_')}_{args.nobs_min}.csv")
         # results.to_csv(cfg.D_DIR + f'computed/{OBJ}/features/{args.model}_fits_{band}_{args.survey}_{args.nobs_min}_{phot_str}.csv')
         print('Elapsed:',time.strftime("%Hh %Mm %Ss",time.gmtime(time.time()-start)))
