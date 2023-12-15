@@ -29,6 +29,7 @@ sys.path.insert(0, os.path.join(os.getcwd(), "..", "..", ".."))
 from module.config import cfg
 from module.preprocessing import parse, data_io
 from module.preprocessing.color_transform import ssa_transform
+from module.plotting.common import savefigs
 # import matplotlib
 # font = {'size' : 18}
 # matplotlib.rc('font', **font)
@@ -154,7 +155,80 @@ print(merged[['surveyID','filterID']].value_counts().sort_index())
 # # Plot and evaluate transformations
 # ---
 
+# ## STARS
+
+# ### Peacock
+
 # + jupyter={"outputs_hidden": true}
+if PLOT_AND_EVALUATE_TRANSFORMATIONS:
+    # Evaluating all the Ivezic transformations on qsos
+    obj = 'calibStars'
+    # transf_name = 'Ivezic'
+    transf_name = 'Peacock'
+
+    transf = cfg.TRANSF.SSA[transf_name.upper()]
+    for ssa_survey in transf.keys():
+        ssa = ssa_transform(obj, ssa_survey, 'ps', ssa_secondary)
+        fig1, fig2, fig3 = ssa.evaluate_transformation(obj, ssa_survey, transf, transf_name, plot=True)
+        del ssa
+# -
+
+# ### Ivezic
+
+if PLOT_AND_EVALUATE_TRANSFORMATIONS:
+    # Evaluating all the Ivezic transformations on qsos
+    obj = 'calibStars'
+    transf_name = 'Ivezic'
+    # transf_name = 'Peacock'
+
+    transf = cfg.TRANSF.SSA[transf_name.upper()]
+    for ssa_survey in transf.keys():
+        ssa = ssa_transform(obj, ssa_survey, 'ps', ssa_secondary)
+        fig1, fig2, fig3 = ssa.evaluate_transformation(obj, ssa_survey, transf, transf_name, plot=True)
+        del ssa
+
+# ## QSOS
+
+# ### Peacock
+
+if PLOT_AND_EVALUATE_TRANSFORMATIONS:
+    # Evaluating all the Ivezic transformations on qsos
+    obj = 'calibStars'
+    transf_name = 'Ivezic'
+    # transf_name = 'Peacock'
+
+    transf = cfg.TRANSF.SSA[transf_name.upper()]
+    for ssa_survey in transf.keys():
+        ssa = ssa_transform(obj, ssa_survey, 'ps', ssa_secondary)
+        fig1, fig2, fig3 = ssa.evaluate_transformation(obj, ssa_survey, transf, transf_name, plot=True)
+        del ssa
+
+# ### Ivezic
+
+if PLOT_AND_EVALUATE_TRANSFORMATIONS:
+    # Evaluating all the Ivezic transformations on qsos
+    obj = 'calibStars'
+    transf_name = 'Ivezic'
+    # transf_name = 'Peacock'
+
+    transf = cfg.TRANSF.SSA[transf_name.upper()]
+    for ssa_survey in transf.keys():
+        ssa = ssa_transform(obj, ssa_survey, 'ps', ssa_secondary)
+        fig1, fig2, fig3 = ssa.evaluate_transformation(obj, ssa_survey, transf, transf_name, plot=True)
+        del ssa
+
+if PLOT_AND_EVALUATE_TRANSFORMATIONS:
+    # Evaluating all the Ivezic transformations on qsos
+    obj = 'qsos'
+    # transf_name = 'Ivezic'
+    transf_name = 'Peacock'
+
+    transf = cfg.TRANSF.SSA[transf_name.upper()]
+    for ssa_survey in transf.keys():
+        ssa = ssa_transform(obj, ssa_survey, 'ps', ssa_secondary)
+        ssa.evaluate_transformation(obj, ssa_survey, transf, transf_name, plot=True)
+        del ssa
+
 if PLOT_AND_EVALUATE_TRANSFORMATIONS:
     # Evaluating all the Ivezic transformations on qsos
     obj = 'qsos'
@@ -166,7 +240,6 @@ if PLOT_AND_EVALUATE_TRANSFORMATIONS:
         ssa = ssa_transform(obj, ssa_survey, 'ps', ssa_secondary)
         ssa.evaluate_transformation(obj, ssa_survey, transf, transf_name, plot=True)
         del ssa
-# -
 
 # # Transform and save data
 # ---
@@ -215,5 +288,3 @@ if SAVE_TRANSFORMED_DATA:
                       'savecols':['mjd','mag','mag_orig','magerr','ssa_sid']}
 
             data_io.dispatch_writer(chunks, kwargs)
-# -
-

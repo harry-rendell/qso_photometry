@@ -127,7 +127,7 @@ class ssa_transform():
         ax.set(xlabel='{} - {}_{}'.format(self.band_ssa, self.band, self.ref_survey_name), title=self.obj)
         ax.axvline(x=0, color='k', ls='--', lw=0.8)
         ax.legend()
-        return ax
+        return fig, ax
     
     def hist_2d(self, color_name):
         """
@@ -162,7 +162,7 @@ class ssa_transform():
         fig.subplots_adjust(wspace=0.3)
         fig.suptitle(self.obj, y=0.92)
         
-        return axes
+        return fig, axes
     
     def mag_correlation(self):
         fig, ax = plt.subplots(1,2, figsize=(17,8))
@@ -175,7 +175,7 @@ class ssa_transform():
         ax[1].plot(x,x)
         ax[1].hist2d(self.mag_ssa_transf, self.df['mag_med'], bins=[100,100], range=[[16,23],[16,23]], cmap=cmap.get_cmap('jet'));
         ax[1].set(xlabel=self.band_ssa + ' transformed', ylabel='r mag (ps)')
-
+        return fig, ax
     def evaluate_transformation(self, obj, ssa_survey, transf, transf_name, plot=False):
         print('band:',ssa_survey,' - ','object:',obj)
         color_name = transf[ssa_survey][0]
@@ -184,8 +184,9 @@ class ssa_transform():
         else:
             self.color_transform(color_name=color_name, p_dict=transf, transf_name=transf_name)
             if plot:
-                self.hist_1d()
-                self.hist_2d(color_name=color_name)
-                self.mag_correlation()
+                fig1, ax1 = self.hist_1d()
+                fig2, ax2 = self.hist_2d(color_name=color_name)
+                fig3, ax3 = self.mag_correlation()
+                return fig1, fig2, fig3
             else:
                 return self.df
