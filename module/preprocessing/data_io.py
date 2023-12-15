@@ -239,7 +239,7 @@ def groupby_apply_dispatcher(func, df, kwargs):
     if len(masks)>0:
         masks = np.all(masks, axis=0)
         df = df[masks]
-    pd.DataFrame.groupby
+
     s = df.groupby(df.index.name, group_keys=False).apply(func, kwargs)
     return pd.DataFrame(s.values.tolist(), index=s.index, dtype='float32')
 
