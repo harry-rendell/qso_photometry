@@ -7,16 +7,17 @@ from ..config import cfg
 import re
 import matplotlib.pyplot as plt
 import matplotlib.cm as cmap
+from module.preprocessing import data_io, parse
 
 class dtdm_raw_analysis():
 	"""
 	Class for analysing dtdm files
 	"""
-	def __init__(self, obj, band, name):
+	def __init__(self, obj, band, name, phot_str='clean'):
 		self.obj = obj
 		self.ID = 'uid' if (obj == 'qsos') else 'uid_s'
 		self.band = band
-		self.data_path = cfg.D_DIR + 'merged/{}/clean/dtdm_{}/'.format(obj,band)
+		self.data_path = cfg.D_DIR + f'merged/{obj}/{phot_str}/dtdm_{band}/'
 		self.name = name
 		# sort based on filesize, then do ordered shuffle so that each core recieves the same number of large files
 		if os.path.exists(self.data_path):
@@ -31,8 +32,21 @@ class dtdm_raw_analysis():
 		"""
 		Function for reading dtdm data
 		"""
-		self.df = pd.read_csv(self.fpaths[i], index_col = self.ID, dtype = {self.ID: np.uint32, 'dt': np.float32, 'dm': np.float32, 'de': np.float32, 'sid': np.uint8}, **kwargs)
+		df = pd.read_csv(self.fpaths[i], index_col = self.ID, dtype = {self.ID: np.uint32, 'dt': np.float32, 'dm': np.float32, 'de': np.float32, 'sid': np.uint8}, **kwargs)
+		self.df = parse.filter_data(df, bounds=cfg.PREPROC.dtdm_bounds[self.obj], dropna=True)
 
+	def read_all(self, ncores=None, **kwargs):
+		"""
+		Function for reading all dtdm data
+		"""
+		if ncores is None: ncores = cfg.USER.N_CORES
+		kwargs['basepath'] = self.data_path
+		kwargs['ID'] = self.ID
+		kwargs['dtypes'] = {self.ID: np.uint32, 'dt': np.float32, 'dm': np.float32, 'de': np.float32, 'sid': np.uint8}
+		
+		df = data_io.dispatch_reader(kwargs, max_processes=ncores)
+		self.df = parse.filter_data(df, bounds=cfg.PREPROC.dtdm_bounds[self.obj], dropna=True)
+	
 	def read_key(self, key):
 		"""
 		Read in the groups of uids for qsos binned into given key.
@@ -350,7 +364,29 @@ class dtdm_raw_analysis():
 			dt, dm = pd.read_csv(cfg.W_DIR + 'assets/comparison_data/stone2022_fig10.csv', comment='#').values.T
 			ax.plot(dt, dm, label='Stone et al. 2022', **kwargs)
 			# ax.scatter(dt, dm, color='k', s=0.5, label='Stone et al. 2022', **kwargs)
-		# elif name=='morganson':
+		elif name=='devries_sf':
+			dt, sf = pd.read_csv(cfg.W_DIR + 'assets/comparison_data/devries2005_fig8.csv', comment='#').values.T
+			dt = dt*365.25
+			sf = 10**sf
+			ax.plot(dt, sf, label='De Vries et al. 2005', **kwargs)
+
+	def plot_sf_from_drw_fits(self, ax, **kwargs):
+		from module.assets import load_drw_mcmc_fits
+		from eztao.carma import drw_sf
+		def ensemble_drw(sigs, taus, lag):
+			n = len(sigs)
+			m = len(lag)
+			sf2 = np.zeros((n, m))
+			for i in range(n):
+				true_drw = drw_sf(10**sigs[i], 10**taus[i])
+				sf2[i,:] = true_drw(lag)**2
+			sf = np.average(sf2, axis=0)**0.5
+			return sf
+		
+		drw_fits = load_drw_mcmc_fits('gri')
+		sigs, taus = drw_fits[['sig50', 'tau50']].values.T
+		dt = np.logspace(0,4,100)
+		ax.plot(dt, ensemble_drw(sigs, taus, dt), label='DRW SF')
 
 	def plot_stats_property(self, keys, figax, macleod=False, fill_between=False, shift=False, **kwargs):
 		if figax is None:
