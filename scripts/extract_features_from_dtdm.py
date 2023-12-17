@@ -64,7 +64,7 @@ if __name__ == "__main__":
               'mjd_key':mjd_key,
               'log_or_lin':log_or_lin,
               'inner':args.inner,
-              'features':['n', 'mean weighted a', 'mean weighted b', 'median a', 'median b', 'SF cwf a', 'SF c', 'SF', 'SF cwf p', 'SF cwf n', 'skewness', 'kurtosis'],
+              'features':['n', 'mean weighted a', 'mean weighted b', 'median a', 'median b', 'SF cwf a', 'SF c', 'SF', 'SF cwf p', 'SF cwf n', 'skewness', 'kurtosis', 'SF iqr'],
               'n_points':n_points}
 
     if args.mag_max:
