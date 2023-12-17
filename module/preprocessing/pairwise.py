@@ -3,7 +3,7 @@ import pandas as pd
 import os
 from ..config import cfg
 from .parse import split_into_non_overlapping_chunks, create_mask_from_bounds
-from scipy.stats import skew, kurtosis
+from scipy.stats import skew, kurtosis, iqr
 
 def groupby_dtdm_between(df, args):
     """
@@ -198,6 +198,9 @@ def calculate_stats_looped(df, kwargs):
 
             results['SF c'][j, 0] = np.average(dm2_de2)
             results['SF c'][j, 1] = dm2_de2.var()
+
+            results['SF iqr'][j, 0] = (0.741*iqr(dm2_de2))**2
+            results['SF iqr'][j, 1] = 1/weights.sum()
 
             results['SF'][j, 0] = np.average(subset['dm']**2)
             results['SF'][j, 1] = subset['dm'].var()
