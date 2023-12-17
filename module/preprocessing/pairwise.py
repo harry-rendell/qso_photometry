@@ -199,9 +199,6 @@ def calculate_stats_looped(df, kwargs):
             results['SF c'][j, 0] = np.average(dm2_de2)
             results['SF c'][j, 1] = dm2_de2.var()
 
-            results['SF iqr'][j, 0] = (0.741*iqr(dm2_de2))**2
-            results['SF iqr'][j, 1] = 1/weights.sum()
-
             results['SF'][j, 0] = np.average(subset['dm']**2)
             results['SF'][j, 1] = subset['dm'].var()
             
