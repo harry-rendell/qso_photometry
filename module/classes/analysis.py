@@ -9,9 +9,10 @@ import os
 import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from module.config import cfg
-from module.preprocessing import data_io
+from module.preprocessing import data_io, pairwise, binning, parse
 from module.assets import load_grouped, load_grouped_tot, load_sets, load_coords, load_redshifts, load_vac
 from .methods.plotting import plot_series as plot_series_
+from module.classes.dtdm import dtdm_raw_analysis
 
 def calc_moments(bins,weights):
     """
@@ -112,6 +113,38 @@ class analysis():
         # Remove objects with a single observation.
         self.df = self.df[self.df.index.duplicated(keep=False)]
 
+    def calculate_dtdm(self, uids):
+        """
+        Calculate dtdm for a given set of uids
+        """
+        if np.issubdtype(type(uids),np.integer): uids = [uids]
+        df_ = self.df[self.df.index.isin(uids)]
+        self.dtdm = df_.groupby(self.ID, group_keys=False).apply(pairwise.calculate_dtdm, 'mjd_rf').set_index(self.ID)
+        self.dtdm_uids = uids
+
+    def calculate_stats(self):
+        """
+        Calculate statistics for a given set of uids
+        """
+        n_points = 10
+        self.mjd_edges = binning.construct_T_edges(t_max=self.dtdm['dt'].max(), n_edges=n_points+1)
+        kwargs = {'obj':self.obj,
+                  'inner':False,
+                  'features':['n', 'mean weighted a', 'mean weighted b', 'median a', 'median b', 'SF cwf a', 'SF c', 'SF', 'SF cwf p', 'SF cwf n', 'skewness', 'kurtosis', 'SF iqr'],
+                  'n_points':n_points,
+                  'mjd_edges': self.mjd_edges}
+        
+        n_processes = 4
+        chunks = [group for _, group in self.dtdm.groupby(self.ID, group_keys=False)]
+        self.mjd_centres = (self.mjd_edges[1:] + self.mjd_edges[:-1])/2
+        all_pooled_stats = data_io.dispatch_function(pairwise.calculate_stats_looped, chunks=chunks, max_processes=n_processes, concat_output=False, **kwargs)
+        self.all_pooled_stats = {uid:stats for uid, stats in zip(self.dtdm_uids, all_pooled_stats)}
+
+    def plot_stats(self, keys, figax=None, label=None, legend_loc='upper right', plot_kwargs={}, **kwargs):
+        for uid, pooled_stats in self.all_pooled_stats.items():
+            self.pooled_stats = pooled_stats
+            figax = dtdm_raw_analysis.plot_stats(self, keys=keys, figax=figax, label=f'uid: {uid}', legend_loc=legend_loc, plot_kwargs=plot_kwargs, **kwargs)
+    
     def add_rest_frame_column(self):
         if 'mjd_rf' not in self.df.columns:
             if ~hasattr(self.df, 'redshift'):
@@ -174,10 +207,11 @@ class analysis():
         self.properties['mjd_ptp_rf']   = self.properties['mjd_ptp']/(1+self.redshifts)
 
     def plot_series(self, uids, sid=None, bands='r', show_outliers=False, axes=None, **kwargs):
-        plot_series_(self.df, uids, sid=sid, bands=bands, 
-                                             marker_dict=self.marker_dict, 
-                                             survey_dict=self.survey_dict,
-                                             plt_color=self.plt_color, 
-                                             show_outliers=show_outliers, 
-                                             axes=axes, 
-                                             **kwargs)
+        fig, ax = plot_series_(self.df, uids, sid=sid, bands=bands, 
+                                                       marker_dict=self.marker_dict, 
+                                                       survey_dict=self.survey_dict,
+                                                       plt_color=self.plt_color, 
+                                                       show_outliers=show_outliers, 
+                                                       axes=axes, 
+                                                       **kwargs)
+        return fig, ax 
