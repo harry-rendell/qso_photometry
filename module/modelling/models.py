@@ -73,3 +73,28 @@ def bkn_pow(xvals,breaks,alphas):
         all_y[i] *= np.abs(all_y[i-1][-1]/all_y[i][0]) # scale the beginning of each piece to the end of the last so it is continuous
     
     return(np.array([y for ychunk in all_y for y in ychunk])) # return flattened list
+
+def piecewise_exponential(t, k1, k2, t0):
+    """
+    Piecewise exponential function with two decay constants and a break point
+
+    Parameters
+    ----------
+    t : array-like
+        Time array
+    k1 : float
+        First decay constant
+    k2 : float
+        Second decay constant
+    t0 : float
+        Break point
+    """
+
+    mask = t<t0
+    N1 = (np.exp(k1*t0)-1)/k1 - t0 # integral of y1 from 0 to t0
+    N2 = np.exp(-k2*t0)/k2 * np.exp(k2*t0) * ( np.exp(k1*t0) - 1 ) # integral of N2 from t0 to inf
+    norm = N1 + N2 # Total normalisation factor
+    y1 = np.exp(k1*t[mask])-1
+    y2 = np.exp(k2*t0) * ( np.exp(k1*t0)-1 ) * np.exp(-k2*t[~mask])
+    unnormed = np.concatenate((y1, y2))
+    return unnormed/norm
