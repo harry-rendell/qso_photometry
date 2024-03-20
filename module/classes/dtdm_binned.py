@@ -9,6 +9,7 @@ from scipy.stats import skew
 from scipy.optimize import curve_fit
 from scipy.stats import linregress, chisquare
 from module.preprocessing.binning import bin_data
+from sklearn.mixture import GaussianMixture
 
 class dtdm_binned_class():
     """
@@ -181,7 +182,7 @@ class dtdm_binned_class():
 
         return figax, SF_n, SF_p
     
-    def hist_dm(self, window_width, figax=None, overlay_gaussian=False, overlay_lorentzian=False, overlay_exponential=False, overlay_diff=False, cmap=plt.cm.cool, colors=['r','b','g','m'], alpha=1, save=False):
+    def hist_dm(self, window_width, figax=None, overlay_gaussian=False, overlay_lorentzian=False, overlay_exponential=False, overlay_gmm=False, overlay_diff=False, cmap=plt.cm.cool, colors=['r','b','g','m'], alpha=1, save=False):
 
         def gaussian(x,peak,x0):
             sigma = (2*np.pi)**-0.5*1/peak
@@ -190,6 +191,8 @@ class dtdm_binned_class():
             return gam / ( gam**2 + ( x - x0 )**2) * 1/np.pi
         def exponential(x,peak,x0,exponent):
             return peak*np.exp(-np.abs(x-x0)*exponent)
+        def normal_(x, sigma, mean):
+            return 1 / (sigma * np.sqrt(2 * np.pi)) * np.exp(-(x-mean)**2 / (2 * sigma**2))
         def double_bin_size(edges, counts, n):
             """
             Not convinced this works properly
@@ -215,6 +218,7 @@ class dtdm_binned_class():
         n=1
         stds     = np.zeros(self.n_bins_T)
         r2s_tot = []
+        gmms = []
         for i, ax in enumerate(axes.T.ravel()):
             r2s = []
 
@@ -299,6 +303,22 @@ class dtdm_binned_class():
                 except Exception as e:
                     print('unable to fit exponential due to error:',e)
 
+            if overlay_gmm:
+                try:
+                    x = np.linspace(-2,2,1000)
+                    n_components = 5
+                    gmm = GaussianMixture(n_components, covariance_type='full', means_init=np.zeros(shape=(n_components,1)), max_iter=1000, tol=1e-5)
+                    a = np.repeat(self.m_bin_centres, np.round(counts/np.round(counts.min(), -2), 0).astype(int))
+                    gmm.fit(a.reshape(-1,1))
+                    gmms.append(gmm)
+                    
+                    combined_pdfs = (gmm.weights_*normal_(x[:, np.newaxis], gmm.covariances_.flatten()**0.5, gmm.means_.flatten())).sum(axis=1)
+                    ax.plot(x, combined_pdfs, label = 'GMM', color=colors[2], lw=2)
+
+
+                except Exception as e:
+                    print('unable to fit GMM due to error:',e)
+
             r2s_tot.append(r2s)
             # ax.text(0.05, 0.9, 'mean = {:.5f}'.format(self.means[i]), transform=ax.transAxes)
             # ax.text(0.05, 0.8, 'mode = {:.5f}'.format(self.modes[i]), transform=ax.transAxes)
@@ -330,7 +350,7 @@ class dtdm_binned_class():
             fig.savefig(cfg.W_DIR + 'analysis/plots/{}_{}_dm_hist.pdf'.format(self.obj, self.name), bbox_inches='tight')
             plt.close()
 
-        return fig, axes, np.array(r2s_tot).T
+        return fig, axes, np.array(r2s_tot).T, gmms
 
     def hist_de(self, window_width, overlay_gaussian=True, overlay_lorentzian=True, save=False):
 
