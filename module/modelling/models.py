@@ -89,7 +89,6 @@ def piecewise_exponential(t, k1, k2, t0):
     t0 : float
         Break point
     """
-
     mask = t<t0
     N1 = (np.exp(k1*t0)-1)/k1 - t0 # integral of y1 from 0 to t0
     N2 = np.exp(-k2*t0)/k2 * np.exp(k2*t0) * ( np.exp(k1*t0) - 1 ) # integral of N2 from t0 to inf
@@ -97,4 +96,4 @@ def piecewise_exponential(t, k1, k2, t0):
     y1 = np.exp(k1*t[mask])-1
     y2 = np.exp(k2*t0) * ( np.exp(k1*t0)-1 ) * np.exp(-k2*t[~mask])
     unnormed = np.concatenate((y1, y2))
-    return unnormed/norm
+    return abs(unnormed/norm)
