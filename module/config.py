@@ -287,28 +287,29 @@ __C.PREPROC.MAX_DT_VAC = {'Lbol': {'g': [12896, 12735, 13077, 12919, 11698, 1196
                                    'r': [23444, 22841, 23992, 22168, 22488, 21900, 19946, 18295],
                                    'i': [10631, 10624, 9652,  9677,  9998,  11184, 10280,  8603]}}
 
+# error = p[0] * mag + p[1]
+__C.PREPROC.SSA_ERROR_LINFIT = [0.0309916, -0.45708423]
 #------------------------------------------------------------------------------
 # Colour transformations
 #------------------------------------------------------------------------------
 __C.TRANSF = edict()
 __C.TRANSF.SSA = edict()
 
-# https://arxiv.org/abs/1607.01189, peacock_ssa
-__C.TRANSF.SSA.PEACOCK = {'g_north': ('g-r',[-0.078, +0.134]),
-                          'g_south': ('g-r',[-0.058, +0.102]),
-                          'r2_north':('g-r',[+0.012, -0.054]),
-                          'r2_south':('g-r',[-0.002, -0.022]),
-                          'i_north': ('r-i',[+0.008, -0.024]),
-                          'i_south': ('r-i',[+0.022, -0.092])}
+# Form of transformation should be mag_native - mag_ref = c_n * color**n + ... + c_0
+# where coefficients c are listed below
 
-__C.TRANSF.SSA.PEACOCK = {'g_north': ('g-r',[+0.078, -0.134]),
-                          'g_south': ('g-r',[+0.058, -0.102]),
-                          'r2_north':('g-r',[-0.012, +0.054]),
-                          'r2_south':('g-r',[+0.002, +0.022]),
-                          'i_north': ('r-i',[-0.008, +0.024]),
-                          'i_south': ('r-i',[-0.022, +0.092])}
+# https://arxiv.org/abs/1607.01189, peacock_ssa
+# first coefficient is for highest order term
+__C.TRANSF.SSA.PEACOCK = {'g_north': ('g-r',[-0.134, +0.078]),
+                          'g_south': ('g-r',[-0.102, +0.058]),
+                          'r2_north':('g-r',[+0.054, -0.012]),
+                          'r2_south':('g-r',[+0.022, +0.002]),
+                          'i_north': ('r-i',[+0.024, -0.008]),
+                          'i_south': ('r-i',[+0.092, -0.022])}
+
 
 # https://arxiv.org/abs/astro-ph/0701508, Ivezic2007_photometric_standardisation
+# first coefficient is for highest order term
 __C.TRANSF.SSA.IVEZIC = {'g_north':  ('g-r', [+0.2628, -0.7952, +1.0544, +0.0268]),
                          'g_south':  ('g-r', [+0.2628, -0.7952, +1.0544, +0.0268]),
 
@@ -318,6 +319,38 @@ __C.TRANSF.SSA.IVEZIC = {'g_north':  ('g-r', [+0.2628, -0.7952, +1.0544, +0.0268
                          
                          'i_north':  ('r-i', [-0.0307, +0.1163, -0.3341, -0.3584]),
                          'i_south':  ('r-i', [-0.0307, +0.1163, -0.3341, -0.3584])}
+
+
+# __C.TRANSF.SSA.HRB = {'g_south':  ('g-r', [+0.23450781, +0.192816  ]),
+#                       'r1':       ('g-r', [+0.20054183, -0.33739011]),
+#                       'r2_south': ('g-r', [-0.06210134, -0.17076644]),
+#                       'i_south':  ('r-i', [-0.07449726, -0.43398917]),
+                      
+#                       # ivezic
+#                       'g_north':  ('g-r', [+0.2628, -0.7952, +1.0544, +0.0268]),
+#                       'r2_north': ('r-i', [-0.0107, +0.0050, -0.2689, -0.1540]),
+#                       'i_north':  ('r-i', [-0.0307, +0.1163, -0.3341, -0.3584])}
+
+## Below is SSS -> SDSS
+# __C.TRANSF.SSA.OWN = {'g_south': ('g-r', [0.234126365664, 0.192988066258]),
+#                       'r1': ('g-r', [0.223064113088, -0.348041603371]),
+#                       'r2_south': ('g-r', [-0.06663700799, -0.168667410171]),
+#                       'i_south': ('r-i', [-0.094850522924, -0.42802724224]),
+                      
+#                       # ivezic
+#                       'g_north':  ('g-r', [+0.2628, -0.7952, +1.0544, +0.0268]),
+#                       'r2_north': ('r-i', [-0.0107, +0.0050, -0.2689, -0.1540]),
+#                       'i_north':  ('r-i', [-0.0307, +0.1163, -0.3341, -0.3584])}
+
+__C.TRANSF.SSA.OWN = {'g_south': ('g-r', [0.222067668122, 0.199906281913]),
+                      'r1': ('g-r', [0.209817608231, -0.338134174909]),
+                      'r2_south': ('g-r', [-0.091072654821, -0.150900424498]),
+                      'i_south': ('r-i', [-0.125610015322, -0.435805256644]),
+                      
+                      # ivezic
+                      'g_north':  ('g-r', [+0.2628, -0.7952, +1.0544, +0.0268]),
+                      'r2_north': ('r-i', [-0.0107, +0.0050, -0.2689, -0.1540]),
+                      'i_north':  ('r-i', [-0.0307, +0.1163, -0.3341, -0.3584])}
 
 #------------------------------------------------------------------------------
 # Analysis and results
@@ -359,3 +392,14 @@ __C.FIG.COLORS.SURVEYS = {'ssa' :'#FBC599',
                           'ztf' :'#DB5375',
                           'ps'  :'#75B2E3',
                           'sdss':'#9C6AD2'}
+
+
+__C.FIG.LABELS = edict()
+
+__C.FIG.LABELS.PROP = {'Lbol':r'$\log_{10}( L_{\mathrm{bol}} \; [\mathrm{erg\;s}^{-1}])$',
+                       'MBH' :r'$\log_{10}( M_{\mathrm{BH}}  /M_\odot)$',
+                       'nEdd':r'$\log_{10}( L_{\mathrm{bol}} /L_{\mathrm{Edd}})$'}
+
+__C.FIG.LABELS.PROPv2 = {'Lbol':r'$\log ( L_{\mathrm{bol}})$',
+                         'MBH' :r'$\log ( M_{\mathrm{BH}}/M_\odot)$',
+                         'nEdd':r'$\log ( n_{\mathrm{Edd}})$'}
