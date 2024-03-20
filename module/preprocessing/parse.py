@@ -30,14 +30,37 @@ def filter_data(df, bounds={}, dropna=True, valid_uids=None, percentiles=[], ver
     Note, using inplace=True is approx ~30% more memory efficient and prevents additional dataframes being stored.
     Use inplace=False when testing bounds, but then switch to inplace=True once suitable bounds have been found. 
     Note, the bounds are INCLUSIVE.
+
+    Parameters:
+    -----------
+    df : DataFrame
+        The dataframe to filter.
+    bounds : dict
+        A dictionary of bounds for each column in the dataframe.
+    dropna : bool
+        Whether to drop rows with NaN values.
+    valid_uids : Series
+        A series of valid uids to restrict the dataframe to.
+    percentiles : list or dict
+        If list, then calculate bounds from percentiles for all columns. If dict, then calculate bounds for the columns in the dictionary.
+        percentiles should be in range [0,1].
+    verbose : bool
+        Whether to print out the number of points removed for each column.
     """
 
     # Restrict the keys in bounds to those that are in df.columns
     if bounds:
         bounds = {k:v for k,v in bounds.items() if k in df.columns}
     elif percentiles:
-        # If no bounds are provided, but percentiles are, then calculate bounds from percentiles
-        bounds={col:df[col].quantile(percentiles).values for col in df.columns}
+        if isinstance(percentiles, list):
+            # If no bounds are provided, but percentiles are, then calculate bounds from percentiles
+            bounds={col:df[col].quantile(percentiles).values for col in df.columns}
+        elif isinstance(percentiles, dict):
+            # If percentiles are a dictionary, then use the dictionary to calculate bounds for the columns in percentiles
+            bounds={col:df[col].quantile(value).values for col, value in percentiles.items()}
+        else:
+            raise Exception('Percentiles must be a list or a dictionary.')
+        
     # Restrict our dataframe rows with indices contained in valid_uids, if provided.
     df = df.copy()
     n = len(df.index)
