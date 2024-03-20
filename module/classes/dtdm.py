@@ -57,7 +57,7 @@ class dtdm_raw_analysis():
         self.groups = [pd.read_csv(path + fname, index_col=self.ID) for fname in fnames]
         self.n_groups = len(self.groups)
         self.bounds_values = np.loadtxt(cfg.D_DIR + 'computed/archive/{}/binned/{}/bounds_values.txt'.format(self.obj, self.key))
-        self.label_range_val = {i:'{:.1f} < {} < {:.1f}'.format(self.bounds_values[i],self.key,self.bounds_values[i+1]) for i in range(len(self.bounds_values)-1)}
+        self.label_range_val = {i:r'{:.1f} < {} < {:.1f}'.format(self.bounds_values[i],cfg.FIG.LABELS.PROPv2[self.key],self.bounds_values[i+1]) for i in range(len(self.bounds_values)-1)}
 
     def bin_de_2d(self, n_chunks, read=False):
         """
@@ -205,7 +205,7 @@ class dtdm_raw_analysis():
                 self.pooled_stats = ({name[7:-6].replace('_',' '):np.array([np.loadtxt('{}{}_{}.csv'.format(fpath,name[:-6],i)) 
                                     for i in range(self.n_groups)])
                                     for name in names if name.startswith('pooled')})
-                self.label_range_val = {i:'{:.1f} < {} < {:.1f}'.format(self.bounds_values[i],self.key,self.bounds_values[i+1]) for i in range(self.n_groups)}
+                self.label_range_val = {i:r'{:.1f} < {} < {:.1f}'.format(self.bounds_values[i],cfg.FIG.LABELS.PROPv2[self.key],self.bounds_values[i+1]) for i in range(self.n_groups)}
                 self.mjd_edges = np.array([np.loadtxt(fpath + f'mjd_edges_{i}.csv') for i in range(self.n_groups)])
         
         else:
@@ -214,7 +214,7 @@ class dtdm_raw_analysis():
         
         self.mjd_centres = (self.mjd_edges[..., :-1] + self.mjd_edges[..., 1:])/2
 
-    def plot_stats(self, keys, figax, label=None, legend_loc='upper right', show_marker_bin_counts=False, **kwargs):
+    def plot_stats(self, keys, figax, label=None, legend_loc='upper right', show_marker_bin_counts=False, plot_kwargs={},  **kwargs):
         if figax is None:
             fig, ax = plt.subplots(1,1, figsize=(10,6))
         else:
@@ -224,6 +224,10 @@ class dtdm_raw_analysis():
         
         color = kwargs.pop('color') if 'color' in kwargs else None
 
+        if label is None:
+            label = ['{}, {}'.format(self.name,key) for key in keys]
+        elif isinstance(label, str):
+            label = [label]*len(keys)
         # Norm by log
         # normalised_bin_counts = np.log(self.pooled_stats['n']) + 10
         # Norm by total max
@@ -232,29 +236,30 @@ class dtdm_raw_analysis():
         # normalised_bin_counts = self.pooled_stats['n']/self.pooled_stats['n'].sum(axis=0)*1e3
         # Norm per sqrt time bin (ie area propto counts)
         normalised_bin_counts = (self.pooled_stats['n']/self.pooled_stats['n'].sum(axis=0))**0.5*1e2
-        error_norm = (2/self.pooled_stats['n'])**0.12
-        for key in keys:
+        error_norm = (2/self.pooled_stats['n'])**0.15
+        for i, key in enumerate(keys):
             y = self.pooled_stats[key]
             if key.startswith('SF'):
                 y[y<0] = np.nan
+                y[y==0] = np.nan
             # else:
                 # y[:,1] = y[:,1]**0.5 # NOTE: Non SF errors are actually variances as of 08/08/23. If extract_features is run since then, remove this line.
-            
-            if label is None:
-                label = '{}, {}'.format(self.name,key)
+
             # ax.errorbar(self.mjd_centres, y[:,0], yerr=y[:,1]**0.5, label='{}, {}'.format(key,self.name), color=color, lw=2.5) # square root this
             ax.errorbar(self.mjd_centres, y[:,0], yerr=y[:,1]*error_norm,
                         capsize=3,
-                        lw=0.6,
-                        elinewidth=0.4,
-                        markeredgewidth=0.5,
-                        color=color)
+                        lw=1,
+                        elinewidth=0.9,
+                        markeredgewidth=0.8,
+                        color=color,
+                        **plot_kwargs)
             ax.scatter(self.mjd_centres, y[:,0], s=normalised_bin_counts,
-                         label=label,
+                       label=label[i],
                        color=color)
     
             ax.set(xlabel='Rest frame time lag (days)')
-        ax.grid(visible=True, lw=0.4)
+        ax.grid(visible=True, which='major', alpha=0.5)
+        ax.grid(visible=True, which='minor', alpha=0.2)
         ax.set(**kwargs)
         for handle in ax.legend(loc=legend_loc).legend_handles:
             try:
@@ -307,6 +312,7 @@ class dtdm_raw_analysis():
 
     def fit_stats_prop(self, key, model_name, ax=None, least_sq_kwargs={}, plot_args={}, **kwargs):
         fitted_params_ = []
+        fitted_params_err = []
         for group_idx in range(self.n_groups):
             y, yerr = self.pooled_stats[key][group_idx].T
             x = self.mjd_centres[group_idx]
@@ -348,7 +354,8 @@ class dtdm_raw_analysis():
                 # ax.legend()
 
             fitted_params_.append(fitted_params)
-        return fitted_params_
+            fitted_params_err.append(np.diag(pcov))
+        return np.array(fitted_params_), np.array(fitted_params_err)
 
     def plot_comparison_data(self, ax, name='macleod', **kwargs):
         # f = lambda x: 0.01*(x**0.443)
@@ -388,7 +395,7 @@ class dtdm_raw_analysis():
         dt = np.logspace(0,4,100)
         ax.plot(dt, ensemble_drw(sigs, taus, dt), label='DRW SF')
 
-    def plot_stats_property(self, keys, figax, macleod=False, fill_between=False, shift=False, **kwargs):
+    def plot_stats_property(self, keys, figax=None, macleod=False, fill_between=False, shift=False, **kwargs):
         if figax is None:
             fig, ax = plt.subplots(1,1, figsize=(10,7))
         else:
@@ -401,7 +408,7 @@ class dtdm_raw_analysis():
         # Norm by total max
         # normalised_bin_counts = self.pooled_stats['n']/np.max(self.pooled_stats['n'])*1e4
         # Norm per group
-        normalised_bin_counts = self.pooled_stats['n']/self.pooled_stats['n'].sum(axis=0)*1e3
+        normalised_bin_counts = self.pooled_stats['n']/self.pooled_stats['n'].sum(axis=0)*3e2 + 10
         # Norm per time bin
         # normalised_bin_counts = self.pooled_stats['n']/(self.pooled_stats['n'].sum(axis=1).reshape(-1,1))*2e3
         
@@ -418,7 +425,8 @@ class dtdm_raw_analysis():
             elinewdith = 0.2
             markeredgewidth = 0.2
 
-        key_centres = (self.bounds_values[1:] + self.bounds_values[:-1])/2
+        self.key_centres = (self.bounds_values[1:] + self.bounds_values[:-1])/2
+
         for group_idx in range(self.n_groups):
             error_norm = (2/self.pooled_stats['n'][group_idx])**0.1
             for key in keys:
@@ -430,7 +438,7 @@ class dtdm_raw_analysis():
                 color = cmap.gist_earth(group_idx/self.n_groups)
                 x = self.mjd_centres[group_idx].copy()
                 if shift:
-                    x /= 10**(key_centres[group_idx, np.newaxis])
+                    x /= 10**(self.key_centres[group_idx, np.newaxis])
                 ax.errorbar(x, y[:,0], yerr=y[:,1]*error_norm,
                             capsize=5,
                             lw=0.5,
@@ -438,8 +446,9 @@ class dtdm_raw_analysis():
                             markeredgewidth=markeredgewidth)#, color=color) # square root this
                 # make the size of the scatter points proportional to the number of points in the bin
                 ax.scatter(x, y[:,0], s=normalised_bin_counts[group_idx],
-                              alpha=0.6,
+                           alpha=0.6,
                            label=self.label_range_val[group_idx])#, color=color)
+                ax.axvspan(0, 10, color='gray', alpha=0.01)
 
         if macleod:
             f = lambda x: 0.01*(x**0.443)
@@ -447,15 +456,19 @@ class dtdm_raw_analysis():
             x,y = np.loadtxt(cfg.D_DIR + 'Macleod2012/SF/macleod2012.csv', delimiter=',').T
             ax.scatter(x, y, label = 'macleod 2012')
 
-        ax.legend()
+        ax.grid(visible=True, which='major', alpha=0.5)
+        ax.grid(visible=True, which='minor', alpha=0.2)
+       
+        # Lines below are no longer needed since we now combine the legends from gri bands in the notebook
+        # ax.legend()
+        # for handle in plt.legend().legend_handles:
+        #     try:
+        #         handle.set_sizes([70])
+        #     except:
+        #         pass
 
-        for handle in plt.legend().legend_handles:
-            try:
-                handle.set_sizes([70])
-            except:
-                pass
-
-        ax.set(xlabel='Rest frame time lag (days)', **kwargs)
+        ax.set(xlabel='Rest frame time lag (days)')
+        ax.set(**kwargs)
 
         return (fig,ax)
 
