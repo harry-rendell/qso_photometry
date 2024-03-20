@@ -101,8 +101,8 @@ def fit_broken_power_law(x, y, yerr, least_sq_kwargs={}, **kwargs):
     """
     #x, A, x_b, a_1, a_2, delta=1
     popt, pcov, model_values = fit(models.bkn_pow_smooth, x, y, yerr, least_sq_kwargs=least_sq_kwargs, **kwargs)
-    amplitude, break_point, index_1, index_2 = popt
-    return amplitude, break_point, index_1, index_2, pcov, model_values
+    amplitude, break_point, index_1, index_2, delta = popt
+    return amplitude, break_point, index_1, index_2, delta, pcov, model_values
 
 def fit_DRW_SF(x, y, yerr, **kwargs):
     """
