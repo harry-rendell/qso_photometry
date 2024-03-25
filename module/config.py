@@ -153,7 +153,7 @@ __C.PREPROC.pairwise_dtypes = {'uid': np.uint32,
 
 # Bounds to be applied in when running calculate_stats_looped
 __C.PREPROC.dtdm_bounds = {'qsos':       {'dm': (-5, 5), 'de': (1e-10, 2)},
-                           'calibStars': {'dm': (-5, 5), 'de': (0, 1)},
+                           'calibStars': {'dm': (-5, 5), 'de': (1e-10, 2)},
                            'sim':        {'dm': (-5, 5), 'de': (1e-10, 2)}}
 
 # Limiting magnitudes
@@ -202,7 +202,7 @@ __C.PREPROC.LIMIT_MAG.ZTF = {
 
 # https://arxiv.org/abs/1607.01189, peacock_ssa
 # 4σ limiting magnitudes, using the smaller of the two between UKST and POSS2.
-__C.PREPROC.LIMIT_MAG.SUPERCOSMOS = {
+__C.PREPROC.LIMIT_MAG.SSA = {
                                     # 4σ
                                     'g': 21.17,
                                     'r': 20.30,
@@ -267,11 +267,11 @@ __C.PREPROC.MAX_DT['OBS']  = {'qsos':      {'g': 16513, 'r': 26702, 'i': 14698},
 # Inner: using ∆m, ∆t pairs within surveys only.
 __C.PREPROC.MAX_DT_INNER = edict()
 
-__C.PREPROC.MAX_DT_INNER['REST']  = {'qsos':     {'g': 5108, 'r': 16141, 'i': 6320},
-                                      'calibStars':{'g':np.nan, 'r':np.nan, 'i':np.nan}}
+__C.PREPROC.MAX_DT_INNER['REST']  = {'qsos':      {'g': 5108, 'r': 16141, 'i': 6320},
+                                     'calibStars':{'g':np.nan, 'r':np.nan, 'i':np.nan}}
 
 __C.PREPROC.MAX_DT_INNER['OBS']  = {'qsos':      {'g': 6181, 'r': 18010, 'i': 7721},
-                                      'calibStars':{'g': 4377, 'r': 17504, 'i': 6942}}
+                                    'calibStars':{'g': 4377, 'r': 17504, 'i': 6942}}
 
 __C.PREPROC.MAX_DT_COMBINED = {'outer':{'g': 15122, 'r': 26062, 'i': 13056},
                                'inner':{'g': 5108,  'r': 17504, 'i': 6942}}
