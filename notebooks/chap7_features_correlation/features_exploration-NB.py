@@ -12,6 +12,11 @@
 #     name: python3
 # ---
 
+# + language="bash"
+# jupytext --to py features_exploration-NB.ipynb # Only run this if the notebook is more up-to-date than -NB.py
+# # jupytext --to --update ipynb features_exploration-NB.ipynb # Run this to update the notebook if changes have been made to -NB.py
+# -
+
 import os
 import sys
 sys.path.insert(0, os.path.join(os.getcwd(), "..", ".."))
@@ -31,30 +36,39 @@ ID = 'uid' if obj == 'qsos' else 'uid_s'
 # +
 n_bins = 10
 bands = 'gri'
+name = 'limited_pairs'
 
 vac = load_vac('qsos', usecols=['z','Lbol'])
 sf = []
 for band in bands:
-    s = pd.read_csv(cfg.D_DIR + f'computed/{obj}/features/{band}/SF_{n_bins}_bins.csv', index_col=ID)
+    s = pd.read_csv(cfg.D_DIR + f'computed/{obj}/features/{band}/SF_{n_bins}_bins_{name}.csv', index_col=ID)
     s['band'] = band
     vac['wavelength'] = color_transform.calculate_wavelength(band, vac['z'])
     s = s.join(vac, on=ID)
     sf.append(s)
 sf = pd.concat(sf).sort_index()
-# -
 
-sf.columns
+# +
+import re
+sort_key = lambda x: (int(re.search(r'(\d+)_(\d+)$', x).group(1)) , int(re.search(r'(\d+)_(\d+)$', x).group(2))) 
+sorted_n = sorted([col for col in sf.columns if col.startswith('n_')], key=sort_key)
+
+for n in sorted_n:
+    lower, upper = sort_key(n)
+    print(f'Points in bin {lower:7,} < ∆t < {upper:<7,} days: {sf[n].sum():>13,}')
 
 # +
 # kwargs = {'n_l':2, 'n_L':11, 'l_low':1000, 'l_high':5000, 'L_low':45.2, 'L_high':47.2}
 kwargs = {'n_l':2, 'n_L':11, 'l_low':1000, 'l_high':5000, 'L_low':44.7, 'L_high':47.2}
 mask_dict_wide, l_edges_w, L_edges_w = binning.create_mask_lambda_lbol(sf, threshold=1000, verbose=False, gap=0, return_edges=True, **kwargs)
 fig = plot_groups_lambda_lbol(sf, mask_dict_wide, **kwargs)
+savefigs(fig, 'lambda_lbol/wide_limited', 'temp')
 
 # kwargs = {'n_l':11, 'n_L':11, 'l_low':1000, 'l_high':5000, 'L_low':45.2, 'L_high':47.2}
 kwargs = {'n_l':11, 'n_L':11, 'l_low':1000, 'l_high':5000, 'L_low':44.7, 'L_high':47.2}
 mask_dict_narrow, l_edges_n, L_edges_n = binning.create_mask_lambda_lbol(sf, threshold=1000, verbose=False, gap=0, return_edges=True, **kwargs)
 fig = plot_groups_lambda_lbol(sf, mask_dict_narrow, **kwargs)
+savefigs(fig, 'lambda_lbol/narrow_limited', 'temp')
 
 
 # -
@@ -80,6 +94,8 @@ def plot_sfs(df, mask_dict, statistic, ax, plot_kwargs={'lw':1}, title=None):
     ax.grid(visible=True, which='minor', alpha=0.2)     
 
 
+sf
+
 # +
 stat = 'SF2_cw'
 ## overlay ensemble on each plot
@@ -90,6 +106,8 @@ for i in range(N_WAVE):
     plot_sfs(sf, {key:value for key, value in mask_dict_narrow.items() if key[0] == i}, stat, ax=ax[i+1], title=rf'{l_edges_n[i]}Å < $\lambda$ < {l_edges_n[i+1]}Å')
 
 plot_sfs(sf, mask_dict_wide, stat, ax=ax[0], title=rf'{l_edges_w[0]:.0f} Å < $\lambda$ < {l_edges_w[1]:.0f} Å')
+
+# savefigs(fig, 'lambda_lbol/SF_split_limited', 'temp')
 
 
 # +
