@@ -116,7 +116,7 @@ def average_nightly_obs(group):
     # we don't really care about mag_orig, and if we want to compare mag vs mag_orig we can look at the unclean data. Let's leave it out.
     return {'mjd':mjd_mean, 'mag':mag_mean, 'mag_orig':mag_mean_native, 'magerr':magerr_mean}
 
-def stats(group):
+def stats(group, kwargs):
     """
     Parameters
     ----------
