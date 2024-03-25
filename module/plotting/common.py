@@ -1,21 +1,25 @@
 import matplotlib.pyplot as plt
+from matplotlib import ticker
 import numpy as np
 import pandas as pd
 import os
 from ..config import cfg
 
-def plot_series(df, uids, sid=None, bands='gri', grouped=None, **kwargs):
+def plot_series(df, uids, sid=None, bands='gri', grouped=None, show_outliers=False, figax=None, **kwargs):
     """
     Simple plotting function for lightcurves
     """
 
     plt_color = {'u':'m', 'g':'g', 'r':'r', 'i':'k', 'z':'b'}
+    # plt_color = {'u':'m', 'g':'g', 'r':'r', 'i':'#6a3d9a', 'z':'b'}
     marker_dict = {3:'v', 5:'D', 7:'s', 11:'o'}
     survey_dict = {3: 'SSS', 5:'SDSS', 7:'PS1', 11:'ZTF'}
 
     if np.issubdtype(type(uids),np.integer): uids = [uids]
-    fig, axes = plt.subplots(len(uids),1,figsize = (20,3*len(uids)), sharex=True)
-    
+    if figax is None:
+        fig, axes = plt.subplots(len(uids),1,figsize = (25,3*len(uids)), sharex=True)
+    else:
+        fig, axes = figax
     if len(uids)==1:
         axes=[axes]
     for uid, ax in zip(uids,axes):
@@ -24,23 +28,24 @@ def plot_series(df, uids, sid=None, bands='gri', grouped=None, **kwargs):
             single_band = single_obj[single_obj['band']==band]
             if sid is not None:
                 # Restrict data to a single survey
-                single_band = single_band[single_band['sid']==sid]
+                single_band = single_band[single_band['sid'].isin(sid)]
             for sid_ in single_band['sid'].unique():
                 x = single_band[single_band['sid']==sid_]
+                if sid_==11:
+                    x['mjd']
                 ax.errorbar(x['mjd'], x['mag'], yerr = x['magerr'], lw = 0.5, markersize = 3, marker = marker_dict[sid_], label = survey_dict[sid_]+' '+band, color = plt_color[band])
+        
+        if show_outliers:
+            outlier_mask = single_obj['outlier'].values & single_obj['sid'].isin(sid)
+            for band in bands:
+                mask = single_obj['band']==band
+                ax.scatter(single_obj['mjd'][outlier_mask & mask], single_obj['mag'][outlier_mask & mask], color = plt_color[band], marker="*", zorder=3, s=200)
 
         ax.invert_yaxis()
         ax.set(xlabel='MJD', ylabel='mag', **kwargs)
-        ax.text(0.02, 0.9, 'uid: {}'.format(uid), transform=ax.transAxes, fontsize=10)
-
-        if grouped is not None:
-            y = grouped.loc[uid]
-            mask = ( abs(x['mag']-y['mag_med']) > 3*y['mag_std'] ).values
-            ax.scatter(x[mask]['mjd'], x[mask]['mag'], color='r', s=30)
-
-    if len(uids)==1:
-        axes=axes[0]
-        
+        ax.text(0.01, 0.85, 'uid: {}'.format(uid), transform=ax.transAxes)
+        ax.yaxis.set_major_formatter(ticker.FuncFormatter(lambda x, pos: f'{x:,.1f}'))
+        ax.grid(visible=True, which='both', alpha=0.6)
     plt.subplots_adjust(hspace=0)        
     return fig, axes
 
@@ -70,7 +75,7 @@ def savefigs(fig, imgname, dirname, dpi=100, noaxis=False, **kwargs):
         # Save to a temporary directory
         pdf_path = os.path.join(cfg.W_DIR, 'temp')
         png_path = os.path.join(cfg.W_DIR, 'temp')
-
+        
     elif not os.path.exists(dirname):
         # If we provide a relative path, assume that we're plotting straight to our overleaf project
         dirname = os.path.join(cfg.THESIS_DIR, dirname)
