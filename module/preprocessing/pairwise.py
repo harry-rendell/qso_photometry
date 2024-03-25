@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import os
 from ..config import cfg
-from .parse import split_into_non_overlapping_chunks, create_mask_from_bounds
+from .parse import split_into_non_overlapping_chunks, create_mask_from_bounds, filter_data
 from scipy.stats import skew, kurtosis, iqr
 
 def groupby_dtdm_between(df, args):
@@ -158,17 +158,40 @@ def calculate_stats_looped(df, kwargs):
     results = {feature:np.zeros(shape=(n_points, 2)) for feature in features}
     results['n'] = np.zeros(shape=(n_points), dtype='uint64')
 
+    if 'subset' in kwargs:
+        df = df[df.index.isin(kwargs['subset'])]
+
     if inner:
-        df = df[df['dsid'].isin([25, 49, 121]).values] # Allow sdss-sdss, ps-ps, ztf-ztf only
-        # df = df[df['dsid'].isin([35, 25, 49, 121]).values] # Allow sdss-ps, sdss-sdss, ps-ps, ztf-ztf only
+        # df = df[df['dsid'].isin([25, 49, 121]).values] # Allow sdss-sdss, ps-ps, ztf-ztf only
+        # [25,49,121,35,55,77] # all except ssa
+        df = df[df['dsid'].isin([35, 25, 49, 121]).values] # Allow sdss-ps, sdss-sdss, ps-ps, ztf-ztf only
 
     mask1 = df['dm'].notna().values & df['de'].notna().values
-    mask2 = create_mask_from_bounds(df, cfg.PREPROC.dtdm_bounds[kwargs['obj']])
-    df = df[mask1 & mask2]
+
+    # bounds={'dm':df['dm'].quantile([0.001,0.999]).values, 'de':(0, 2)}
+    # lower, upper = df['dm'].quantile([0.0001,0.9999]).values
+    # lower = max(lower, -5)
+    # upper = min(upper, 5)
+    # bounds={'dm':(lower,upper), 'de':(0, 2)}
+
+    # bounds={'dm':(-3,3), 'de':(0, 2)}
+    # mask2 = create_mask_from_bounds(df, cfg.PREPROC.dtdm_bounds[kwargs['obj']])
+    # print(bounds)
+    # mask2 = create_mask_from_bounds(df, bounds)
+    # df = df[mask1 & mask2]
+
+    df = df[mask1]
     for j, edges in enumerate(zip(mjd_edges[:-1], mjd_edges[1:])):
         mjd_lower, mjd_upper = edges
         boolean = ((mjd_lower < df['dt']) & (df['dt']<mjd_upper)).values# & (df['dm2_de2']>0) # include last condition to remove negative SF values
         subset = df[boolean]
+
+        lower, upper = subset['dm'].quantile([0.0001,0.9999]).values
+        lower = max(lower, -5)
+        upper = min(upper, 5)
+        mask = create_mask_from_bounds(subset, {'dm':(lower,upper), 'de':(0, 2)})
+        subset = subset[mask]
+
         n = len(subset)
         results['n'][j] = n
         # print('\t\tnumber of points in {:.1f} < ∆t < {:.1f}: {}'.format(mjd_lower, mjd_upper, boolean.sum()))
