@@ -140,7 +140,59 @@ def assign_groups(df_, property_='Lbol'):
     print(df['group'].value_counts().sort_index())
     return df.join(vac, on='uid')
 
-def create_mask_lambda_lbol(df, threshold=100, n_l=15, n_L=15, l_low=1000, l_high=5000, L_low=45.2, L_high=47.2, gap=0, return_edges=False, verbose=False):
+# def create_mask_lambda_lbol(df, threshold=100, n_l=15, n_L=15, l_low=1000, l_high=5000, L_low=45.2, L_high=47.2, gap=(0,0), return_edges=False, verbose=False):
+#     """
+#     Create a mask for each bin in the lambda-Lbol plane.
+
+#     Parameters
+#     ----------
+#     df : pandas.DataFrame
+#         Dataframe containing at least uid, Lbol, wavelength
+#     threshold : int
+#         Minimum number of objects in a bin to be included in the mask
+#     n : int
+#         Number of bins in each dimension
+#     l_low : float
+#         Minimum wavelength
+#     l_high : float
+#         Maximum wavelength
+#     L_low : float
+#         Minimum Lbol
+#     L_high : float
+#         Maximum Lbol
+#     gap : int
+#         Number of bins to skip between each mask
+#     verbose : bool
+#         Print number of objects in each bin
+    
+#     Returns
+#     -------
+#     mask_dict : dict
+#         Dictionary of masks, with keys (l,L) and values boolean arrays
+#     """
+#     import itertools
+
+#     lambda_edges = np.linspace(l_low, l_high, n_l)
+#     Lbol_edges   = np.linspace(L_low, L_high, n_L)
+
+#     # create a series of 2d bins from the edges
+#     Lbol_bins = pd.cut(df['Lbol'], Lbol_edges, labels=False)
+#     lambda_bins = pd.cut(df['wavelength'], lambda_edges, labels=False)
+
+#     # masks = [(Lbol_bins == L).values & (lambda_bins == l).values for l,L in itertools.product(range(n-1), range(n-1))]
+#     masks_full = {(l,L):(Lbol_bins == L).values & (lambda_bins == l).values for l,L in itertools.product(range(n_l-1), range(n_L-1))}
+#     mask_dict = {key:value for key,value in masks_full.items() if (value.sum() > threshold) and (key[0] % (gap[0]+1) == 0) and (key[1] % (gap[1]+1) == 0)}
+    
+#     if verbose:
+#         for key, mask in mask_dict.items():
+#             print(f"Number of objects in bin {key}: {np.sum(mask)}")
+
+#     if return_edges:
+#         return mask_dict, lambda_edges, Lbol_edges
+#     return mask_dict
+
+
+def create_mask_lambda_prop(df, property_name, threshold=100, n_l=15, n_p=15, l_low=1000, l_high=5000, p_low=45.2, p_high=47.2, gap=(0,0), return_edges=False, verbose=False):
     """
     Create a mask for each bin in the lambda-Lbol plane.
 
@@ -148,6 +200,8 @@ def create_mask_lambda_lbol(df, threshold=100, n_l=15, n_L=15, l_low=1000, l_hig
     ----------
     df : pandas.DataFrame
         Dataframe containing at least uid, Lbol, wavelength
+    property_name : str
+        Name of the property to bin
     threshold : int
         Minimum number of objects in a bin to be included in the mask
     n : int
@@ -156,10 +210,10 @@ def create_mask_lambda_lbol(df, threshold=100, n_l=15, n_L=15, l_low=1000, l_hig
         Minimum wavelength
     l_high : float
         Maximum wavelength
-    L_low : float
-        Minimum Lbol
-    L_high : float
-        Maximum Lbol
+    p_low : float
+        Minimum property
+    p_high : float
+        Maximum property
     gap : int
         Number of bins to skip between each mask
     verbose : bool
@@ -173,40 +227,20 @@ def create_mask_lambda_lbol(df, threshold=100, n_l=15, n_L=15, l_low=1000, l_hig
     import itertools
 
     lambda_edges = np.linspace(l_low, l_high, n_l)
-    Lbol_edges   = np.linspace(L_low, L_high, n_L)
+    prop_edges   = np.linspace(p_low, p_high, n_p)
 
     # create a series of 2d bins from the edges
-    Lbol_bins = pd.cut(df['Lbol'], Lbol_edges, labels=False)
+    prop_bins = pd.cut(df[property_name], prop_edges, labels=False)
     lambda_bins = pd.cut(df['wavelength'], lambda_edges, labels=False)
 
     # masks = [(Lbol_bins == L).values & (lambda_bins == l).values for l,L in itertools.product(range(n-1), range(n-1))]
-    masks_full = {(l,L):(Lbol_bins == L).values & (lambda_bins == l).values for l,L in itertools.product(range(n_l-1), range(n_L-1))}
-    mask_dict = {key:value for key,value in masks_full.items() if (value.sum() > threshold) and (key[0] % (gap+1) == 0) and (key[1] % (gap+1) == 0)}
+    masks_full = {(l,L):(prop_bins == L).values & (lambda_bins == l).values for l,L in itertools.product(range(n_l-1), range(n_p-1))}
+    mask_dict = {key:value for key,value in masks_full.items() if (value.sum() > threshold) and (key[0] % (gap[0]+1) == 0) and (key[1] % (gap[1]+1) == 0)}
     
     if verbose:
         for key, mask in mask_dict.items():
             print(f"Number of objects in bin {key}: {np.sum(mask)}")
 
     if return_edges:
-        return mask_dict, lambda_edges, Lbol_edges
-    return mask_dict
-
-
-def create_mask_property(df, property_, bounds, threshold=100, n=15, gap=0, verbose=False):
-    import itertools
-
-    Lbol_edges   = np.linspace(L_low, L_high, n)
-    lambda_edges = np.linspace(l_low, l_high, n)
-
-    # create a series of 2d bins from the edges
-    Lbol_bins = pd.cut(df['Lbol'], Lbol_edges, labels=False)
-    lambda_bins = pd.cut(df['wavelength'], lambda_edges, labels=False)
-
-    # masks = [(Lbol_bins == L).values & (lambda_bins == l).values for l,L in itertools.product(range(n-1), range(n-1))]
-    masks_full = {(l,L):(Lbol_bins == L).values & (lambda_bins == l).values for l,L in itertools.product(range(n-1), range(n-1))}
-    mask_dict = {key:value for key,value in masks_full.items() if (value.sum() > threshold) and (key[0] % 2 == 0) and (key[1] % 2 == 0)}
-    
-    for key, mask in mask_dict.items():
-        print(f"Number of objects in bin {key}: {np.sum(mask)}")
-
+        return mask_dict, lambda_edges, prop_edges
     return mask_dict
