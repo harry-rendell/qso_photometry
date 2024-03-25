@@ -7,7 +7,7 @@ import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from module.config import cfg
 from module.preprocessing import data_io, parse
-from module.modelling.carma import generate_mock_dataset
+from module.modelling.carma import save_mock_dataset
 from module.assets import load_grouped
 
 if __name__ == "__main__":
@@ -39,6 +39,6 @@ if __name__ == "__main__":
     chunks = np.array_split(np.arange(1,1000*args.n_cores+1, dtype='int'), args.n_cores)
     suffixes, _ = parse.split_into_non_overlapping_chunks(None, args.n_cores, bin_size=5000, return_bin_edges=True)
     # chunks_and_suffixes = list(zip(chunks, suffixes))
-    data_io.dispatch_function(generate_mock_dataset, chunks=list(zip(chunks,suffixes)), max_processes=cfg.USER.N_CORES, **kwargs)
+    data_io.dispatch_function(save_mock_dataset, chunks=list(zip(chunks,suffixes)), max_processes=cfg.USER.N_CORES, **kwargs)
 
     print('Elapsed:',time.strftime("%Hh %Mm %Ss",time.gmtime(time.time()-start)))
