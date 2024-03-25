@@ -135,7 +135,7 @@ def plot_sf_ensemble(self, save = False):
 # 
 #------------------------------------------------------------------------------
 
-def plot_series(df, uids, marker_dict={}, survey_dict={}, plt_color={}, sid=None, bands='r', show_outliers=False, axes=None, **kwargs):
+def plot_series(df, uids, marker_dict={}, survey_dict={}, plt_color={}, sid=None, bands='r', show_outliers=False, figax=None, **kwargs):
     """
     Plot lightcurve of given objects
 
@@ -148,8 +148,10 @@ def plot_series(df, uids, marker_dict={}, survey_dict={}, plt_color={}, sid=None
             1 = SSS_r1, 3 = SSS_r2, 5 = SDSS, 7 = PS1, 11 = ZTF
     """
     if np.issubdtype(type(uids),np.integer): uids = [uids]
-    if axes is None:
+    if figax is None:
         fig, axes = plt.subplots(len(uids),1,figsize = (25,3*len(uids)), sharex=True)
+    else:
+        fig, axes = figax
     if len(uids)==1:
         axes=[axes]
     for uid, ax in zip(uids,axes):
@@ -158,10 +160,16 @@ def plot_series(df, uids, marker_dict={}, survey_dict={}, plt_color={}, sid=None
             single_band = single_obj[single_obj['band']==band]
             if sid is not None:
                 # Restrict data to a single survey
-                single_band = single_band[single_band['sid']==sid]
+                single_band = single_band[single_band['sid'].isin(sid)]
             for sid_ in single_band['sid'].unique():
                 x = single_band[single_band['sid']==sid_]
                 ax.errorbar(x['mjd'], x['mag'], yerr = x['magerr'], lw = 0.5, markersize = 3, marker = marker_dict[sid_], label = survey_dict[sid_]+' '+band, color = plt_color[band])
+        
+        if show_outliers:
+            outlier_mask = single_obj['outlier'].values & single_obj['sid'].isin(sid)
+            for band in bands:
+                mask = single_obj['band']==band
+                ax.scatter(single_obj['mjd'][outlier_mask & mask], single_obj['mag'][outlier_mask & mask], color = plt_color[band], marker="*", zorder=3, s=200)#, edgecolor='k', linewidths=1)
 
         # else:
         #     # Plot a single band
@@ -173,16 +181,18 @@ def plot_series(df, uids, marker_dict={}, survey_dict={}, plt_color={}, sid=None
         #         ax.errorbar(x['mjd'], x['mag'], yerr = x['magerr'], lw = 0, elinewidth=0.7, marker = self.marker_dict[sid_], label = self.survey_dict[sid_]+' '+filtercodes, color = self.plt_color[filtercodes])
         #     mean = single_obj['mag'].mean()
         #     ax.axhline(y=mean, color='k', ls='--', lw=0.4, dashes=(50, 20))
+
             
-        if show_outliers:
-            """
-            requires having computed MAD previously
-            """
-            mjd, mag, MAD = single_obj.loc[single_obj['MAD']>0.25, ['mjd','mag', 'MAD']].values.T
-            ax.scatter(mjd, mag, s=100)
-            string = ', '.join(['{:.3f}' for _ in MAD]).format(*MAD)
-            # ax.text(0.02, 0.8, 'MAD max: {:.2f}'.format(np.max(MAD)), transform=ax.transAxes, fontsize=10)
-            ax.text(0.02, 0.8, string, transform=ax.transAxes, fontsize=10)
+
+
+            # """
+            # requires having computed MAD previously
+            # """
+            # mjd, mag, MAD = single_obj.loc[single_obj['MAD']>0.25, ['mjd','mag', 'MAD']].values.T
+            # ax.scatter(mjd, mag, s=100)
+            # string = ', '.join(['{:.3f}' for _ in MAD]).format(*MAD)
+            # # ax.text(0.02, 0.8, 'MAD max: {:.2f}'.format(np.max(MAD)), transform=ax.transAxes, fontsize=10)
+            # ax.text(0.02, 0.8, string, transform=ax.transAxes, fontsize=10)
             # mu, std = self.df_grouped.loc[uid,['mag_mean','mag_std']].values.T
             # axis.axhline((mu-5*std),lw=0.5)
             # axis.axhline((mu+5*std),lw=0.5)
@@ -196,8 +206,7 @@ def plot_series(df, uids, marker_dict={}, survey_dict={}, plt_color={}, sid=None
     
     plt.subplots_adjust(hspace=0)
     
-    if axes is not None:
-        return axes
+    return fig, axes
 
 #------------------------------------------------------------------------------
 # 
