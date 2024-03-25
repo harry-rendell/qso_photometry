@@ -39,7 +39,7 @@ if __name__ == "__main__":
     elif OBJ == 'calibStars':
         ID = 'uid_s'
         mjd_key = 'mjd'
-        args.frame = 'REST'
+        args.frame = 'OBS'
     elif OBJ == 'sim':
         ID = 'uid'
         mjd_key = 'mjd'    
@@ -86,6 +86,7 @@ if __name__ == "__main__":
             uid_subset = mag_med[(mag_med < args.mag_max).values].index
             kwargs['subset'] = uid_subset
 
+        assert not np.isnan(max_t), 'max_t is nan'
         # create time bins given the maximum time
         if log_or_lin.startswith('log'):
             mjd_edges = construct_T_edges(t_max=max_t, n_edges=n_points+1)
