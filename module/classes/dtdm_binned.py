@@ -308,7 +308,10 @@ class dtdm_binned_class():
                     x = np.linspace(-2,2,1000)
                     n_components = 5
                     gmm = GaussianMixture(n_components, covariance_type='full', means_init=np.zeros(shape=(n_components,1)), max_iter=1000, tol=1e-5)
-                    a = np.repeat(self.m_bin_centres, np.round(counts/np.round(counts.min(), -2), 0).astype(int))
+                    # a = np.repeat(self.m_bin_centres, np.round(counts/np.round(counts.min(), -2), 0).astype(int))
+                    n = 10 # reduce the number of repeats by a factor of n
+                    a = np.repeat(self.m_bin_centres, np.round(counts/(np.round(counts.min(), -2)*n), 0).astype(int))
+                    # return a
                     gmm.fit(a.reshape(-1,1))
                     gmms.append(gmm)
                     
