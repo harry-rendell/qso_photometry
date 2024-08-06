@@ -1,3 +1,5 @@
 # To generate a color gradient with N colors:
 # print([c.replace('#','').upper() for c in sns.color_palette("husl", N).as_hex()])
-axes.prop_cycle: cycler('color', ['ffa800','eb7600','eb1e00','d500ff','6f00eb','006EFF','00aceb','12c26e'])
+axes.prop_cycle: cycler('color', ['ffa800','eb7600','eb1e00','FF00AE','d500ff','6f00eb','2B00EB','006EFF','00aceb','12c26e','18C212','ADF103','FF4E2A'])
+# axes.prop_cycle: cycler('color', ['F77189', 'D58C32', 'A4A031', '50B131', '34AE91', '37ABB5', '3BA3EC', 'BB83F4', 'F564D4'])
+# axes.prop_cycle: cycler('color', ['F77189', 'DC8932', 'AE9D31', '77AB31', '33B07A', '36ADA4', '38A9C5', '6E9BF4', 'CC7AF4', 'F565CC'])
