@@ -61,6 +61,26 @@ __C.SURVEY_LABELS = {'sdss':'SDSS',
                      'ztf':'ZTF',
                      'ssa':'SuperCOSMOS'}
 
+__C.SURVEY_LABELS_SHORT = {'sdss':'SDSS',
+                           'ps':'PS',
+                           'ztf':'ZTF',
+                           'ssa':'SSS'}
+
+# sss = 3
+# sdss = 5
+# ps = 7
+# ztf = 11
+# __C.SURVEY_LABELS_PAIRS = {9  :'sss-sss',
+#                            15 :'sss-sdss',
+#                            21 :'sss-ps',
+#                            33 :'sss-ztf',
+#                            25 :'sdss-sdss',
+#                            35 :'sdss-ps',
+#                            55 :'sdss-ztf',
+#                            49 :'ps-ps',
+#                            77 :'ps-ztf',
+#                            121:'ztf-ztf'}
+
 __C.COLLECTION.SDSS = edict()
 # Datatypes
 # mag converted from real[4] with similar precision
@@ -161,6 +181,8 @@ __C.PREPROC.LIMIT_MAG = edict()
 
 # https://www.sdss4.org/dr16/imaging/other_info/
 # 5σ limiting magnitudes
+# I think these are single epoch?? SDSS doesn't really do much multiepoch imaging so it must be.
+# This is just taken from the website and doesn't seem to appear in a paper. How to reference?
 __C.PREPROC.LIMIT_MAG.SDSS = {
                             'u': 22.15,
                             'g': 23.13,
@@ -171,21 +193,20 @@ __C.PREPROC.LIMIT_MAG.SDSS = {
 
 # https://outerspace.stsci.edu/display/PANSTARRS/PS1+FAQ+-+Frequently+asked+questions
 # 5σ limiting magnitudes
-# Note, these are actually the 3pi stacked 5σ depths... Should really be using single epoch 5σ depths
 __C.PREPROC.LIMIT_MAG.PS = {
-                            'g': 23.3,
-                            'r': 23.2,
-                            'i': 23.1,
-                            'z': 22.3,
-                            'y': 21.4
+                            # Below are the single epoch 5σ depths. Cite Chambers 2019
+                            'g': 22.0,
+                            'r': 21.8,
+                            'i': 21.5,
+                            'z': 20.9,
+                            'y': 19.7
 
-                            # Below are the single epoch 5σ depths
-                            # 'g': 22.0,
-                            # 'r': 21.8,
-                            # 'i': 21.5,
-                            # 'z': 20.9,
-                            # 'y': 19.7
-
+                            # Below are the 12 epochs stacked 5σ depths
+                            # 'g': 23.3,
+                            # 'r': 23.2,
+                            # 'i': 23.1,
+                            # 'z': 22.3,
+                            # 'y': 21.4
                             }
 
 
@@ -347,10 +368,14 @@ __C.TRANSF.SSA.OWN = {'g_south': ('g-r', [0.222067668122, 0.199906281913]),
                       'r2_south': ('g-r', [-0.091072654821, -0.150900424498]),
                       'i_south': ('r-i', [-0.125610015322, -0.435805256644]),
                       
-                      # ivezic
-                      'g_north':  ('g-r', [+0.2628, -0.7952, +1.0544, +0.0268]),
-                      'r2_north': ('r-i', [-0.0107, +0.0050, -0.2689, -0.1540]),
-                      'i_north':  ('r-i', [-0.0307, +0.1163, -0.3341, -0.3584])}
+                      'g_north': ('g-r', [0.222067668122, 0.199906281913]),
+                      'r2_north': ('g-r', [0.209817608231, -0.338134174909]),
+                      'i_north': ('r-i', [-0.125610015322, -0.435805256644])}
+
+                    #   ivezic
+                    #   'g_north':  ('g-r', [+0.2628, -0.7952, +1.0544, +0.0268]),
+                    #   'r2_north': ('r-i', [-0.0107, +0.0050, -0.2689, -0.1540]),
+                    #   'i_north':  ('r-i', [-0.0307, +0.1163, -0.3341, -0.3584])}
 
 #------------------------------------------------------------------------------
 # Analysis and results
@@ -398,8 +423,11 @@ __C.FIG.LABELS = edict()
 
 __C.FIG.LABELS.PROP = {'Lbol':r'$\log_{10}( L_{\mathrm{bol}} \; [\mathrm{erg\;s}^{-1}])$',
                        'MBH' :r'$\log_{10}( M_{\mathrm{BH}}  /M_\odot)$',
-                       'nEdd':r'$\log_{10}( L_{\mathrm{bol}} /L_{\mathrm{Edd}})$'}
+                       'nEdd':r'$\log_{10}( L_{\mathrm{bol}} /L_{\mathrm{Edd}})$',
+                       'z':r'$z$'}
 
 __C.FIG.LABELS.PROPv2 = {'Lbol':r'$\log ( L_{\mathrm{bol}})$',
                          'MBH' :r'$\log ( M_{\mathrm{BH}}/M_\odot)$',
-                         'nEdd':r'$\log ( n_{\mathrm{Edd}})$'}
+                         'nEdd':r'$\log ( n_{\mathrm{Edd}})$',
+                         'z':r'$z$',
+                         'wavelength':r'$\lambda$'}

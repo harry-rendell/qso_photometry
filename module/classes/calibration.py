@@ -83,6 +83,7 @@ class calib():
         # Setting up colors
         marg_color = {'blue':'royalblue', 'red':'salmon'}[color]
         joint_color = {'blue':'Blues', 'red':'Reds'}[color]
+        label_dict = {'qsos':'Quasars', 'calibStars':'Stars'}
         
         if g is None:
             g = sns.JointGrid(x=xname, y=yname, data=data, xlim=bounds[xname], ylim=bounds[yname], height=8)
@@ -117,6 +118,13 @@ class calib():
     #     plt.axvline(x=0, lw=0.2, color='k', ls='--', dashes=(20,10))
 
         plt.grid(lw = 0.2, which='major')
+        transf_string = 'untransformed' if yname.endswith('nat') else 'transformed'
+        plt.text(0.03, 0.03, f'{label_dict[self.obj]} ({transf_string})', transform=g.ax_joint.transAxes, 
+                                                             fontsize=22, 
+                                                             color='white', 
+                                                             ha='left', 
+                                                             va='bottom')
+                                                            #  bbox=dict(facecolor='white'))
 
         # Save
         if save:

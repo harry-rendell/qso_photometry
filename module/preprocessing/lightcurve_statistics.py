@@ -71,7 +71,7 @@ def calculate_sf_per_qso(group, kwargs):
             weights = 0.5*de[mask]**-4
             a[i,1] = np.average(dm[mask]**2 - de[mask]**2, weights=weights) # SF2_cw
             a[i,2] = np.average(dm[mask]**2, weights=weights) # SF2_w
-            a[i,3] = 1/weights.sum() # SF_err
+            a[i,3] = 1/weights.sum() # SF2_err
 
     return {f'{key}_{mjd_edges[i]}_{mjd_edges[i+1]}':a[i,j] for i in range(n_points) for j, key in enumerate(features)}
 

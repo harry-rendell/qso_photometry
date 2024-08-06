@@ -71,8 +71,10 @@ def filter_data(df, bounds={}, dropna=True, valid_uids=None, percentiles=[], ver
     # Create set of boolean numpy arrays which are true if the key is within the bounds.
     for key, bound in bounds.items():
         boolean = df[key].between(bound[0], bound[1])
+        is_na = df[key].isna()
         if verbose:
-            print('Enforcing {:.2f} <= {} <= {:.2f}'.format(bound[0],key,bound[1]).ljust(50,' ') + 'No. points outside bounds: {:,}'.format((~boolean).sum()))
+            # print('Enforcing {:.2f} <= {} <= {:.2f}'.format(bound[0],key,bound[1]).ljust(50,' ') + 'No. points outside bounds: {:,}'.format((~boolean).sum()) + f', {is_na.sum():,} of these are NaNs')
+            print(f"Enforcing {bound[0]:.2f} <= {key} <= {bound[1]:.2f}".ljust(50, ' ') + f"No. non-NaN points outside bounds: {(~boolean).sum()-is_na.sum():,} \t No. NaNs: {is_na.sum():,}")
         df[key] = df[key].where(boolean, np.nan, inplace=False)
     
     # Drop rows with no observations in any band

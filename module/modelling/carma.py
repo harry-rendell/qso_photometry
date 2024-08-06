@@ -36,7 +36,14 @@ def apply_fit_drw_mcmc(group, kwargs):
     TODO: Add hyperparams of MCMC fit into kwargs
     """
     t, y, yerr = group[[kwargs['mjd_key'], 'mag', 'magerr']].values.T
-    nan_result = {'sig16':np.nan, 'sig50':np.nan, 'sig84':np.nan, 'tau16':np.nan, 'tau50':np.nan, 'tau84':np.nan, 'mjd_ptp':np.ptp(t), 'n':len(t)}
+    sid_counts = group['sid'].value_counts()
+    n_sss = sid_counts.get(3, default=0)
+    n_sdss = sid_counts.get(5, default=0)
+    n_ps = sid_counts.get(7, default=0)
+    n_ztf = sid_counts.get(11, default=0)
+    
+    nan_result = {'sig16':np.nan, 'sig50':np.nan, 'sig84':np.nan, 'tau16':np.nan, 'tau50':np.nan, 'tau84':np.nan, 'mjd_ptp':np.ptp(t),
+                  'n':len(t), 'nsss':n_sss, 'nsdss':n_sdss, 'nps':n_ps, 'nztf':n_ztf}
     # obtain best-fit 
     try:
         best_drw = drw_fit(t, y, yerr)
@@ -76,12 +83,13 @@ def apply_fit_drw_mcmc(group, kwargs):
     clean_chain_drw = sampler_drw.flatchain[sampler_drw.flatlnprobability > prob_threshold_drw, :]
     
     if len(clean_chain_drw) == 0:
-        print('clean chain is empty for uid:', group.index[0], flush=True)
+        print(f'clean chain (n={len(t)}) is empty for uid:', group.index[0], flush=True)
         return nan_result
     
     p = np.percentile(clean_chain_drw, q=[16,50,84], axis=0) * 0.4342944819032518 # multiply to convert from ln to log10
 
-    return {'sig16':p[0,0], 'sig50':p[1,0], 'sig84':p[2,0], 'tau16':p[0,1], 'tau50':p[1,1], 'tau84':p[2,1], 'mjd_ptp':np.ptp(t), 'n':len(t)}
+    return {'sig16':p[0,0], 'sig50':p[1,0], 'sig84':p[2,0], 'tau16':p[0,1], 'tau50':p[1,1], 'tau84':p[2,1], 'mjd_ptp':np.ptp(t),
+            'n':len(t), 'nsss':n_sss, 'nsdss':n_sdss, 'nps':n_ps, 'nztf':n_ztf}
 
 def apply_dho_fit(group, kwargs):
     """

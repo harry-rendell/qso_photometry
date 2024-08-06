@@ -74,7 +74,9 @@ class analysis():
         self.df = data_io.dispatch_reader(kwargs, multiproc=multiproc, i=i, max_processes=ncores, concat=True, fnames=fnames, uids=uids)
         # self.df = self.df[np.any(self.df['band'].isin(self.band), axis=1)]
         # Remove objects with a single observation.
-        self.df = self.df[self.df.index.duplicated(keep=False)]
+        mask_not_single_obs = self.df.index.duplicated(keep=False)
+        print(f'Number of objects with single observation: {(~mask_not_single_obs).sum()}')
+        self.df = self.df[mask_not_single_obs]
 
     def read_merged_photometry(self, nrows=None, multiproc=True, i=None, ncores=4, fnames=None, phot_str='clean', uids=None):
         """
@@ -122,7 +124,9 @@ class analysis():
         self.df = self.df[np.any([(self.df.band == b).values for b in self.band], axis=0)]
         # self.df = self.df[np.any(self.df['band'].isin(self.band), axis=1)]
         # Remove objects with a single observation.
-        self.df = self.df[self.df.index.duplicated(keep=False)]
+        mask_not_single_obs = self.df.index.duplicated(keep=False)
+        print(f'Number of objects removed with single observation: {(~mask_not_single_obs).sum()}')
+        self.df = self.df[mask_not_single_obs]
 
     def calculate_dtdm(self, uids):
         """

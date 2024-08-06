@@ -10,6 +10,7 @@ from scipy.optimize import curve_fit
 from scipy.stats import linregress, chisquare
 from module.preprocessing.binning import bin_data
 from sklearn.mixture import GaussianMixture
+from itertools import combinations_with_replacement
 
 class dtdm_binned_class():
     """
@@ -79,13 +80,25 @@ class dtdm_binned_class():
         self.m_bin_widths = widths(self.m_bin_edges)
         self.e_bin_edges = bin_dict['e_bin_edges']
         self.t_dict = bin_dict['T_dict']
+        self.t_dict_latex = {key:'$'+string.replace('∆',r'\Delta ')+'$' for key, string in self.t_dict.items()}        
         self.m2_bin_edges = bin_dict['m2_bin_edges']
         self.m2_bin_widths = widths(self.m2_bin_edges)
         self.m2_bin_centres = centres(self.m2_bin_edges)
         self.width = bin_dict['width']
 
+        self.t_dict_latex = {}
+        for key, string in self.t_dict.items():
+            split_label = string.replace('∆', r'\Delta ').split('<')
+            # self.t_dict_latex[key] = f"${split_label[0]}\,\mathrm{{days}}<{split_label[1]}<{split_label[2]}\,\mathrm{{days}}$" # option 1, put days after each number
+            self.t_dict_latex[key] = f"${split_label[0]}<{split_label[1]}<{split_label[2]}$ [days]" # option 2, [days] at the end
+
         # temporary hack to reformat dictionary.
         # self.t_dict = {key:f'{float(value.split("<t<")[0]):.0f}<∆t<{float(value.split("<t<")[1]):.0f}' for key, value in self.t_dict.items()}
+
+    def plot_test(self):
+        # text self.t_dict_latex
+        fig, ax = plt.subplots(1,1, figsize=(5,5))
+        ax.set(xlabel=self.t_dict_latex[0], ylabel=self.t_dict_latex[1])
 
     def stats(self, verbose=False):
         if verbose:
@@ -104,14 +117,14 @@ class dtdm_binned_class():
         self.skew_2  = N_dm**0.5 * ((x-mean[:,np.newaxis])**3).sum(axis=1) * ( ((x-mean[:,np.newaxis])**2).sum(axis=1) )**-1.5
 
     def plot_means(self, ax, ls='-'):
-        ax.errorbar(self.t_bin_chunk_centres, self.means, yerr=self.means*self.dms_binned.sum(axis=1)**-0.5, lw=0.5, marker='o', label=self.label)
-         # ax.scatter(self.t_bin_chunk_centres, self.means, s=30, label=self.name, ls=ls)
-         # ax.plot   (self.t_bin_chunk_centres, self.means, lw=1.5, ls=ls)
+        ax.errorbar(self.T_bin_centres, self.means, yerr=self.means*self.dms_binned.sum(axis=1)**-0.5, lw=0.5, marker='o', label=self.label)
+         # ax.scatter(self.T_bin_centres, self.means, s=30, label=self.name, ls=ls)
+         # ax.plot   (self.T_bin_centres, self.means, lw=1.5, ls=ls)
 
     def plot_modes(self, ax, ls='-'):
-        ax.errorbar(self.t_bin_chunk_centres, self.modes, yerr=self.means*self.dms_binned.sum(axis=1)**-0.5, lw=0.5, marker='o', label=self.label)
-         # ax.scatter(self.t_bin_chunk_centres, self.modes, s=30, label=self.name, ls=ls)
-         # ax.plot   (self.t_bin_chunk_centres, self.modes, lw=1.5, ls=ls)
+        ax.errorbar(self.T_bin_centres, self.modes, yerr=self.means*self.dms_binned.sum(axis=1)**-0.5, lw=0.5, marker='o', label=self.label)
+         # ax.scatter(self.T_bin_centres, self.modes, s=30, label=self.name, ls=ls)
+         # ax.plot   (self.T_bin_centres, self.modes, lw=1.5, ls=ls)
 
     def plot_sf_ensemble(self, figax=None):
         if figax is None:
@@ -121,7 +134,7 @@ class dtdm_binned_class():
         SF = (((self.m_bin_centres**2)*self.dms_binned).sum(axis=1)/self.dms_binned.sum(axis=1))**0.5
         SF[self.dms_binned.sum(axis=1)**-0.5 > 0.1] = np.nan # remove unphysically large SF values
         # Check errors below a right
-        ax.errorbar(self.t_bin_chunk_centres, SF, yerr=self.dms_binned.sum(axis=1)**-0.5*self.means, lw = 0.5, marker = 'o', label = self.label)
+        ax.errorbar(self.T_bin_centres, SF, yerr=self.dms_binned.sum(axis=1)**-0.5*self.means, lw = 0.5, marker = 'o', label = self.label)
         ax.set(yscale='log',xscale='log', xticks=[100,1000])
         ax.set(xlabel='∆t',ylabel = 'structure function')
 
@@ -141,7 +154,7 @@ class dtdm_binned_class():
         SF = np.sqrt(SF**2 - 2*median_phot_err**2)
         SF[self.dms_binned.sum(axis=1)**-0.5 > 0.1] = np.nan # remove unphysically large SF values
         # Check errors below a right
-        ax.errorbar(self.t_bin_chunk_centres, SF, yerr=self.dms_binned.sum(axis=1)**-0.5*self.means, lw = 0.5, marker = 'o', label = self.label)
+        ax.errorbar(self.T_bin_centres, SF, yerr=self.dms_binned.sum(axis=1)**-0.5*self.means, lw = 0.5, marker = 'o', label = self.label)
         ax.set(yscale='log',xscale='log', xticks=[100,1000])
         ax.set(xlabel='∆t',ylabel = 'structure function')
 
@@ -156,7 +169,7 @@ class dtdm_binned_class():
         SF = 0.74 * ( self.m_bin_centres[uq_idxs]-self.m_bin_centres[lq_idxs] ) * (( self.dms_binned.sum(axis=1) - 1 ) ** -0.5)
         SF[SF == 0] = np.nan
 
-        ax.errorbar(self.t_bin_chunk_centres, SF, yerr=self.dms_binned.sum(axis=1)**-0.5*self.means, lw = 0.5, marker = 'o', label = self.label)
+        ax.errorbar(self.T_bin_centres, SF, yerr=self.dms_binned.sum(axis=1)**-0.5*self.means, lw = 0.5, marker = 'o', label = self.label)
         ax.set(xticks=[100,1000], **kwargs)
         ax.set(xlabel='∆t',ylabel = 'structure function')
         return ax, SF
@@ -174,15 +187,42 @@ class dtdm_binned_class():
         SF_p[self.dms_binned[:,100:].sum(axis=1)**-0.5 > 0.1] = np.nan
         
         # Check errors below are right
-        ax.errorbar(self.t_bin_chunk_centres, SF_n, yerr=self.dms_binned[:, :100].sum(axis=1)**-0.5*self.means, ls='--', color=color, lw = 0.5, marker = 'o', label = self.label + ' negative')
-        ax.errorbar(self.t_bin_chunk_centres, SF_p, yerr=self.dms_binned[:, 100:].sum(axis=1)**-0.5*self.means, ls='-', color=color, lw = 0.5, marker = 'o', label = self.label + ' positive') 
+        ax.errorbar(self.T_bin_centres, SF_n, yerr=self.dms_binned[:, :100].sum(axis=1)**-0.5*self.means, ls='--', color=color, lw = 0.5, marker = 'o', label = self.label + ' negative')
+        ax.errorbar(self.T_bin_centres, SF_p, yerr=self.dms_binned[:, 100:].sum(axis=1)**-0.5*self.means, ls='-', color=color, lw = 0.5, marker = 'o', label = self.label + ' positive') 
 
         ax.set(yscale='log',xscale='log', xticks=[100,1000])
         ax.set(xlabel='∆t',ylabel = 'structure function')
 
         return figax, SF_n, SF_p
     
-    def hist_dm(self, window_width, figax=None, overlay_gaussian=False, overlay_lorentzian=False, overlay_exponential=False, overlay_gmm=False, overlay_diff=False, cmap=plt.cm.cool, colors=['r','b','g','m'], alpha=1, save=False):
+    def hist_dm(self, window_width, figax=None, 
+                overlay_gaussian=False, overlay_lorentzian=False, overlay_exponential=False, overlay_gmm={}, overlay_diff=False, 
+                cmap=plt.cm.cool, colors=['r','b','g','m'], alpha=1, n_skip=1, start=0, n_col=2, legend_height=10.65, verbose=False, scale=1):
+        """
+        Plot histograms of ∆m for each ∆t bin
+
+        Parameters
+        ----------
+        window_width : float
+            width of histogram
+        figax : tuple
+            tuple of fig, ax to overlay histograms on
+        overlay_gaussian : bool
+            fit a gaussian to the histogram
+        overlay_lorentzian : bool
+            fit a lorentzian to the histogram
+        overlay_exponential : bool
+            fit an exponential to the histogram
+        overlay_gmm : dict
+            dictionary of Gaussian Mixture Model parameters. Leave empty to omit GMM fit
+            required keys:
+                n_components : int
+                overlay_components : bool
+        overlay_diff : bool
+            overlay the difference between the histogram and the fit
+
+        ...
+        """
 
         def gaussian(x,peak,x0):
             sigma = (2*np.pi)**-0.5*1/peak
@@ -210,29 +250,44 @@ class dtdm_binned_class():
                 updated_bin_counts = np.append(updated_bin_counts, counts[-1])
             return updated_bin_edges, updated_bin_counts
         
+        N = self.n_bins_T//n_skip
+
         if figax is None:
-            fig, axes = plt.subplots(self.n_bins_T//2,2,figsize = (15,3.1*self.n_bins_T//2))
+            fig, axes = plt.subplots(N//n_col-start,n_col,figsize = (14*scale,scale*3.1*(N/n_col-start))) # only intended to be used for 1 or 2 columns
             plt.subplots_adjust(wspace=0.1)
         else:
             fig, axes = figax
         n=1
-        stds     = np.zeros(self.n_bins_T)
+        # stds     = np.zeros(self.n_bins_T)
         r2s_tot = []
-        gmms = []
+        self.gmms = []
+        edges = self.m_bin_edges
+        text_height = 0.6
         for i, ax in enumerate(axes.T.ravel()):
-            r2s = []
+            
+            # on final iteration, set j to the last index
+            if i == len(axes.T.ravel())-1:
+                j = int(self.n_bins_T-1)
+            else:
+                j = int(i*n_skip + start)
 
-            ax.set_title(self.t_dict[i])
-            edges = self.m_bin_edges
-            counts = self.dms_binned[i]
+            print(f'plotting: {j+1}/{self.n_bins_T}')
+
+            counts = self.dms_binned[j]
             if counts.sum() == 0:
                 continue
+            r2s = []
+            ax.set_title(self.t_dict_latex[j], fontsize=12, pad=1)
+
             # edges, counts = double_bin_size(edges, counts, 2**(i//8))
-            m,_,_= ax.hist(edges[:-1], edges, weights = counts, alpha = alpha, density=True, label = self.obj, color = cmap(0.2+i/20*0.5), range=[-window_width,window_width])
-            ax.set(xlim=[-window_width,window_width], xlabel='∆m', yticks=[])
+            # 
+            m,_,_= ax.hist(edges[:-1], edges, weights = counts, alpha = alpha, density=True, 
+                           label = self.label, color = cmap(0.3+j/20*0.5), range=[-window_width,window_width])
+            
+            ax.set(xlim=[-window_width,window_width], yticks=[])
+            ax.set_xlabel(r'$\Delta m$', fontsize=12)
             # ax.axvline(x=modes[i], lw=0.5, ls='--', color='k')
             # ax.axvline(x=m_bin_centres[m.argmax()], lw=0.5, ls='--', color='r')
-            text_height = 0.6
             if overlay_gaussian:
                 try:
                     #Also make sure that bins returned from .hist match m_bin_edges : it is
@@ -240,7 +295,7 @@ class dtdm_binned_class():
 
                     popt, _ = curve_fit(gaussian, self.m_bin_edges[:-1:n], m, p0 = [m.max(),self.m_bin_edges[:-1:n][m.argmax()]])
                     # ax.plot(x,gaussian(x, m.max(), self.m_bin_edges[:-1:n][m.argmax()]), label = 'gaussian') what is this for
-                    ax.plot(x,gaussian(x, *popt), color=colors[1], label = 'gaussian', lw=1.5)
+                    ax.plot(x,gaussian(x, *popt), color=colors[1], label = 'Gaussian', lw=1.85, alpha=0.75)
 
                     # popt, _ = curve_fit(gaussian, self.m_bin_edges[:-1:n], m, p0 = [m.max(),self.m_bin_edges[:-1:n][m.argmax()]], sigma = 1/self.m_bin_widths)
                     # ax.plot(x,gaussian(x, *popt), label = 'gaussian_weighted')
@@ -258,14 +313,15 @@ class dtdm_binned_class():
     ######################### something wrong with chi squared
                     text_height -= 0.1
                 except Exception as e:
-                    print('unable to fit gaussian due to error:',e)
+                    if verbose:
+                        print('unable to fit gaussian due to error:',e)
 
             if overlay_lorentzian:
                 try:
                     x = np.linspace(-2,2,1000)
 
                     popt, _ = curve_fit(lorentzian, self.m_bin_edges[:-1:n], m, p0 = [1/m.max(),self.m_bin_edges[:-1:n][m.argmax()]])
-                    ax.plot(x,lorentzian(x,popt[0],popt[1]), color = colors[2], label = 'lorentzian', lw=2)
+                    ax.plot(x,lorentzian(x,popt[0],popt[1]), color = colors[2], label = 'Lorentzian', lw=2)
                     
                     # popt, _ = curve_fit(lorentzian, self.m_bin_edges[:-1:n], m, p0 = [1/m.max(),self.m_bin_edges[:-1:n][m.argmax()]], sigma = 1/self.m_bin_widths)
                     # ax.plot(x,lorentzian(x,popt[0],popt[1]), label = 'lorentzian weighted')
@@ -278,7 +334,8 @@ class dtdm_binned_class():
                     # ax.text(0.05, text_height, r'Lorentzian  $r^2$ = {:.5f}'.format(r2_lorentzian), transform=ax.transAxes)
                     text_height -= 0.1
                 except Exception as e:
-                    print('unable to fit lorentzian due to error:',e)
+                    if verbose:
+                        print('unable to fit lorentzian due to error:',e)
 
 
             if overlay_exponential:
@@ -288,7 +345,7 @@ class dtdm_binned_class():
 
                     popt, _ = curve_fit(exponential, self.m_bin_edges[:-1:n], m, p0 = [m.max(),self.m_bin_edges[:-1:n][m.argmax()], 1])
                     # ax.plot(x,exponential(x, m.max(), self.m_bin_edges[:-1:n][m.argmax()]), label = 'exponential') what is this for
-                    ax.plot(x,exponential(x, *popt), color=colors[3], label = 'exponential', lw=2)
+                    ax.plot(x,exponential(x, *popt), color=colors[3], label = 'Exponential', lw=1.85, alpha=0.75)
 
                     # popt, _ = curve_fit(exponential, self.m_bin_edges[:-1:n], m, p0 = [m.max(),self.m_bin_edges[:-1:n][m.argmax()], 1], sigma = 1/self.m_bin_widths)
                     # ax.plot(x,exponential(x, *popt), label = 'exponential_weighted')
@@ -301,59 +358,96 @@ class dtdm_binned_class():
                     # ax.text(0.05, text_height, r'Expoxwnential $r^2$ = {:.5f}'.format(r2_exponential), transform=ax.transAxes)
                     text_height -= 0.1
                 except Exception as e:
-                    print('unable to fit exponential due to error:',e)
+                    if verbose:
+                        print('unable to fit exponential due to error:',e)
 
             if overlay_gmm:
-                try:
-                    x = np.linspace(-2,2,1000)
-                    n_components = 5
-                    gmm = GaussianMixture(n_components, covariance_type='full', means_init=np.zeros(shape=(n_components,1)), max_iter=1000, tol=1e-5)
-                    # a = np.repeat(self.m_bin_centres, np.round(counts/np.round(counts.min(), -2), 0).astype(int))
-                    n = 10 # reduce the number of repeats by a factor of n
-                    a = np.repeat(self.m_bin_centres, np.round(counts/(np.round(counts.min(), -2)*n), 0).astype(int))
-                    # return a
-                    gmm.fit(a.reshape(-1,1))
-                    gmms.append(gmm)
+                x = np.linspace(-2,2,1000)
+                n_components = overlay_gmm['n_components']
+
+                for tol in [1e-5, 1e-6, 1e-7]:
+                    for i, n_components_ in enumerate(range(n_components, n_components+3)):
+                        try:
+                            gmm = GaussianMixture(n_components_, covariance_type='full', means_init=np.zeros(shape=(n_components_, 1)), max_iter=1000, tol=tol)
+                            
+                            N = 10  # Reduce the number of repeats by a factor of N
+                            
+                            # TODO: sample uniformly instead of np.repeat then use pymc
+                            a = np.repeat(self.m_bin_centres, np.round(counts / (np.round(counts.min(), -2) * N), 0).astype(int))
+                            gmm.fit(a.reshape(-1, 1))
+
+                            # TODO: we should really add gmms using a dictionary in case some of the fits fail
+                            self.gmms.append(gmm)
+                            
+                            individual_pdfs = (gmm.weights_ * normal_(x[:, np.newaxis], gmm.covariances_.flatten()**0.5, gmm.means_.flatten()))
+                            combined_pdfs = individual_pdfs.sum(axis=1)
+                            ax.plot(x, combined_pdfs, label='GMM', color=overlay_gmm['color'], lw=2.3, alpha=0.7, ls=['-','--','-.'][i])
+
+                            if overlay_gmm['overlay_components']:
+                                for k_ in range(n_components):
+                                    label = 'GMM components' if k_==0 else None
+                                    ax.plot(x, individual_pdfs[:,k_], color='k', lw=0.6, ls=(0,(5,3)), label=label)
+
+                            # Set success flag to True and break out of both loops
+                            success = True
+                            break
+                        except Exception as e:
+                            if verbose:
+                                print('Unable to fit GMM with tolerance', tol, 'and n_components', n_components_, 'due to error:', e)
                     
-                    combined_pdfs = (gmm.weights_*normal_(x[:, np.newaxis], gmm.covariances_.flatten()**0.5, gmm.means_.flatten())).sum(axis=1)
-                    ax.plot(x, combined_pdfs, label = 'GMM', color=colors[2], lw=2)
-
-
-                except Exception as e:
-                    print('unable to fit GMM due to error:',e)
+                    if success:
+                        break
+                    
 
             r2s_tot.append(r2s)
             # ax.text(0.05, 0.9, 'mean = {:.5f}'.format(self.means[i]), transform=ax.transAxes)
             # ax.text(0.05, 0.8, 'mode = {:.5f}'.format(self.modes[i]), transform=ax.transAxes)
             # ax.text(0.05, 0.7, 'skew  = {:.5f}'.format(self.skew_1[i]), transform=ax.transAxes)
 
-            from itertools import combinations_with_replacement
-            a = {f'{b[0]}-{b[1]}':a[0]*a[1] for a,b in zip(combinations_with_replacement([3,5,7,11],2),combinations_with_replacement(['ssa','sdss','ps','ztf'],2 ))}
+            # a = {f'{b[0]}-{b[1]}':a[0]*a[1] for a,b in zip(combinations_with_replacement([3,5,7,11],2),combinations_with_replacement(['SSS','SDSS','PS','ZTF'],2))}
+            a = {f'{b[0]}-{b[1]}':a[0]*a[1] for a,b in zip(combinations_with_replacement([3,5,7,11],2),combinations_with_replacement(['sss','sdss','ps','ztf'],2))}
             survey_fractions = ''
             for name, index in a.items():
-                frac = self.dcs_binned[i][index]/self.dcs_binned[i].sum()
+                frac = self.dcs_binned[j][index]/self.dcs_binned[j].sum()
                 if frac > 0.005:
                     survey_fractions += f'{name}: {frac*100:.0f}%\n'
 
+            if self.label is not None:
+                # If label is not None then assume we are going to be overlaying distributions
+                survey_fractions = self.label + ':\n' + survey_fractions
             if self.obj=='qsos':
-                survey_fractions = 'qsos:\n' + survey_fractions
-                ax.text(0.02, 0.96, survey_fractions, transform=ax.transAxes, verticalalignment='top')
+                ax.text(0.02, 0.96, survey_fractions, transform=ax.transAxes, verticalalignment='top', usetex=False, fontsize=11)
             else:
-                survey_fractions = 'stars:\n' + survey_fractions
-                ax.text(0.78, 0.66, survey_fractions, transform=ax.transAxes, verticalalignment='top')
+                ax.text(0.98, 0.96, survey_fractions, transform=ax.transAxes, verticalalignment='top', horizontalalignment='right', usetex=False, fontsize=11)
 
             # ax.axvline(x=self.means[i], lw=0.4, ls='-', color='b')
             # ax.axvline(x=self.modes[i], lw=0.4, ls='-', color='r')
             # ax.axvline(x=self.m_bin_centres[m.argmax()], lw=0.6, ls='-', color='r')
             ax.axvline(x=0, lw=1, ls='--', color='k')
-            ax.legend()
-            plt.subplots_adjust(hspace=0.5)
+        # add title
+        # fig.suptitle('Quasar and Star $\Delta m$ distributions', fontsize=16, y=0.925)
+        fig.suptitle('Quasar and Star $\Delta m$ distributions', fontsize=16, y=0.925)
+        # put legend outside of subplots
+        plt.legend(loc='upper right', bbox_to_anchor=(1.01, legend_height))
+        plt.subplots_adjust(hspace=0.5)
 
-        if save:
-            fig.savefig(cfg.W_DIR + 'analysis/plots/{}_{}_dm_hist.pdf'.format(self.obj, self.name), bbox_inches='tight')
-            plt.close()
+        return fig, axes, np.array(r2s_tot).T
 
-        return fig, axes, np.array(r2s_tot).T, gmms
+    def plot_gmm_variances(self):
+        n = len(self.gmms)
+        fig, axes = plt.subplots(n,1, figsize=(10, n*2), sharex=True, sharey=True)
+        for i, ax in enumerate(axes.ravel()):
+            weights =self.gmms[i].weights_
+            variances = self.gmms[i].covariances_.flatten()**0.5
+            ax.plot(weights, variances, 'o')
+            ax.set(ylabel='Weight', title=self.t_dict_latex[i])
+            ax.axhline(0, color='k', lw=0.5, ls='--')
+            ax.grid(visible=True, which='both', alpha=0.6)
+            # plt.grid(visible=True, which='minor', alpha=0.2)
+        # make title for figure
+        axes[-1].set(xlabel='Standard deviation', xlim=(0, 1), ylim=(-0.1,1))
+        fig.suptitle('GMM variances and weights', fontsize=16, y=0.9)
+        return fig, axes
 
     def hist_de(self, window_width, overlay_gaussian=True, overlay_lorentzian=True, save=False):
 
@@ -362,7 +456,7 @@ class dtdm_binned_class():
         n=1
         stds     = np.zeros(self.n_bins_T)
         for i, ax in enumerate(axes):
-            m,_,_= ax.hist(self.e_bin_edges[:-1], self.e_bin_edges[::n], weights = self.des_binned[i], alpha = 1, density=False, label = self.t_dict[i], color = cmap(i/20.0));
+            m,_,_= ax.hist(self.e_bin_edges[:-1], self.e_bin_edges[::n], weights = self.des_binned[i], alpha = 1, density=False, label = self.t_dict_latex[i], color = cmap(i/20.0));
             ax.set(xlim=[0,window_width], xlabel='∆σ')
             ax.axvline(x=0, lw=0.5, ls='--')
             ax.legend()
@@ -380,8 +474,8 @@ class dtdm_binned_class():
         n=1
         stds     = np.zeros(self.n_bins_T)
         for i, ax in enumerate(axes):
-            m,_,_= ax.hist(self.t_bin_edges[:-1], self.t_bin_edges[::n], weights = self.dts_binned[i], alpha = 1, density=True, label = self.t_dict[i], color = cmap(i/20.0));
-            ax.set(xlim=[self.t_bin_chunk[i],self.t_bin_chunk[i+1]], xlabel='∆t')
+            m,_,_= ax.hist(self.t_bin_edges[:-1], self.t_bin_edges[::n], weights = self.dts_binned[i], alpha = 1, density=True, label = self.t_dict_latex[i], color = cmap(i/20.0));
+            # ax.set(xlim=[self.T_bin_edges[i],self.T_bin_edges[i+1]], xlabel='∆t')
             ax.axvline(x=0, lw=0.5, ls='--')
             ax.legend()
 
@@ -397,7 +491,7 @@ class dtdm_binned_class():
         n=1
         stds     = np.zeros(self.n_bins_T)
         for i in range(self.n_bins_T):
-            m,_,_= ax.hist(self.t_bin_edges[:-1], self.t_bin_edges[::n], weights = self.dts_binned[i], alpha = 1, label = self.t_dict[i], color = cmap(i/20.0));
+            m,_,_= ax.hist(self.t_bin_edges[:-1], self.t_bin_edges[::n], weights = self.dts_binned[i], alpha = 1, label = self.t_dict_latex[i], color = cmap(i/20.0));
         ax.axvline(x=0, lw=0.5, ls='--')
         ax.set(yscale='log')
         # ax.legend()

@@ -83,7 +83,6 @@ def fit_power_law(x, y, yerr, **kwargs):
     coefficient = 10**coefficient
 
     # Print the best fit
-    print(f'fitted power law: y = {coefficient:.2f}*x^{exponent:.2f}')
     return coefficient, exponent, pcov, model_values
 
 def fit_power_law_linear(x, y, yerr):

@@ -222,7 +222,9 @@ class dtdm_raw_analysis():
         if keys=='all':
             keys = list(self.pooled_stats.keys())[1:]
         
-        color = kwargs.pop('color') if 'color' in kwargs else None
+        color = plot_kwargs.pop('color') if 'color' in plot_kwargs else None
+
+        if 'lw' not in plot_kwargs: plot_kwargs['lw'] = 1
 
         if label is None:
             label = ['{}, {}'.format(self.name,key) for key in keys]
@@ -236,25 +238,31 @@ class dtdm_raw_analysis():
         # normalised_bin_counts = self.pooled_stats['n']/self.pooled_stats['n'].sum(axis=0)*1e3
         # Norm per sqrt time bin (ie area propto counts)
         normalised_bin_counts = (self.pooled_stats['n']/self.pooled_stats['n'].sum(axis=0))**0.5*1e2
-        error_norm = (2/self.pooled_stats['n'])**0.15
+        error_norm = (2/self.pooled_stats['n'])**0.08
         for i, key in enumerate(keys):
-            y = self.pooled_stats[key]
+            y = self.pooled_stats[key].copy()
             if key.startswith('SF'):
-                y[y<0] = np.nan
-                y[y==0] = np.nan
+                y[y[:,0]<0] = np.nan
+                y[y[:,0]==0] = np.nan
+            if key.startswith('median'):
+                y[y[:,0]==0] = np.nan
+                y[abs(y[:,0])>0.3] *= 1
+                y[:,1][(y[:,1])>0.15] = 0.15
             # else:
                 # y[:,1] = y[:,1]**0.5 # NOTE: Non SF errors are actually variances as of 08/08/23. If extract_features is run since then, remove this line.
 
             # ax.errorbar(self.mjd_centres, y[:,0], yerr=y[:,1]**0.5, label='{}, {}'.format(key,self.name), color=color, lw=2.5) # square root this
             ax.errorbar(self.mjd_centres, y[:,0], yerr=y[:,1]*error_norm,
                         capsize=3,
-                        lw=1,
-                        elinewidth=0.9,
-                        markeredgewidth=0.8,
+                        marker='o',
+                        ms=2,
+                        elinewidth=0.4,
+                        markeredgewidth=0.9,
                         color=color,
+                        label=label[i],
                         **plot_kwargs)
             ax.scatter(self.mjd_centres, y[:,0], s=normalised_bin_counts,
-                       label=label[i],
+                       
                        color=color)
     
             ax.set(xlabel='Rest frame time lag (days)')
@@ -275,8 +283,9 @@ class dtdm_raw_analysis():
             from module.modelling.fitting import fit_power_law
             # yerr = 10*np.ones(y.shape) # to fit without errors
             coefficient, exponent, pcov, model_values = fit_power_law(self.mjd_centres, y, yerr, **kwargs)
-            label = r'$\Delta t^{\beta}, \beta='+'{:.2f}'.format(exponent)+'$'
-            fitted_params = (coefficient, exponent)			
+            label = rf'$\alpha \Delta t^{{\beta}}, \beta={exponent:.3f}\pm{pcov[1,1]**0.5:.3f}, \alpha={coefficient:.3f}\pm{pcov[0,0]**0.5/np.log(10):.3f}$'
+            print(f'fitted power law: y = ({coefficient:.3f} ± {pcov[0,0]**0.5/np.log(10):.3f})*x^({exponent:.3f} ± {pcov[1,1]**0.5:.3f})')
+            fitted_params = (coefficient, exponent)
         elif model_name == 'broken_power_law':
             from module.modelling.fitting import fit_broken_power_law
             # yerr = 10*np.ones(y.shape) # to fit without errors
@@ -305,7 +314,7 @@ class dtdm_raw_analysis():
             fitted_params = (tau, SF_inf, beta)
             
         if ax is not None:
-            ax.plot(*model_values, ls='-.', label=label, **plot_args)		
+            ax.plot(*model_values, ls='-.', label=label, **plot_args, zorder=0)		
             ax.legend()
 
         return fitted_params
@@ -361,21 +370,26 @@ class dtdm_raw_analysis():
         # f = lambda x: 0.01*(x**0.443)
         # ax.plot(self.mjd_centres, f(self.mjd_centres), lw=0.5, ls='--', color='b', label='MacLeod 2012')
         if name=='macleod':
-            x,y = pd.read_csv(cfg.W_DIR + 'assets/comparison_data/macleod2012_fig5.csv', comment='#').values.T
-            ax.plot(x, y, label = 'Macleod 2012', **kwargs)
+            x,y = pd.read_csv(cfg.W_DIR + 'assets/comparison_data/macleod2012_fig17.csv', comment='#').values.T
+            ax.plot(x, y, label = 'Macleod et al. 2012', **kwargs)
         elif name=='caplar':
             dt, dm = pd.read_csv(cfg.W_DIR + 'assets/comparison_data/caplar2020_fig4.csv', comment='#').values.T
             dt = dt*365.25
-            ax.scatter(dt, -dm, color='k', s=0.5, label='Caplar et al. 2020', **kwargs)
+            ax.scatter(dt, -dm, color='k', s=0.7, label='Caplar et al. 2020', **kwargs)
         elif name=='stone':
             dt, dm = pd.read_csv(cfg.W_DIR + 'assets/comparison_data/stone2022_fig10.csv', comment='#').values.T
             ax.plot(dt, dm, label='Stone et al. 2022', **kwargs)
             # ax.scatter(dt, dm, color='k', s=0.5, label='Stone et al. 2022', **kwargs)
-        elif name=='devries_sf':
-            dt, sf = pd.read_csv(cfg.W_DIR + 'assets/comparison_data/devries2005_fig8.csv', comment='#').values.T
+        elif name=='devries':
+            dt, sf = pd.read_csv(cfg.W_DIR + 'assets/comparison_data/devries2005_fig18.csv', comment='#').values.T
+            # dt, sf = pd.read_csv(cfg.W_DIR + 'assets/comparison_data/devries2005_fig8.csv', comment='#').values.T
             dt = dt*365.25
             sf = 10**sf
-            ax.plot(dt, sf, label='De Vries et al. 2005', **kwargs)
+            ax.plot(dt, sf, label='de Vries et al. 2005', **kwargs)
+        elif name=='morganson':
+            dt, sf = pd.read_csv(cfg.W_DIR + f'assets/comparison_data/morganson2014_fig6_{self.band}.csv', comment='#').values.T
+            dt = dt*365.25
+            ax.plot(dt, sf, label='Morganson et al. 2014', **kwargs)
 
     def plot_sf_from_drw_fits(self, ax, **kwargs):
         from module.assets import load_drw_mcmc_fits

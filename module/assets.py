@@ -4,7 +4,7 @@ import numpy as np
 import os
 from .preprocessing import parse, color_transform
 
-def load_grouped(obj, bands=None, return_dict=True, **kwargs):
+def load_grouped(obj, bands='gri', return_dict=True, clean=True, **kwargs):
     """
     Load grouped data for a given object and band.
     If return_dict = True, then return a dictionary of DataFrames.
@@ -13,29 +13,32 @@ def load_grouped(obj, bands=None, return_dict=True, **kwargs):
     """
     ID = 'uid' if obj == 'qsos' else 'uid_s'
     if 'usecols' in kwargs: kwargs['usecols'] += [ID]
+    clean_str = 'clean' if clean else 'unclean'
+
     if len(bands) == 1:
-        sdss = pd.read_csv(cfg.D_DIR + f'surveys/sdss/{obj}/clean/{bands}_band/grouped.csv',index_col=ID, **kwargs)
-        ps   = pd.read_csv(cfg.D_DIR + f'surveys/ps/{obj}/clean/{bands}_band/grouped.csv',  index_col=ID, **kwargs)
-        ztf  = pd.read_csv(cfg.D_DIR + f'surveys/ztf/{obj}/clean/{bands}_band/grouped.csv', index_col=ID, **kwargs)
-        ssa  = pd.read_csv(cfg.D_DIR + f'surveys/ssa/{obj}/clean/{bands}_band/grouped.csv', index_col=ID, **kwargs)
+        sdss = pd.read_csv(cfg.D_DIR + f'surveys/sdss/{obj}/{clean_str}/{bands}_band/grouped.csv',index_col=ID, **kwargs)
+        ps   = pd.read_csv(cfg.D_DIR + f'surveys/ps/{obj}/{clean_str}/{bands}_band/grouped.csv',  index_col=ID, **kwargs)
+        ztf  = pd.read_csv(cfg.D_DIR + f'surveys/ztf/{obj}/{clean_str}/{bands}_band/grouped.csv', index_col=ID, **kwargs)
+        ssa  = pd.read_csv(cfg.D_DIR + f'surveys/ssa/{obj}/{clean_str}/{bands}_band/grouped.csv', index_col=ID, **kwargs)
     else:
-        sdss = {b:pd.read_csv(cfg.D_DIR + f'surveys/sdss/{obj}/clean/{b}_band/grouped.csv', index_col=ID, **kwargs) for b in bands}
-        ps   = {b:pd.read_csv(cfg.D_DIR + f'surveys/ps/{obj}/clean/{b}_band/grouped.csv',   index_col=ID, **kwargs) for b in bands}
-        ztf  = {b:pd.read_csv(cfg.D_DIR + f'surveys/ztf/{obj}/clean/{b}_band/grouped.csv',  index_col=ID, **kwargs) for b in bands}
-        ssa  = {b:pd.read_csv(cfg.D_DIR + f'surveys/ssa/{obj}/clean/{b}_band/grouped.csv',  index_col=ID, **kwargs) for b in bands}
+        sdss = {b:pd.read_csv(cfg.D_DIR + f'surveys/sdss/{obj}/{clean_str}/{b}_band/grouped.csv', index_col=ID, **kwargs) for b in bands}
+        ps   = {b:pd.read_csv(cfg.D_DIR + f'surveys/ps/{obj}/{clean_str}/{b}_band/grouped.csv',   index_col=ID, **kwargs) for b in bands}
+        ztf  = {b:pd.read_csv(cfg.D_DIR + f'surveys/ztf/{obj}/{clean_str}/{b}_band/grouped.csv',  index_col=ID, **kwargs) for b in bands}
+        ssa  = {b:pd.read_csv(cfg.D_DIR + f'surveys/ssa/{obj}/{clean_str}/{b}_band/grouped.csv',  index_col=ID, **kwargs) for b in bands}
     
     if return_dict:
         return {'sdss':sdss, 'ps':ps, 'ztf':ztf, 'ssa':ssa}
     else:
         return sdss, ps, ztf, ssa
     
-def load_grouped_tot(obj, bands=None, **kwargs):
+def load_grouped_tot(obj, bands=None, clean=True, **kwargs):
+    clean_str = 'clean' if clean else 'unclean'
     ID = 'uid' if obj == 'qsos' else 'uid_s'
     if 'usecols' in kwargs: kwargs['usecols'] += [ID]
     if len(bands) == 1:
-        tot  = pd.read_csv(cfg.D_DIR + f'merged/{obj}/clean/grouped_{bands}.csv', index_col=ID, **kwargs)
+        tot  = pd.read_csv(cfg.D_DIR + f'merged/{obj}/{clean_str}/grouped_{bands}.csv', index_col=ID, **kwargs)
     else:
-        tot = {b:pd.read_csv(cfg.D_DIR + f'merged/{obj}/clean/grouped_{b}.csv', index_col=ID, **kwargs) for b in bands}
+        tot = {b:pd.read_csv(cfg.D_DIR + f'merged/{obj}/{clean_str}/grouped_{b}.csv', index_col=ID, **kwargs) for b in bands}
 
     return tot
 
@@ -58,39 +61,58 @@ def load_n_tot(obj, **kwargs):
     if 'usecols' in kwargs: kwargs['usecols'] += [ID]
     return pd.read_csv(cfg.D_DIR + f'catalogues/{obj}/n_tot.csv', index_col=ID, **kwargs)
 
-def load_drw_mcmc_fits(bands, bounds={'a':(0,0.01),'loc':(2,5),'scale':(0.1,1), 'z':(0.2,5), 'tau16':(0,5), 'tau50':(0,5), 'tau84':(0,6)}):
+def load_drw_mcmc_fits(bands, bounds={'a':(0,0.01),'loc':(2,5),'scale':(0.1,1), 'z':(0.2,5), 'tau16':(0,5), 'tau50':(0,5), 'tau84':(0,6)}, dropna=True):
     # Load skewfit data
     ID = 'uid'
-    vac = load_vac('qsos', usecols=['z','Lbol'])
+    vac = load_vac('qsos', usecols=['z','Lbol','MBH','nEdd'])
     drw_mcmc_fits = []
     for band in bands:
-        # s = pd.read_csv(cfg.D_DIR + f"computed/qsos/mcmc_fits/rest/{band}_ssa_sdss_ps_ztf_30.csv", index_col=ID)
-        s = pd.read_csv(cfg.D_DIR + f"computed/qsos/mcmc_fits/rest/{band}_all_0.csv", index_col=ID)
+        # s = pd.read_csv(cfg.D_DIR + f"computed/qsos/mcmc_fits/rest/{band}_sdss_ps_ztf_30.csv", index_col=ID)
+        s = pd.read_csv(cfg.D_DIR + f"computed/qsos/mcmc_fits/rest/{band}_all_0_best_phot.csv", index_col=ID)
+        # s = pd.read_csv(cfg.D_DIR + f"computed/qsos/mcmc_fits/rest/{band}_all_0.csv", index_col=ID)
         s['band'] = band
         vac['wavelength'] = color_transform.calculate_wavelength(band, vac['z'])
-        s = s.join(vac, on=ID)
+        s = s.join(vac, on=ID, how='left')
         drw_mcmc_fits.append(s)
-    drw_mcmc_fits = pd.concat(drw_mcmc_fits).dropna().sort_index()
+    drw_mcmc_fits = pd.concat(drw_mcmc_fits).sort_index()
     if bounds:
-        drw_mcmc_fits = parse.filter_data(drw_mcmc_fits, bounds=bounds, verbose=True)
+        drw_mcmc_fits = parse.filter_data(drw_mcmc_fits, bounds=bounds, verbose=True, dropna=dropna)
+
+    # Add extra columns
+    drw_mcmc_fits['loglambda'] = np.log10(drw_mcmc_fits['wavelength']/3000)
+    drw_mcmc_fits['logz'] = np.log10(drw_mcmc_fits['z'])
+    drw_mcmc_fits['sigerr'] = (drw_mcmc_fits['sig84'] - drw_mcmc_fits['sig16'])/2
+    drw_mcmc_fits['tauerr'] = (drw_mcmc_fits['tau84'] - drw_mcmc_fits['tau16'])/2
+    drw_mcmc_fits['logmjd_ptp'] = np.log10(drw_mcmc_fits['mjd_ptp'])
+    
     return drw_mcmc_fits
 
-def load_all_features(bands, n_bins, bounds={'a':(0,0.01),'loc':(2,5),'scale':(0.1,1), 'z':(0.2,5), 'tau16':(0,5), 'tau50':(0,6), 'tau84':(0,7)}):
+def load_all_features(bands, n_bins, bounds={'a':(0,0.01),'loc':(2,5),'scale':(0.1,1), 'z':(0.2,5), 'tau16':(0,5), 'tau50':(0,6), 'tau84':(0,7)}, dropna=True):
     ID = 'uid'
     obj = 'qsos'
     vac = load_vac('qsos', usecols=['z','Lbol','MBH','nEdd'])
     sf = []
     for band in bands:
         s = pd.read_csv(cfg.D_DIR + f'computed/{obj}/features/{band}/SF_{n_bins}_bins_all_pairs.csv', index_col=ID)
-        # drw_mcmc_fits = pd.read_csv(cfg.D_DIR + f"computed/qsos/mcmc_fits/rest/{band}_ssa_sdss_ps_ztf_30.csv", index_col=ID)
-        drw_mcmc_fits = pd.read_csv(cfg.D_DIR + f"computed/qsos/mcmc_fits/rest/{band}_all_0.csv", index_col=ID)
-        drw_mcmc_fits = parse.filter_data(drw_mcmc_fits, bounds=bounds, verbose=True)
+        # drw_mcmc_fits = pd.read_csv(cfg.D_DIR + f"computed/qsos/mcmc_fits/rest/{band}_sdss_ps_ztf_30.csv", index_col=ID)
+        drw_mcmc_fits = pd.read_csv(cfg.D_DIR + f"computed/qsos/mcmc_fits/rest/{band}_all_0_best_phot.csv", index_col=ID)
+        # drw_mcmc_fits = pd.read_csv(cfg.D_DIR + f"computed/qsos/mcmc_fits/obs/{band}_sdss_ps_30.csv", index_col=ID)
+        # drw_mcmc_fits = pd.read_csv(cfg.D_DIR + f"computed/qsos/mcmc_fits/rest/{band}_all_0.csv", index_col=ID)
+        drw_mcmc_fits = parse.filter_data(drw_mcmc_fits, bounds=bounds, verbose=True, dropna=dropna)
         s = s.join(drw_mcmc_fits, on=ID, how='inner')
         s['band'] = band
         vac['wavelength'] = color_transform.calculate_wavelength(band, vac['z'])
         s = s.join(vac, on=ID, how='left')
         sf.append(s)
+
     sf = pd.concat(sf).sort_index()
+    
+    # Add extra columns
+    sf['loglambda'] = np.log10(sf['wavelength']/3000)
+    sf['logz'] = np.log10(sf['z'])
+    sf['sigerr'] = (sf['sig84'] - sf['sig16'])/2
+    sf['tauerr'] = (sf['tau84'] - sf['tau16'])/2
+    sf['logmjd_ptp'] = np.log10(sf['mjd_ptp'])
     return sf
 
 def load_vac(obj, catalogue_name='dr16q_vac', **kwargs):
